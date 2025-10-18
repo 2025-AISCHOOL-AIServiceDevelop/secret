@@ -1,4 +1,4 @@
-package com.aischool.back;
+package com.aischool;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
