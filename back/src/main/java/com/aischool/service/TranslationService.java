@@ -32,29 +32,19 @@ public class TranslationService {
     private static String getStr(Map<String, Object> m, String k) {
         return m.get(k) == null ? null : m.get(k).toString();
     }
-
     private static Integer getInt(Map<String, Object> m, String k) {
         Object v = m.get(k);
         if (v == null) return null;
         if (v instanceof Number n) return n.intValue();
         try { return Integer.parseInt(v.toString()); } catch (Exception e) { return null; }
     }
-
-    /** URL decoding (UTF-8) */
     private static String decodeUtf8(String s) {
         try { return URLDecoder.decode(s, StandardCharsets.UTF_8); }
         catch (Exception e) { return s; }
     }
 
-    /**
-     * 제목을 링크의 **진짜 파일명**으로 결정한다.
-     * 1) HEAD 요청으로 Content-Disposition 의 filename* / filename 먼저 시도
-     * 2) 없으면 URL path 의 마지막 세그먼트에서 추출
-     * 3) 그래도 없으면 fallback(title) → "Untitled"
-     * 최종적으로 파일명에 부적합한 문자는 sanitize 처리
-     */
+    /** URL의 진짜 파일명 우선으로 타이틀 결정 */
     private String resolveTitleFromUrl(String url, String fallback) {
-        // 1) HEAD → Content-Disposition
         try {
             HttpURLConnection conn = (HttpURLConnection) new java.net.URL(url).openConnection();
             conn.setInstanceFollowRedirects(true);
@@ -63,16 +53,14 @@ public class TranslationService {
             conn.setReadTimeout(10_000);
             conn.connect();
 
-            String cd = conn.getHeaderField("Content-Disposition"); // e.g. attachment; filename="video.mp4"
+            String cd = conn.getHeaderField("Content-Disposition");
             if (cd != null) {
-                // RFC 5987 형식: filename*=UTF-8''<encoded>
                 var m1 = Pattern.compile("filename\\*=UTF-8''([^;]+)").matcher(cd);
                 if (m1.find()) {
                     String name = decodeUtf8(m1.group(1));
                     int dot = name.lastIndexOf('.');
                     return FileStorage.sanitize(dot > 0 ? name.substring(0, dot) : name);
                 }
-                // 일반: filename="video.mp4"
                 var m2 = Pattern.compile("filename=\"?([^\";]+)\"?").matcher(cd);
                 if (m2.find()) {
                     String name = decodeUtf8(m2.group(1));
@@ -82,12 +70,10 @@ public class TranslationService {
             }
         } catch (Exception ignore) { /* fallback */ }
 
-        // 2) URL 경로에서 파일명 추출
         try {
-            String path = new URI(url).getPath(); // /.../video.mp4
+            String path = new URI(url).getPath();
             if (path != null) {
-                String last = path.substring(path.lastIndexOf('/') + 1);
-                last = decodeUtf8(last);
+                String last = decodeUtf8(path.substring(path.lastIndexOf('/') + 1));
                 if (!last.isBlank()) {
                     int dot = last.lastIndexOf('.');
                     String base = dot > 0 ? last.substring(0, dot) : last;
@@ -96,7 +82,6 @@ public class TranslationService {
             }
         } catch (Exception ignore) { /* fallback */ }
 
-        // 3) fallback
         String fb = (fallback == null || fallback.isBlank()) ? "Untitled" : fallback;
         return FileStorage.sanitize(fb);
     }
@@ -104,20 +89,19 @@ public class TranslationService {
     /* ---------- 메인 플로우 ---------- */
     @Transactional
     public TranslateResponse translateAndSave(TranslateRequest req) throws Exception {
-
-        // ✅ 제목: 항상 URL 에서 실제 파일명 우선 (요청 title 은 fallback)
+        // 0) 타이틀
         String storyTitle = resolveTitleFromUrl(req.getInputFileUrl(), req.getTitle());
 
-        // 1) 원본 row
+        // 1) 원본 row (우선 생성)
         Contents original = contentsRepo.save(Contents.builder()
                 .parentId(null)
-                .title(storyTitle) // 동화 타이틀 = 실제 파일명(확장자 제외)
+                .title(storyTitle)
                 .thumbUrl(req.getThumbUrl())
                 .language(req.getSourceLang())
                 .createdAt(LocalDateTime.now())
                 .build());
 
-        // 2) Perso 프로젝트 생성 (durationSec null → PersoClient에서 임시값 처리)
+        // 2) Perso 프로젝트 생성
         String inputName = storyTitle + ".mp4";
         Map<String, Object> project = perso.createProject(
                 inputName, req.getInputFileUrl(), req.getSourceLang(),
@@ -135,10 +119,7 @@ public class TranslationService {
             Thread.sleep(5_000);
             Map<String, Object> now = perso.getExport(exportId);
             String status = getStr(now, "status");
-            if ("COMPLETED".equalsIgnoreCase(status)) {
-                finalExport = now;
-                break;
-            }
+            if ("COMPLETED".equalsIgnoreCase(status)) { finalExport = now; break; }
             if ("FAILED".equalsIgnoreCase(status)) {
                 throw new IllegalStateException("Perso export failed: " + getStr(now, "failure_reason"));
             }
@@ -146,7 +127,7 @@ public class TranslationService {
         }
         System.out.println();
 
-        // 4) 다운로드 URL 선택
+        // 4) 번역본 다운로드 URL
         String outUrl = req.isLipsync()
                 ? getStr(finalExport, "video_output_video_with_lipsync")
                 : getStr(finalExport, "video_output_video_without_lipsync");
@@ -156,27 +137,34 @@ public class TranslationService {
         if (outUrl == null)
             throw new IllegalStateException("No output video url from Perso.");
 
-        // 5) Perso에서 실제 duration 가져오기
+        // 5) 실제 duration 조회
         Map<String, Object> projectDetail = perso.getProject(projectId);
         Integer realDuration = getInt(projectDetail, "input_file_video_duration_sec");
+
+        /* 5-1) ✅ 원본 영상도 저장: contents/<타이틀>_<원본언어>.mp4 */
+        String sourceName = storyTitle + "_" + req.getSourceLang() + ".mp4";
+        String sourcePath = storage.downloadTo("contents", sourceName, req.getInputFileUrl());
+        original.setContentsPath(sourcePath);
+        original.setDurationSec(realDuration);
+        original.setCompletedAt(LocalDateTime.now());
+        contentsRepo.save(original);
 
         // 6) 번역본 row
         Contents translated = contentsRepo.save(Contents.builder()
                 .parentId(original.getContentsId())
-                .title(storyTitle) // 동일 타이틀 유지
+                .title(storyTitle)
                 .thumbUrl(original.getThumbUrl())
                 .language(req.getTargetLang())
                 .projectId(projectId)
                 .exportId(exportId)
-                .durationSec(realDuration)
+                .durationSec(realDuration)                // ✅ 실제 길이 저장
                 .createdAt(LocalDateTime.now())
                 .build());
 
-        // 7) 저장 파일명: "동화타이틀_언어.mp4" (루트에 바로 저장)
-        String downloadName = storyTitle + "_" + req.getTargetLang() + ".mp4";
-        String savedPath = storage.downloadToRoot(downloadName, outUrl);
-
-        translated.setContentsPath(savedPath);
+        // 7) 번역 영상 저장: contents/<타이틀>_<타깃언어>.mp4
+        String translatedName = storyTitle + "_" + req.getTargetLang() + ".mp4";
+        String translatedPath = storage.downloadTo("contents", translatedName, outUrl);
+        translated.setContentsPath(translatedPath);
         translated.setCompletedAt(LocalDateTime.now());
         contentsRepo.save(translated);
 
@@ -194,36 +182,25 @@ public class TranslationService {
             String  org     = getStr(s, "text_original");
             String  tr      = getStr(s, "text_translated");
 
-            // ✅ 한국어(원문)
             if (org != null && !org.isBlank()) {
                 rows.add(Script.builder()
                         .contentsId(translated.getContentsId())
-                        .orderNo(orderNo)
-                        .startMs(startMs)
-                        .endMs(endMs)
-                        .language("ko")
-                        .text(org)
-                        .createdAt(LocalDateTime.now())
-                        .build());
+                        .orderNo(orderNo).startMs(startMs).endMs(endMs)
+                        .language("ko").text(org)
+                        .createdAt(LocalDateTime.now()).build());
             }
-
-            // ✅ 타겟 언어(번역)
             if (tr != null && !tr.isBlank() && !targetLang.isBlank()) {
                 rows.add(Script.builder()
                         .contentsId(translated.getContentsId())
-                        .orderNo(orderNo)
-                        .startMs(startMs)
-                        .endMs(endMs)
-                        .language(targetLang)
-                        .text(tr)
-                        .createdAt(LocalDateTime.now())
-                        .build());
+                        .orderNo(orderNo).startMs(startMs).endMs(endMs)
+                        .language(targetLang).text(tr)
+                        .createdAt(LocalDateTime.now()).build());
             }
         }
-
         scriptRepo.saveAll(rows);
 
-        System.out.println("💾 Saved: " + savedPath);
+        System.out.println("💾 Saved original: " + sourcePath);
+        System.out.println("💾 Saved translated: " + translatedPath);
 
         return new TranslateResponse(
                 translated.getContentsId(),

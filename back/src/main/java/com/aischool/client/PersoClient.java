@@ -33,27 +33,31 @@ public class PersoClient {
         log.info("[Perso] apiKey present? {}", apiKey != null && !apiKey.isBlank());
     }
 
-    private Map<String,String> auth() {
-        Map<String,String> h = new HashMap<>();
+    private Map<String, String> auth() {
+        Map<String, String> h = new HashMap<>();
         h.put("PersoLive-APIKey", apiKey);
         return h;
     }
 
-    /** 프로젝트 생성: form-urlencoded 전송 */
+    /** 프로젝트 생성: application/x-www-form-urlencoded */
     public Map<String, Object> createProject(String inputName,
                                              String inputUrl,
                                              String sourceLang,
-                                             Integer durationSec,
-                                             Integer numSpeakers) {
-
-        if (durationSec == null) throw new IllegalArgumentException("durationSec required");
+                                             Integer durationSec,          // ⬅️ null 허용
+                                             Integer numSpeakers) {        // ⬅️ null 허용
 
         MultiValueMap<String, String> form = new LinkedMultiValueMap<>();
         form.add("input_file_name", inputName);
         form.add("input_file_url", inputUrl);
         form.add("source_language", sourceLang);
-        form.add("input_file_video_duration_sec", String.valueOf(durationSec));
-        if (numSpeakers != null) form.add("input_number_of_speakers", String.valueOf(numSpeakers));
+
+        // ⬇️ null 이면 폼에 넣지 않음(서버가 자동 계산/기본값 사용)
+        if (durationSec != null) {
+            form.add("input_file_video_duration_sec", String.valueOf(durationSec));
+        }
+        if (numSpeakers != null) {
+            form.add("input_number_of_speakers", String.valueOf(numSpeakers));
+        }
 
         log.debug("[Perso] createProject form={}", form);
 
@@ -71,7 +75,7 @@ public class PersoClient {
         }
     }
 
-    /** EXPORT 생성: form-urlencoded 전송 */
+    /** EXPORT 생성: application/x-www-form-urlencoded */
     public Map<String, Object> createExport(String projectId,
                                             String targetLang,
                                             String exportType,
@@ -81,7 +85,7 @@ public class PersoClient {
 
         MultiValueMap<String, String> form = new LinkedMultiValueMap<>();
         form.add("project", projectId);
-        form.add("export_type", exportType);         // "INITIAL_EXPORT" / "PROOFREAD_EXPORT"
+        form.add("export_type", exportType); // INITIAL_EXPORT / PROOFREAD_EXPORT
         form.add("target_language", targetLang);
         form.add("server_label", serverLabel == null ? "" : serverLabel);
         form.add("priority", "0");
