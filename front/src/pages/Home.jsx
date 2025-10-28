@@ -1,16 +1,17 @@
 
 import { Link } from 'react-router-dom'
+import { PlayButton } from '../@design-system'
 
 function Home() {
   return (
-    <div>
+    <div className="container mx-auto">
       <h2 className="text-center font-extrabold tracking-tight">전래동화 시리즈</h2>
       <div className="flex justify-center mt-3 mb-5">
         <input className="w-[min(720px,90%)] bg-white border-2 border-[#a9b9d3] rounded-full px-4 py-3 text-sm" placeholder="동화를 검색해보세요" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-4">
-        <section className="grid gap-3">
+        <section className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {[1, 2, 3, 4].map((i) => (
             <article className="rounded-[18px] overflow-hidden border-2 border-[#d7c6c6]" key={i}>
               <div className="h-[180px] bg-[url('/vite.svg')] bg-no-repeat bg-center bg-[length:60px_60px] opacity-70" style={{ backgroundColor: '#f4efe7' }} />
@@ -19,7 +20,7 @@ function Home() {
                   <div className="font-extrabold mb-1">콩쥐 팥쥐</div>
                   <div className="text-muted text-xs">작은 장치와 잔잔한 재미, 한국의 이야기입니다.</div>
                 </div>
-                <Link to="/player" className="no-underline rounded-full px-4 py-2 font-extrabold border-2" style={{ background: '#ffe57a', borderColor: '#e0c354', color: '#3a3a3a' }}>재생</Link>
+                <PlayButton to="/player">재생</PlayButton>
               </div>
             </article>
           ))}

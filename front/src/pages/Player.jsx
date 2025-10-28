@@ -1,3 +1,5 @@
+import { SpeedButton, TagButton } from '../@design-system'
+
 function Player() {
   return (
     <div>
@@ -15,22 +17,31 @@ function Player() {
               <span className="block h-full" style={{ width: '40%', background: 'linear-gradient(90deg, #a9a3ff, #82b2ff)' }} />
             </div>
             <div className="text-[#6d7a9f] text-xs">02:45 / 08:30</div>
-            <button className="rounded-[10px] px-3 py-2 text-sm font-bold border-2 bg-white" style={{ borderColor: '#c9d2f1', color: '#4a5b82' }}>느리게</button>
+            <SpeedButton>느리게</SpeedButton>
           </div>
         </section>
         <aside className="grid gap-3 rounded-[18px] p-3 border-2" style={{ background: '#eef3ff', borderColor: '#c7d3f4' }}>
           <div className="font-black text-[#7d8db6]">따라서 말해봐요!</div>
-          <div className="grid gap-2 max-h-[320px] overflow-auto pr-1 scrollbar-soft">
-            {[1,2,3,4].map((n)=> (
+          <div className="grid gap-2 max-h-[320px] card-scroll pr-1">
+            {[
+              "첫째 장면의 한 줄에서 작은 단어들이 섞여 있습니다.",
+              "둘째 장면에서는 영웅이 등장해서 모험을 시작합니다.",
+              "셋째 장면에서 친구들을 만나 새로운 동료가 생깁니다.",
+              "넷째 장면은 위험한 상황에서 벗어나는 긴박한 순간입니다.",
+              "다섯째 장면에서 마법의 물건을 발견하게 됩니다.",
+              "여섯째 장면은 모두가 함께 모여 축하하는 장면입니다.",
+              "일곱째 장면에서 새로운 도전이 기다리고 있습니다.",
+              "여덟째 장면은 친구들과 함께하는 즐거운 시간입니다."
+            ].map((text, n)=> (
               <div className="flex items-center justify-between gap-2 rounded-[12px] p-2 border-2 bg-white" style={{ borderColor: '#cfd9f4' }} key={n}>
-                <div className="text-[#5c6d93] text-[13px]">첫째 장면의 한 줄에서 작은 단어들이 섞여 있습니다.</div>
-                <button className="rounded-[10px] px-3 py-2 text-sm font-bold border-2 bg-white" style={{ borderColor: '#c9d2f1', color: '#4a5b82' }}>듣기</button>
+                <div className="text-[#5c6d93] text-[13px]">{text}</div>
+                <SpeedButton>듣기</SpeedButton>
               </div>
             ))}
           </div>
           <div className="flex flex-wrap gap-2">
             {['한국어','영어','중국어','일본어','스페인어','한국어','한국어'].map((t,idx)=> (
-              <span className="px-3 py-1 rounded-full text-xs border-2 bg-white text-[#5a6ea0]" style={{ borderColor: '#c6ccee' }} key={t+idx}>{t}</span>
+              <TagButton key={t+idx}>{t}</TagButton>
             ))}
           </div>
         </aside>

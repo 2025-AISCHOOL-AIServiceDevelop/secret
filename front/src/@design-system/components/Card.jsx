@@ -107,4 +107,29 @@ export const FormCard = ({ children, ...props }) => (
   </BaseCard>
 )
 
+// Script card with custom scrollbar
+export const ScriptCard = ({ children, maxHeight = '400px', ...props }) => (
+  <BaseCard
+    variant="default"
+    className={`card-scroll`}
+    style={{ maxHeight }}
+    {...props}
+  >
+    {children}
+  </BaseCard>
+)
+
+// Script item component
+export const ScriptItem = ({ title, content, index }) => (
+  <div className="p-4 border-b border-gray-200 last:border-b-0 hover:bg-gray-50 transition-colors">
+    <div className="flex items-center gap-3 mb-2">
+      <span className="flex-shrink-0 w-8 h-8 bg-accent text-white rounded-full flex items-center justify-center text-sm font-bold">
+        {index + 1}
+      </span>
+      <h3 className="font-bold text-textMain">{title}</h3>
+    </div>
+    <p className="text-muted text-sm leading-relaxed">{content}</p>
+  </div>
+)
+
 export default Card

@@ -4,9 +4,9 @@
 export const Container = ({ children, size = 'default', className = '', ...props }) => {
   const sizeClasses = {
     small: 'max-w-4xl',
-    default: 'max-w-[1200px]',
-    large: 'max-w-7xl',
-    full: 'max-w-full'
+    default: 'max-w-7xl',
+    large: 'max-w-screen-2xl',
+    full: 'w-full'
   }
 
   return (

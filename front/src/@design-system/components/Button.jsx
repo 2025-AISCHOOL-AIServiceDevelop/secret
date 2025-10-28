@@ -17,11 +17,11 @@ const BaseButton = forwardRef(({
     primary: 'bg-accent text-panel border-2 border-accent hover:bg-accent/90 focus:ring-accent',
     secondary: 'bg-header text-textMain border-2 border-headerBorder hover:bg-header/90 focus:ring-header',
     outline: 'bg-transparent text-textMain border-2 border-headerBorder hover:bg-header/10 focus:ring-headerBorder',
-    play: 'bg-[#ffe182] text-[#3a3a3a] border-2 border-[#c9a94b] hover:bg-[#ffe182]/90 focus:ring-[#c9a94b]',
+    play: 'bg-[#FEEBB1] text-[#3a3a3a] border-2 border-[#e0b685] hover:bg-[#FEEBB1]/90 focus:ring-[#e0b685]',
     kakao: 'bg-[#fff3a8] text-[#3a3a3a] border-2 border-[#d2c277] hover:bg-[#fff3a8]/90 focus:ring-[#d2c277]',
     google: 'bg-white text-[#3a3a3a] border-2 border-[#d2c277] hover:bg-white/90 focus:ring-[#d2c277]',
-    tag: 'bg-white text-[#5a6ea0] border-2 border-[#c6ccee] hover:bg-[#f0f4ff] focus:ring-[#c6ccee]',
-    speed: 'bg-white text-[#4a5b82] border-2 border-[#c9d2f1] hover:bg-[#f0f4ff] focus:ring-[#c9d2f1]'
+    tag: 'bg-[#B1D2FA] text-[#4a5b82] border-2 border-[#B1D2FA] hover:bg-[#B1D2FA]/90 focus:ring-[#B1D2FA]',
+    speed: 'bg-[#B1D2FA] text-[#4a5b82] border-2 border-[#B1D2FA] hover:bg-[#B1D2FA]/90 focus:ring-[#B1D2FA]'
   }
 
   const sizeClasses = {

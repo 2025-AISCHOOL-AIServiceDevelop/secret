@@ -27,7 +27,9 @@ export {
   SidebarCard,
   PlayerCard,
   LoginCard,
-  FormCard
+  FormCard,
+  ScriptCard,
+  ScriptItem
 } from './components/Card'
 
 // Badges
@@ -66,6 +68,10 @@ export {
   Spacer,
   Divider
 } from './components/Layout'
+
+// Layout Components
+export { Header } from './components/Header'
+export { Footer } from './components/Footer'
 
 // Media
 export {

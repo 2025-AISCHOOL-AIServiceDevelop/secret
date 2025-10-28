@@ -141,6 +141,36 @@ import { Container, Grid, Flex, Spacer } from '@/design-system'
 </Container>
 ```
 
+### Layout Components (레이아웃 컴포넌트)
+
+#### Header (헤더)
+```jsx
+import { Header } from '@/design-system'
+
+function App() {
+  return (
+    <div>
+      <Header />
+      {/* 메인 컨텐츠 */}
+    </div>
+  )
+}
+```
+
+#### Footer (푸터)
+```jsx
+import { Footer } from '@/design-system'
+
+function App() {
+  return (
+    <div>
+      {/* 메인 컨텐츠 */}
+      <Footer />
+    </div>
+  )
+}
+```
+
 ### Media (미디어)
 
 #### 기본 사용법

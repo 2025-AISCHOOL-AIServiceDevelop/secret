@@ -26,3 +26,64 @@
     scrollbar-color: #9EB4FF #CED8EA;
   }
 }
+
+/* Custom Scrollbar Styles */
+::-webkit-scrollbar {
+  width: 16px;
+  height: 16px;
+}
+
+::-webkit-scrollbar-track {
+  background: linear-gradient(180deg, #DFE9F6 0%, #F0D98B 100%);
+  border-radius: 8px;
+  margin: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: url('./assets/planet.png') center center / contain no-repeat,
+              linear-gradient(180deg, #6B7CFF 0%, #394b69 100%);
+  border-radius: 8px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: url('./assets/planet.png') center center / contain no-repeat,
+              linear-gradient(180deg, #8A99B2 0%, #3A4B63 100%);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+::-webkit-scrollbar-corner {
+  background: #DFE9F6;
+}
+
+/* Firefox scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #6B7CFF #DFE9F6;
+}
+
+/* Card-specific Scrollbar Styles */
+.card-scroll {
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.card-scroll::-webkit-scrollbar {
+  width: 8px;
+}
+
+.card-scroll::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+
+.card-scroll::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #6B7CFF 0%, #394b69 100%);
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.card-scroll::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #8A99B2 0%, #3A4B63 100%);
+}
