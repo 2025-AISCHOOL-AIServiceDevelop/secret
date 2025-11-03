@@ -73,6 +73,12 @@ export {
 export { Header } from './components/Header'
 export { Footer } from './components/Footer'
 
+// Modals
+export {
+  Modal,
+  LoginPromptModal
+} from './components/Modal'
+
 // Media
 export {
   Image,

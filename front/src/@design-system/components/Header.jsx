@@ -1,5 +1,7 @@
+import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { AppTitle } from './Typography';
+import { LoginPromptModal } from './Modal';
 import { useAuthStore } from '../../stores';
 
 // Header component
@@ -7,6 +9,16 @@ export const Header = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { isAuthenticated, user, logout, login } = useAuthStore();
+  const [showLoginModal, setShowLoginModal] = useState(false);
+
+  const handleLoginClick = () => {
+    setShowLoginModal(true);
+  };
+
+  const handleLoginConfirm = () => {
+    setShowLoginModal(false);
+    navigate('/login');
+  };
 
   const handleLogout = () => {
     logout();
@@ -26,7 +38,7 @@ export const Header = () => {
         <nav className="absolute right-8 top-1/2 -translate-y-1/2 flex gap-3 z-10">
           {!isAuthenticated ? (
             <button
-              onClick={login}
+              onClick={handleLoginClick}
               className={`no-underline font-bold rounded-full px-5 py-2 border-2 border-[#a89a77] bg-white/70 text-[#394b69] cursor-pointer hover:bg-white transition-colors duration-150`}
             >
               로그인
@@ -54,6 +66,13 @@ export const Header = () => {
           )}
         </nav>
       </div>
+
+      {/* Login Prompt Modal */}
+      <LoginPromptModal
+        isOpen={showLoginModal}
+        onClose={() => setShowLoginModal(false)}
+        onConfirm={handleLoginConfirm}
+      />
     </header>
   )
 }
