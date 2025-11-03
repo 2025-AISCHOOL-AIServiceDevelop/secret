@@ -32,18 +32,20 @@ public class TranslationService {
     private static String getStr(Map<String, Object> m, String k) {
         return m.get(k) == null ? null : m.get(k).toString();
     }
+
     private static Integer getInt(Map<String, Object> m, String k) {
         Object v = m.get(k);
         if (v == null) return null;
         if (v instanceof Number n) return n.intValue();
         try { return Integer.parseInt(v.toString()); } catch (Exception e) { return null; }
     }
+
+    /** URL decoding (UTF-8) */
     private static String decodeUtf8(String s) {
         try { return URLDecoder.decode(s, StandardCharsets.UTF_8); }
         catch (Exception e) { return s; }
     }
 
-    /** URL의 진짜 파일명 우선으로 타이틀 결정 */
     private String resolveTitleFromUrl(String url, String fallback) {
         try {
             HttpURLConnection conn = (HttpURLConnection) new java.net.URL(url).openConnection();
@@ -73,7 +75,8 @@ public class TranslationService {
         try {
             String path = new URI(url).getPath();
             if (path != null) {
-                String last = decodeUtf8(path.substring(path.lastIndexOf('/') + 1));
+                String last = path.substring(path.lastIndexOf('/') + 1);
+                last = decodeUtf8(last);
                 if (!last.isBlank()) {
                     int dot = last.lastIndexOf('.');
                     String base = dot > 0 ? last.substring(0, dot) : last;
@@ -86,13 +89,12 @@ public class TranslationService {
         return FileStorage.sanitize(fb);
     }
 
-    /* ---------- 메인 플로우 ---------- */
     @Transactional
     public TranslateResponse translateAndSave(TranslateRequest req) throws Exception {
-        // 0) 타이틀
+        // 0) 제목
         String storyTitle = resolveTitleFromUrl(req.getInputFileUrl(), req.getTitle());
 
-        // 1) 원본 row (우선 생성)
+        // 1) 원본 row(일단 duration은 null로)
         Contents original = contentsRepo.save(Contents.builder()
                 .parentId(null)
                 .title(storyTitle)
@@ -101,7 +103,7 @@ public class TranslationService {
                 .createdAt(LocalDateTime.now())
                 .build());
 
-        // 2) Perso 프로젝트 생성
+        // 2) Perso 프로젝트 생성(필수 duration은 PersoClient에서 1초로 대체 전송)
         String inputName = storyTitle + ".mp4";
         Map<String, Object> project = perso.createProject(
                 inputName, req.getInputFileUrl(), req.getSourceLang(),
@@ -119,7 +121,10 @@ public class TranslationService {
             Thread.sleep(5_000);
             Map<String, Object> now = perso.getExport(exportId);
             String status = getStr(now, "status");
-            if ("COMPLETED".equalsIgnoreCase(status)) { finalExport = now; break; }
+            if ("COMPLETED".equalsIgnoreCase(status)) {
+                finalExport = now;
+                break;
+            }
             if ("FAILED".equalsIgnoreCase(status)) {
                 throw new IllegalStateException("Perso export failed: " + getStr(now, "failure_reason"));
             }
@@ -127,7 +132,7 @@ public class TranslationService {
         }
         System.out.println();
 
-        // 4) 번역본 다운로드 URL
+        // 4) 출력 URL 선택
         String outUrl = req.isLipsync()
                 ? getStr(finalExport, "video_output_video_with_lipsync")
                 : getStr(finalExport, "video_output_video_without_lipsync");
@@ -137,19 +142,35 @@ public class TranslationService {
         if (outUrl == null)
             throw new IllegalStateException("No output video url from Perso.");
 
-        // 5) 실제 duration 조회
+        // 5) ✅ 실제 duration 재조회 (Export 완료 후면 Perso가 채워둔 경우가 많음)
+        Integer realDuration = null;
         Map<String, Object> projectDetail = perso.getProject(projectId);
-        Integer realDuration = getInt(projectDetail, "input_file_video_duration_sec");
+        realDuration = getInt(projectDetail, "input_file_video_duration_sec");
 
-        /* 5-1) ✅ 원본 영상도 저장: contents/<타이틀>_<원본언어>.mp4 */
-        String sourceName = storyTitle + "_" + req.getSourceLang() + ".mp4";
-        String sourcePath = storage.downloadTo("contents", sourceName, req.getInputFileUrl());
-        original.setContentsPath(sourcePath);
+        // 5-1) ✅ 여전히 null/1 이면, 스크립트의 max(end_ms)로 계산
+        if (realDuration == null || realDuration <= 1) {
+            List<Map<String, Object>> scripts =
+                    (List<Map<String, Object>>) projectDetail.getOrDefault("scripts", List.of());
+            int maxEnd = 0;
+            for (Map<String, Object> s : scripts) {
+                Integer end = getInt(s, "end_ms");
+                if (end != null && end > maxEnd) maxEnd = end;
+            }
+            if (maxEnd > 0) {
+                realDuration = (maxEnd + 999) / 1000; // ms → 초 (올림)
+            }
+        }
+
+        // 5-2) 그래도 없으면 요청값이나 0으로
+        if (realDuration == null || realDuration <= 1) {
+            realDuration = (req.getDurationSec() != null) ? req.getDurationSec() : 0;
+        }
+
+        // ✅ 원본 duration 업데이트
         original.setDurationSec(realDuration);
-        original.setCompletedAt(LocalDateTime.now());
         contentsRepo.save(original);
 
-        // 6) 번역본 row
+        // 6) 번역본 row (실제 duration 반영)
         Contents translated = contentsRepo.save(Contents.builder()
                 .parentId(original.getContentsId())
                 .title(storyTitle)
@@ -157,14 +178,15 @@ public class TranslationService {
                 .language(req.getTargetLang())
                 .projectId(projectId)
                 .exportId(exportId)
-                .durationSec(realDuration)                // ✅ 실제 길이 저장
+                .durationSec(realDuration)   // ✅ 여기도 실제 길이
                 .createdAt(LocalDateTime.now())
                 .build());
 
-        // 7) 번역 영상 저장: contents/<타이틀>_<타깃언어>.mp4
-        String translatedName = storyTitle + "_" + req.getTargetLang() + ".mp4";
-        String translatedPath = storage.downloadTo("contents", translatedName, outUrl);
-        translated.setContentsPath(translatedPath);
+        // 7) 파일 저장
+        String downloadName = storyTitle + "_" + req.getTargetLang() + ".mp4";
+        String savedPath = storage.downloadToRoot(downloadName, outUrl);
+
+        translated.setContentsPath(savedPath);
         translated.setCompletedAt(LocalDateTime.now());
         contentsRepo.save(translated);
 
@@ -185,22 +207,29 @@ public class TranslationService {
             if (org != null && !org.isBlank()) {
                 rows.add(Script.builder()
                         .contentsId(translated.getContentsId())
-                        .orderNo(orderNo).startMs(startMs).endMs(endMs)
-                        .language("ko").text(org)
-                        .createdAt(LocalDateTime.now()).build());
+                        .orderNo(orderNo)
+                        .startMs(startMs)
+                        .endMs(endMs)
+                        .language("ko")
+                        .text(org)
+                        .createdAt(LocalDateTime.now())
+                        .build());
             }
             if (tr != null && !tr.isBlank() && !targetLang.isBlank()) {
                 rows.add(Script.builder()
                         .contentsId(translated.getContentsId())
-                        .orderNo(orderNo).startMs(startMs).endMs(endMs)
-                        .language(targetLang).text(tr)
-                        .createdAt(LocalDateTime.now()).build());
+                        .orderNo(orderNo)
+                        .startMs(startMs)
+                        .endMs(endMs)
+                        .language(targetLang)
+                        .text(tr)
+                        .createdAt(LocalDateTime.now())
+                        .build());
             }
         }
         scriptRepo.saveAll(rows);
 
-        System.out.println("💾 Saved original: " + sourcePath);
-        System.out.println("💾 Saved translated: " + translatedPath);
+        System.out.println("💾 Saved: " + savedPath);
 
         return new TranslateResponse(
                 translated.getContentsId(),

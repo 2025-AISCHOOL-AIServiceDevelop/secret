@@ -40,21 +40,22 @@ public class PersoClient {
     }
 
     /** 프로젝트 생성: application/x-www-form-urlencoded */
-    public Map<String, Object> createProject(String inputName,
-                                             String inputUrl,
-                                             String sourceLang,
-                                             Integer durationSec,          // ⬅️ null 허용
-                                             Integer numSpeakers) {        // ⬅️ null 허용
+    public Map<String, Object> createProject(
+            String inputName,
+            String inputUrl,
+            String sourceLang,
+            Integer durationSec,
+            Integer numSpeakers
+    ) {
 
         MultiValueMap<String, String> form = new LinkedMultiValueMap<>();
         form.add("input_file_name", inputName);
         form.add("input_file_url", inputUrl);
         form.add("source_language", sourceLang);
 
-        // ⬇️ null 이면 폼에 넣지 않음(서버가 자동 계산/기본값 사용)
-        if (durationSec != null) {
-            form.add("input_file_video_duration_sec", String.valueOf(durationSec));
-        }
+        // ✅ durationSec이 null이어도 필수필드 통과를 위해 1초로 전송
+        form.add("input_file_video_duration_sec", String.valueOf(durationSec == null ? 1 : durationSec));
+
         if (numSpeakers != null) {
             form.add("input_number_of_speakers", String.valueOf(numSpeakers));
         }
@@ -76,16 +77,18 @@ public class PersoClient {
     }
 
     /** EXPORT 생성: application/x-www-form-urlencoded */
-    public Map<String, Object> createExport(String projectId,
-                                            String targetLang,
-                                            String exportType,
-                                            boolean lipsync,
-                                            boolean watermark,
-                                            String serverLabel) {
+    public Map<String, Object> createExport(
+            String projectId,
+            String targetLang,
+            String exportType,
+            boolean lipsync,
+            boolean watermark,
+            String serverLabel
+    ) {
 
         MultiValueMap<String, String> form = new LinkedMultiValueMap<>();
         form.add("project", projectId);
-        form.add("export_type", exportType); // INITIAL_EXPORT / PROOFREAD_EXPORT
+        form.add("export_type", exportType); // "INITIAL_EXPORT" / "PROOFREAD_EXPORT"
         form.add("target_language", targetLang);
         form.add("server_label", serverLabel == null ? "" : serverLabel);
         form.add("priority", "0");
