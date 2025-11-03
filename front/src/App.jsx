@@ -1,8 +1,17 @@
-import { Outlet } from 'react-router-dom'
-import './App.css'
-import { Header, Footer } from './@design-system'
+import { useEffect } from 'react';
+import { Outlet } from 'react-router-dom';
+import './App.css';
+import { Header, Footer } from './@design-system';
+import { useAuthStore } from './stores';
 
 function App() {
+  const { checkAuthStatus } = useAuthStore();
+
+  // Check authentication status on app load
+  useEffect(() => {
+    checkAuthStatus();
+  }, [checkAuthStatus]);
+
   return (
     <div className="min-h-dvh grid grid-rows-[auto_1fr_auto]">
       <Header />

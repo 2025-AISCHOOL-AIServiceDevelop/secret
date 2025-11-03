@@ -1,10 +1,67 @@
-import { SpeedButton, TagButton } from '../@design-system'
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { SpeedButton, TagButton } from '../@design-system';
+import { useContentsStore, useTranslationStore, useTutorStore, useAuthStore } from '../stores';
 
 function Player() {
+  const [searchParams] = useSearchParams();
+  const contentId = searchParams.get('contentId');
+
+  const { getContentById } = useContentsStore();
+  const { scripts, isLoadingScripts, loadScripts, currentScript, getCurrentScript } = useTranslationStore();
+  const { isAnalyzing, recordingState, startRecording, stopRecording, analyzePronunciation, currentFeedback } = useTutorStore();
+  const { user } = useAuthStore();
+
+  const [selectedScript, setSelectedScript] = useState(null);
+
+  // Load content and scripts on mount
+  useEffect(() => {
+    if (contentId) {
+      loadScripts(parseInt(contentId));
+    }
+  }, [contentId, loadScripts]);
+
+  // Set initial selected script
+  useEffect(() => {
+    if (scripts.length > 0 && !selectedScript) {
+      setSelectedScript(scripts[0]);
+    }
+  }, [scripts, selectedScript]);
+
+  const content = contentId ? getContentById(parseInt(contentId)) : null;
+  const displayScript = selectedScript || getCurrentScript();
+
+  const handleRecordAndAnalyze = async () => {
+    if (recordingState === 'idle' && user && contentId && displayScript) {
+      // Start recording (in a real app, this would integrate with Web Audio API)
+      startRecording();
+
+      // Simulate recording for 3 seconds, then analyze
+      setTimeout(async () => {
+        stopRecording();
+
+        // Create a dummy audio blob for demo (in real app, this would be actual recorded audio)
+        const dummyAudioBlob = new Blob(['dummy audio data'], { type: 'audio/wav' });
+        const dummyAudioFile = new File([dummyAudioBlob], 'recording.wav', { type: 'audio/wav' });
+
+        try {
+          await analyzePronunciation(
+            dummyAudioFile,
+            user.id || 1, // Use user ID from auth store
+            parseInt(contentId),
+            content?.language || 'en'
+          );
+        } catch (error) {
+          console.error('Analysis failed:', error);
+        }
+      }, 3000);
+    }
+  };
+
   return (
     <div>
       <div className="font-black text-[#ffd857] text-[20px] mb-2">
-        따라 해봐요! <span className="text-[#2c3a72] inline-block ml-2 text-[22px]">“A new village has emerged against the ancient enemy.”</span>
+        따라 해봐요! <span className="text-[#2c3a72] inline-block ml-2 text-[22px]">{displayScript ? `"${displayScript.text}"` : '"스크립트를 불러오는 중..."'}</span>
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-4">
         <section className="grid gap-3 rounded-[18px] p-3 border-2" style={{ background: '#e1e8ff', borderColor: '#b9c5ef' }}>
@@ -22,27 +79,74 @@ function Player() {
         </section>
         <aside className="grid gap-3 rounded-[18px] p-3 border-2" style={{ background: '#eef3ff', borderColor: '#c7d3f4' }}>
           <div className="font-black text-[#7d8db6]">따라서 말해봐요!</div>
-          <div className="grid gap-2 max-h-[320px] card-scroll pr-1">
-            {[
-              "첫째 장면의 한 줄에서 작은 단어들이 섞여 있습니다.",
-              "둘째 장면에서는 영웅이 등장해서 모험을 시작합니다.",
-              "셋째 장면에서 친구들을 만나 새로운 동료가 생깁니다.",
-              "넷째 장면은 위험한 상황에서 벗어나는 긴박한 순간입니다.",
-              "다섯째 장면에서 마법의 물건을 발견하게 됩니다.",
-              "여섯째 장면은 모두가 함께 모여 축하하는 장면입니다.",
-              "일곱째 장면에서 새로운 도전이 기다리고 있습니다.",
-              "여덟째 장면은 친구들과 함께하는 즐거운 시간입니다."
-            ].map((text, n)=> (
-              <div className="flex items-center justify-between gap-2 rounded-[12px] p-2 border-2 bg-white" style={{ borderColor: '#cfd9f4' }} key={n}>
-                <div className="text-[#5c6d93] text-[13px]">{text}</div>
-                <SpeedButton>듣기</SpeedButton>
+
+          {/* Recording and Analysis Section */}
+          <div className="grid gap-2">
+            <button
+              onClick={handleRecordAndAnalyze}
+              disabled={isAnalyzing || recordingState === 'recording' || !user}
+              className={`px-4 py-2 rounded-lg font-bold text-white ${
+                recordingState === 'recording'
+                  ? 'bg-red-500 animate-pulse'
+                  : isAnalyzing
+                  ? 'bg-yellow-500'
+                  : !user
+                  ? 'bg-gray-400 cursor-not-allowed'
+                  : 'bg-green-500 hover:bg-green-600'
+              }`}
+            >
+              {recordingState === 'recording' ? '녹음 중...' :
+               isAnalyzing ? '분석 중...' :
+               !user ? '로그인 필요' : '녹음 시작'}
+            </button>
+
+            {currentFeedback && (
+              <div className="bg-white p-3 rounded-lg border">
+                <h4 className="font-bold text-sm mb-2">발음 분석 결과</h4>
+                <p className="text-xs text-gray-600">
+                  점수: {currentFeedback.score || 'N/A'} / 정확도: {currentFeedback.accuracy || 'N/A'}
+                </p>
+                {currentFeedback.feedback && (
+                  <p className="text-xs mt-2">{currentFeedback.feedback}</p>
+                )}
               </div>
-            ))}
+            )}
           </div>
+
+          {/* Scripts List */}
+          <div className="grid gap-2 max-h-[200px] card-scroll pr-1">
+            {isLoadingScripts ? (
+              <div className="text-center py-4">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500 mx-auto"></div>
+                <p className="text-xs mt-2">스크립트 로딩 중...</p>
+              </div>
+            ) : scripts.length > 0 ? (
+              scripts.map((script) => (
+                <div
+                  key={script.id || script.orderNo}
+                  onClick={() => setSelectedScript(script)}
+                  className={`flex items-center justify-between gap-2 rounded-[12px] p-2 border-2 cursor-pointer transition-colors ${
+                    selectedScript?.id === script.id || selectedScript?.orderNo === script.orderNo
+                      ? 'bg-blue-100 border-blue-300'
+                      : 'bg-white border-[#cfd9f4] hover:bg-gray-50'
+                  }`}
+                >
+                  <div className="text-[#5c6d93] text-[13px] flex-1 truncate">{script.text}</div>
+                  <SpeedButton>듣기</SpeedButton>
+                </div>
+              ))
+            ) : (
+              <div className="text-center py-4 text-gray-500 text-sm">
+                스크립트를 불러올 수 없습니다.
+              </div>
+            )}
+          </div>
+
+          {/* Language Tags */}
           <div className="flex flex-wrap gap-2">
-            {['한국어','영어','중국어','일본어','스페인어','한국어','한국어'].map((t,idx)=> (
-              <TagButton key={t+idx}>{t}</TagButton>
-            ))}
+            {content?.language && <TagButton>{content.language.toUpperCase()}</TagButton>}
+            <TagButton>영어</TagButton>
+            <TagButton>한국어</TagButton>
           </div>
         </aside>
       </div>

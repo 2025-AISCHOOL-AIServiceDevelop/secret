@@ -1,7 +1,39 @@
+import { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuthStore } from '../stores';
+
 function Login() {
+  const navigate = useNavigate();
+  const { isAuthenticated, checkAuthStatus, login, isLoading } = useAuthStore();
+
+  useEffect(() => {
+    // Check if user is already authenticated
+    checkAuthStatus();
+  }, [checkAuthStatus]);
+
+  useEffect(() => {
+    // Redirect to home if already authenticated
+    if (isAuthenticated) {
+      navigate('/');
+    }
+  }, [isAuthenticated, navigate]);
+
   const handleLogin = (provider) => {
-    window.location.href = `http://localhost:8082/oauth2/authorization/${provider}`;
+    // For now, redirect directly to backend OAuth endpoint
+    // In production, you might want to use the login method from auth store
+    window.location.href = `http://localhost:8080/oauth2/authorization/${provider}`;
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <p>로그인 상태 확인 중...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[1fr_420px] gap-6 items-center">

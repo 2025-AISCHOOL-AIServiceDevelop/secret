@@ -40,7 +40,7 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: url('./assets/planet.png') center center / contain no-repeat,
+  background: url('./assets/planet.svg') center center / contain no-repeat,
               linear-gradient(180deg, #6B7CFF 0%, #394b69 100%);
   border-radius: 8px;
   border: 2px solid rgba(255, 255, 255, 0.3);
@@ -48,7 +48,7 @@
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: url('./assets/planet.png') center center / contain no-repeat,
+  background: url('./assets/planet.svg') center center / contain no-repeat,
               linear-gradient(180deg, #8A99B2 0%, #3A4B63 100%);
   border-color: rgba(255, 255, 255, 0.5);
 }
