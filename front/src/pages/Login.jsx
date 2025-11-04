@@ -21,7 +21,7 @@ function Login() {
   const handleLogin = (provider) => {
     // For now, redirect directly to backend OAuth endpoint
     // In production, you might want to use the login method from auth store
-    window.location.href = `http://localhost:8080/oauth2/authorization/${provider}`;
+    window.location.href = `http://localhost:8082/oauth2/authorization/${provider}`;
   };
 
   if (isLoading) {

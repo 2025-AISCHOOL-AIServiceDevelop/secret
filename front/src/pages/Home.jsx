@@ -6,7 +6,20 @@ import { useContentsStore } from '../stores';
 
 function Home() {
   const [searchInput, setSearchInput] = useState('');
-  const { contents, searchQuery, isLoading, error, hasSearched, searchContents, clearError } = useContentsStore();
+  const { contents, searchQuery, isLoading, error, hasSearched, searchContents, clearError, clearSearch, } = useContentsStore();
+
+  // 페이지 진입할 때 초기화 (홈 로고 클릭 시에도 반응)
+  useEffect(() => {
+    clearSearch();
+    setSearchInput('');
+  }, []);
+
+  // 검색어 비워지면 자동으로 기본 리스트로 복귀
+  useEffect(() => {
+    if (!searchInput.trim()) {
+      clearSearch();
+    }
+  }, [searchInput]);
 
   // Handle search input
   const handleSearch = (e) => {
@@ -16,12 +29,7 @@ function Home() {
     }
   };
 
-  // Clear search results when input is cleared
-  useEffect(() => {
-    if (!searchInput.trim() && hasSearched) {
-      // Optionally clear search results when input is empty
-    }
-  }, [searchInput, hasSearched]);
+ 
 
   return (
     <div className="container mx-auto">
