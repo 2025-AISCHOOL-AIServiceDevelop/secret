@@ -5,7 +5,7 @@ const api = axios.create({
   baseURL: 'http://localhost:8082', // Backend URL
   headers: {
     'Content-Type': 'application/json',
-  },
+  },   withCredentials: true, // ✅ 반드시 있어야 함
 });
 
 // Auth API
