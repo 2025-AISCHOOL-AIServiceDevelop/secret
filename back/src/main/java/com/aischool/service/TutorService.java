@@ -10,9 +10,8 @@ import com.aischool.client.AzureSpeechClient;
 import com.aischool.dto.FeedbackRequestDto;
 import com.aischool.dto.FeedbackResponseDto;
 import com.aischool.entity.Feedback;
-import com.microsoft.cognitiveservices.speech.PronunciationAssessmentResult;
 
-import com.aischool.service.AzureSpeechService;
+import com.microsoft.cognitiveservices.speech.PronunciationAssessmentResult;
 
 import lombok.RequiredArgsConstructor;
 
@@ -28,10 +27,13 @@ public class TutorService {
     private final AzureSpeechService azureSpeechService;
 
     private String getMedalFromScore(double score) {
-    if (score >= 85) return "GOLD";
-    else if (score >= 70) return "SILVER";
-    else return "BRONZE";
-}
+        if (score >= 85)
+            return "GOLD";
+        else if (score >= 70)
+            return "SILVER";
+        else
+            return "BRONZE";
+    }
 
     public FeedbackResponseDto createFeedback(FeedbackRequestDto requestDto) {
 
@@ -61,26 +63,26 @@ public class TutorService {
                 generated.getFeedbackText());
 
         // 프론트/포스트맨 응답 리턴
-        return new FeedbackResponseDto(
-                savedFeedback.getFinalScore(),
-                savedFeedback.getMedal().name(),
-                savedFeedback.getFeedbackText(),
-                LocalDateTime.now());
+        return FeedbackResponseDto.fromEntity(savedFeedback);
     }
 
     public FeedbackResponseDto processPronunciationFeedback(
             MultipartFile audioFile,
             Long userId,
             Long contentsId,
-            String lang) {
+            String lang,
+            String targetSentence) {
         try {
             // 1️⃣ 업로드된 파일을 임시로 로컬에 저장
             File tempFile = File.createTempFile("record_", ".webm");
             audioFile.transferTo(tempFile);
 
             // 2️⃣ Azure 발음 평가 실행
-            PronunciationAssessmentResult result = azureSpeechService.analyzeWithConvert(tempFile, "reference text",
-                    lang);
+            PronunciationAssessmentResult result = azureSpeechService.analyzeWithConvert(
+                    tempFile, 
+                    targetSentence,
+                    lang
+            );
 
             // 3️⃣ 결과 점수 파싱 및 DB 저장 (예시)
             double accuracy = result.getAccuracyScore();
@@ -88,15 +90,25 @@ public class TutorService {
             double completeness = result.getCompletenessScore();
             double finalScore = result.getPronunciationScore();
 
-            // ...여기서 DB 저장 로직 or DTO 변환
+            // 4️⃣ 점수 기반 메달과 피드백 문장 생성
+            String medal = getMedalFromScore(finalScore); 
+            String feedbackText = "발음 평가가 완료되었습니다.";
 
-           return new FeedbackResponseDto(
-    (int) finalScore,
-    getMedalFromScore(finalScore),
-    "발음 평가가 완료되었습니다.",
-    LocalDateTime.now()
-);
+            // 5️⃣ DB 저장
+            Feedback savedFeedback = feedbackService.saveFeedback(
+                    userId,
+                    contentsId,
+                    lang,
+                    (int) Math.round(finalScore),
+                    (int) Math.round(accuracy),
+                    (int) Math.round(fluency),
+                    (int) Math.round(completeness),
+                    medal,
+                    feedbackText
+            );
 
+            // 6️⃣ 프론트 응답
+           return FeedbackResponseDto.fromEntity(savedFeedback);
 
         } catch (Exception e) {
             throw new RuntimeException("발음 분석 중 오류: " + e.getMessage());

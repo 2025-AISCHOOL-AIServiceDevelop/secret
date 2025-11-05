@@ -33,10 +33,12 @@ import lombok.RequiredArgsConstructor;
         @RequestParam("file") MultipartFile audioFile,
         @RequestParam("userId") Long userId,
         @RequestParam("contentsId") Long contentsId,
-        @RequestParam("lang") String lang
-    ){
+        @RequestParam("lang") String lang,
+        @RequestParam("targetSentence") String targetSentence)
+    {
         // 파일 전송 + ai 분석 + DB 저장 + 결과 반환
-        return tutorService.processPronunciationFeedback(audioFile, userId, contentsId, lang);
+        return tutorService.processPronunciationFeedback(audioFile, userId, contentsId, lang, targetSentence);
+
     }
     
 }
