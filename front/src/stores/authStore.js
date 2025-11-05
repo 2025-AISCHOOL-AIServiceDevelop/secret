@@ -1,14 +1,14 @@
 import { create } from 'zustand';
 import { authAPI } from '../services/api';
+import axios from 'axios';
 
 const useAuthStore = create((set, get) => ({
-  // State
   user: null,
   isAuthenticated: false,
   isLoading: false,
   error: null,
 
-  // Actions
+  // ✅ 로그인 상태 확인
   checkAuthStatus: async () => {
     set({ isLoading: true, error: null });
     try {
@@ -39,26 +39,30 @@ const useAuthStore = create((set, get) => ({
     }
   },
 
-  // Login (OAuth2 redirect will be handled by backend)
+  // ✅ 로그인 (백엔드 OAuth2)
   login: () => {
-    // Redirect to backend OAuth2 login endpoint
-    window.location.href = 'http://localhost:8080/oauth2/authorization/google';
+    window.location.href = 'http://localhost:8082/oauth2/authorization/google';
   },
 
-  // Logout
-  logout: () => {
+  // ✅ 로그아웃 (백엔드 세션 + 프론트 상태 둘 다 종료)
+  logout: async () => {
+    try {
+      await axios.get('http://localhost:8082/api/logout', { withCredentials: true });
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
+
+    // 상태 초기화
     set({
       user: null,
       isAuthenticated: false,
       error: null,
     });
-    // Clear any local storage if needed
-    localStorage.removeItem('auth_token');
-    // Redirect to logout or home page
+
+    // 홈으로 이동
     window.location.href = '/';
   },
 
-  // Clear error
   clearError: () => set({ error: null }),
 }));
 
