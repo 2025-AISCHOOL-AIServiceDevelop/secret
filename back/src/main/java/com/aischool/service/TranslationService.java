@@ -8,6 +8,7 @@ import com.aischool.entity.Script;
 import com.aischool.repository.ContentsRepository;
 import com.aischool.repository.ScriptRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,6 +21,7 @@ import java.util.*;
 import java.util.regex.Pattern;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 public class TranslationService {
 
@@ -28,7 +30,7 @@ public class TranslationService {
     private final ContentsRepository contentsRepo;
     private final ScriptRepository scriptRepo;
 
-    /* ---------- 공용 유틸 ---------- */
+    /* ---------- ?⑤벊???醫뤿뼢 ---------- */
     private static String getStr(Map<String, Object> m, String k) {
         return m.get(k) == null ? null : m.get(k).toString();
     }
@@ -91,10 +93,10 @@ public class TranslationService {
 
     @Transactional
     public TranslateResponse translateAndSave(TranslateRequest req) throws Exception {
-        // 0) 제목
+        // 0) ??뺛걠
         String storyTitle = resolveTitleFromUrl(req.getInputFileUrl(), req.getTitle());
 
-        // 1) 원본 row(일단 duration은 null로)
+        // 1) ?癒?궚 row(??곕뼊 duration?? null嚥?
         Contents original = contentsRepo.save(Contents.builder()
                 .parentId(null)
                 .title(storyTitle)
@@ -103,14 +105,15 @@ public class TranslationService {
                 .createdAt(LocalDateTime.now())
                 .build());
 
-        // 2) Perso 프로젝트 생성(필수 duration은 PersoClient에서 1초로 대체 전송)
-        String inputName = storyTitle + ".mp4";
+        // 2) Perso ?袁⑥쨮??븍뱜 ??밴쉐(?袁⑸땾 duration?? PersoClient?癒?퐣 1?λ뜄以???筌??袁⑸꽊)
+        String uniqueTitleForPerso = storyTitle + "-" + System.currentTimeMillis();
+        String inputName = FileStorage.sanitize(uniqueTitleForPerso) + ".mp4";
         Map<String, Object> project = perso.createProject(
                 inputName, req.getInputFileUrl(), req.getSourceLang(),
                 req.getDurationSec(), req.getNumberOfSpeakers());
         String projectId = getStr(project, "project_id");
 
-        // 3) INITIAL_EXPORT 생성 → 완료 대기
+        // 3) INITIAL_EXPORT ??밴쉐 ???袁⑥┷ ??疫?
         Map<String, Object> export = perso.createExport(
                 projectId, req.getTargetLang(), "INITIAL_EXPORT",
                 req.isLipsync(), req.isWatermark(), "");
@@ -121,18 +124,23 @@ public class TranslationService {
             Thread.sleep(5_000);
             Map<String, Object> now = perso.getExport(exportId);
             String status = getStr(now, "status");
+            log.debug("[Perso] export {} status={} payload={}", exportId, status, now);
             if ("COMPLETED".equalsIgnoreCase(status)) {
                 finalExport = now;
                 break;
             }
             if ("FAILED".equalsIgnoreCase(status)) {
-                throw new IllegalStateException("Perso export failed: " + getStr(now, "failure_reason"));
+                String reason = Optional.ofNullable(getStr(now, "failure_reason"))
+                        .orElse(Optional.ofNullable(getStr(now, "failure_reason_detail"))
+                                .orElse(Optional.ofNullable(getStr(now, "status_message")).orElse("unknown")));
+                log.error("[Perso] export {} failed. reason={} payload={}", exportId, reason, now);
+                throw new IllegalStateException("Perso export failed: " + reason);
             }
-            System.out.print("⏳ [Perso] Processing...");
+            log.info("[Perso] export {} processing...", exportId);
         }
-        System.out.println();
+        log.info("[Perso] export {} completed", exportId);
 
-        // 4) 출력 URL 선택
+        // 4) ?곗뮆??URL ?醫뤾문
         String outUrl = req.isLipsync()
                 ? getStr(finalExport, "video_output_video_with_lipsync")
                 : getStr(finalExport, "video_output_video_without_lipsync");
@@ -142,12 +150,12 @@ public class TranslationService {
         if (outUrl == null)
             throw new IllegalStateException("No output video url from Perso.");
 
-        // 5) ✅ 실제 duration 재조회 (Export 완료 후면 Perso가 채워둔 경우가 많음)
+        // 5) ????쇱젫 duration ?????(Export ?袁⑥┷ ?袁ⓦ늺 Perso揶쎛 筌?쑴???野껋럩??첎? 筌띾‘??
         Integer realDuration = null;
         Map<String, Object> projectDetail = perso.getProject(projectId);
         realDuration = getInt(projectDetail, "input_file_video_duration_sec");
 
-        // 5-1) ✅ 여전히 null/1 이면, 스크립트의 max(end_ms)로 계산
+        // 5-1) ???????null/1 ???? ??쎄쾿?깆????max(end_ms)嚥??④쑴沅?
         if (realDuration == null || realDuration <= 1) {
             List<Map<String, Object>> scripts =
                     (List<Map<String, Object>>) projectDetail.getOrDefault("scripts", List.of());
@@ -157,20 +165,20 @@ public class TranslationService {
                 if (end != null && end > maxEnd) maxEnd = end;
             }
             if (maxEnd > 0) {
-                realDuration = (maxEnd + 999) / 1000; // ms → 초 (올림)
+                realDuration = (maxEnd + 999) / 1000; // ms ????(????
             }
         }
 
-        // 5-2) 그래도 없으면 요청값이나 0으로
+        // 5-2) 域밸챶?????곸몵筌??遺욧퍕揶쏅????0??곗쨮
         if (realDuration == null || realDuration <= 1) {
             realDuration = (req.getDurationSec() != null) ? req.getDurationSec() : 0;
         }
 
-        // ✅ 원본 duration 업데이트
+        // ???癒?궚 duration ??낅쑓??꾨뱜
         original.setDurationSec(realDuration);
         contentsRepo.save(original);
 
-        // 6) 번역본 row (실제 duration 반영)
+        // 6) 甕곕뜆肉?퉪?row (??쇱젫 duration 獄쏆꼷??
         Contents translated = contentsRepo.save(Contents.builder()
                 .parentId(original.getContentsId())
                 .title(storyTitle)
@@ -178,11 +186,11 @@ public class TranslationService {
                 .language(req.getTargetLang())
                 .projectId(projectId)
                 .exportId(exportId)
-                .durationSec(realDuration)   // ✅ 여기도 실제 길이
+                .durationSec(realDuration)   // ????由????쇱젫 疫뀀챷??
                 .createdAt(LocalDateTime.now())
                 .build());
 
-        // 7) 파일 저장
+        // 7) ???뵬 ????
         String downloadName = storyTitle + "_" + req.getTargetLang() + ".mp4";
         String savedPath = storage.downloadToRoot(downloadName, outUrl);
 
@@ -190,7 +198,7 @@ public class TranslationService {
         translated.setCompletedAt(LocalDateTime.now());
         contentsRepo.save(translated);
 
-        // 8) 스크립트 저장 (줄×언어=1행)
+        // 8) ??쎄쾿?깆???????(餓κ슛?щ섧??1??
         List<Map<String, Object>> scripts =
                 (List<Map<String, Object>>) projectDetail.getOrDefault("scripts", List.of());
 
@@ -229,7 +237,7 @@ public class TranslationService {
         }
         scriptRepo.saveAll(rows);
 
-        System.out.println("💾 Saved: " + savedPath);
+        System.out.println("?裕?Saved: " + savedPath);
 
         return new TranslateResponse(
                 translated.getContentsId(),
@@ -238,3 +246,6 @@ public class TranslationService {
                 translated.getContentsPath());
     }
 }
+
+
+
