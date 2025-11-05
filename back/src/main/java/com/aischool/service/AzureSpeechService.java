@@ -72,7 +72,7 @@ public class AzureSpeechService {
     private PronunciationAssessmentResult analyzeWav(File wavFile, String referenceText, String lang) throws Exception {
         if (referenceText == null || referenceText.isBlank()) {
             throw new IllegalArgumentException("referenceText(기준 문장)이 비어있습니다.");
-        }
+        } 
 
         SpeechConfig config = SpeechConfig.fromSubscription(speechKey, speechRegion);
         if (lang == null || lang.isBlank()) lang = "en-US";
@@ -103,7 +103,7 @@ public class AzureSpeechService {
                 throw new RuntimeException("Azure 인식 실패: " + err);
             }
 
-            // ✅ 최신 SDK에서는 fromResult()로 변환해야 함
+            // 최신 SDK에서는 fromResult()로 변환해야 함
             return PronunciationAssessmentResult.fromResult(result);
         }
     }

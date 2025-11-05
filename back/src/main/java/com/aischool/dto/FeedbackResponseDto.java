@@ -15,18 +15,37 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class FeedbackResponseDto {
 
-    private Integer finalScore;      // 최종 점수
-    private String medal;            // 메달 등급 (GOLD, SILVER, BRONZE)
-    private String feedbackText;     // AI 피드백 문장
+    private Long feedbackId;
+    private Long userId;
+    private Long contentsId;
+    private String lang;
+
+    private Integer finalScore; 
+    private Integer accuracy;
+    private Integer fluency;
+    private Integer completeness;
+
+    private String medal; // 메달 등급 (GOLD, SILVER, BRONZE)
+    private String feedbackText; // AI 피드백 문장
     private LocalDateTime feedbackDate; // 피드백 생성 시각
 
     // 엔티티에서 DTO로 변환할 때 사용
     public static FeedbackResponseDto fromEntity(Feedback feedback) {
         return FeedbackResponseDto.builder()
+                .feedbackId(feedback.getFeedbackId())
+                .userId(feedback.getUserId())
+                .contentsId(feedback.getContentsId())
+                .lang(feedback.getLang())
                 .finalScore(feedback.getFinalScore())
+                .accuracy(feedback.getAccuracy())
+                .fluency(feedback.getFluency())
+                .completeness(feedback.getCompleteness())
                 .medal(feedback.getMedal().name())
                 .feedbackText(feedback.getFeedbackText())
-                .feedbackDate(feedback.getFeedbackDate() != null ? feedback.getFeedbackDate() : LocalDateTime.now())
+                .feedbackDate(
+                        feedback.getFeedbackDate() != null
+                                ? feedback.getFeedbackDate()
+                                : LocalDateTime.now())
                 .build();
     }
 }

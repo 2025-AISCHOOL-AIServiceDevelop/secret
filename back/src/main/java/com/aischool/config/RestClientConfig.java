@@ -20,7 +20,7 @@ public class RestClientConfig {
 
         // readTimeout은 JdkClientHttpRequestFactory에서 설정
         JdkClientHttpRequestFactory factory = new JdkClientHttpRequestFactory(httpClient);
-        factory.setReadTimeout(Duration.ofSeconds(30));
+        factory.setReadTimeout(Duration.ofMinutes(2));
 
         return builder
                 .requestFactory(factory)   // ✅ 단일 인자 오버로드
