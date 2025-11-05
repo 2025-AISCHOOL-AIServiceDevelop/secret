@@ -26,7 +26,7 @@ export const Header = () => {
   };
 
   return (
-    <header className="sticky top-0 z-10 bg-header border-[3px] rounded-b-[18px] border-[#5E5A6A] shadow-sm">
+    <header className="sticky z-10 bg-header border-[3px] rounded-[18px] border-[#5E5A6A] shadow-sm">
       <div className="relative w-full max-w-screen-2xl mx-auto px-1 py-1 flex items-center justify-center">
         
         {/* 중앙 로고 */}

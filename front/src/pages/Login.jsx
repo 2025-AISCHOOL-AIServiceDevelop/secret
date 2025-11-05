@@ -1,6 +1,8 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../stores';
+import kakaoLogo from '../assets/kakao.png';
+import googleLogo from '../assets/google.png';
 
 function Login() {
   const navigate = useNavigate();
@@ -51,24 +53,29 @@ function Login() {
       {/* 로그인 영역 */}
       <div className="rounded-[18px] p-6 grid gap-3 border-2"
            style={{ background: '#e1ecff', borderColor: '#b7c5e9' }}>
-        <div className="flex gap-3">
-          <button className="flex-1 rounded-full px-3 py-2 font-extrabold border-2"
-                  style={{ background: '#f8f4e9', borderColor: '#bfb3a1' }}>로그인</button>
-          <button className="flex-1 rounded-full px-3 py-2 font-extrabold border-2 bg-white"
-                  style={{ borderColor: '#bfb3a1' }}>회원가입</button>
-        </div>
+        
         <button
           onClick={() => handleLogin('kakao')}
-          className="rounded-[12px] px-4 py-3 font-extrabold border-2"
-          style={{ background: '#fff3a8', borderColor: '#d2c277' }}>
-          카카오 계정으로 로그인
+          className="w-full flex justify-center items-center"
+        >
+          <img
+            src={kakaoLogo}
+            alt="카카오 로그인"
+            className="w-[280px] h-auto hover:scale-105 active:scale-95 transition-transform duration-300"
+          />
         </button>
+
         <button
           onClick={() => handleLogin('google')}
-          className="rounded-[12px] px-4 py-3 font-extrabold border-2 bg-white"
-          style={{ borderColor: '#d2c277' }}>
-          Google 계정으로 로그인
+          className="w-full flex justify-center items-center"
+        >
+          <img
+            src={googleLogo}
+            alt="Google 로그인"
+            className="w-[280px] h-auto hover:scale-105 transition-transform duration-300"
+          />
         </button>
+
         <div className="w-[120px] h-[120px] justify-self-center mt-2 rounded-[16px] border-2 border-dashed bg-[#f0f0f0] bg-[url('/vite.svg')] bg-no-repeat bg-center bg-[length:60px_60px]" />
       </div>
     </div>
