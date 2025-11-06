@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore, useTutorStore } from '../stores';
+import saturn from '../assets/saturn.png';
 
 function Mypage() {
   const navigate = useNavigate();
@@ -35,8 +36,14 @@ function Mypage() {
 
   return (
     <div className="container mx-auto max-w-4xl">
+      
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-800 mb-2">마이페이지</h1>
+        <div className="relative mb-8 pt-7 text-center"></div>
+        <div className="relative mb-8 pt-7 text-center">
+          <img src={saturn} alt="토성 아이콘" aria-hidden="true"
+            className="absolute left-1/2 -translate-x-1/2 -top-[0.5px] h-auto max-w-[34px] drop-shadow"/>
+          <h1 className="text-4xl font-[DungeonFighterOnlineBeatBeat] text-[#8C85A5] mb-2">마이페이지</h1>
+        </div>
         <div className="flex items-center justify-between bg-white p-6 rounded-lg shadow-sm border">
           <div>
             <h2 className="text-xl font-semibold text-gray-700">{user.name || user.userName || '사용자'}</h2>

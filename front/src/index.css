@@ -15,6 +15,15 @@
   --box-shadow-soft: 0 2px 0 rgba(0,0,0,0.04);
 }
 
+/* 1) 커스텀 폰트 불러오기 */
+@font-face {
+    font-family: 'DungeonFighterOnlineBeatBeat';
+    src: url('//cdn.df.nexon.com/img/common/font/DNFBitBit-Regular.woff'),
+         url('//cdn.df.nexon.com/img/common/font/DNFBitBit-Regular.woff2');
+    font-weight: 400;
+    font-display: swap;
+}
+
 @layer base {
   html, body, #root { height: 100%; }
   body { @apply m-0 bg-bg text-textMain; }
