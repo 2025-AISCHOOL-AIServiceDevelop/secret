@@ -92,7 +92,11 @@ function FollowRecorder({ script, contentsId, language = 'en', userId, onAnalyze
   const cleanup = () => {
     if (rafRef.current) cancelAnimationFrame(rafRef.current)
     if (audioContextRef.current) {
-      try { audioContextRef.current.close() } catch {}
+      try {
+        audioContextRef.current.close()
+      } catch (error) {
+        console.warn('AudioContext cleanup error:', error)
+      }
       audioContextRef.current = null
     }
     if (mediaStreamRef.current) {

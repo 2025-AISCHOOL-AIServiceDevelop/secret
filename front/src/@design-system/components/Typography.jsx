@@ -2,7 +2,7 @@ import { forwardRef } from 'react'
 
 // Base Text component
 const BaseText = forwardRef(({
-  as: Component = 'span',
+  as: Component = 'span', // eslint-disable-line no-unused-vars
   variant = 'body',
   weight = 'normal',
   color = 'default',

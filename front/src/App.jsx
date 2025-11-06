@@ -3,6 +3,7 @@ import { Outlet } from 'react-router-dom';
 import './App.css';
 import { Header, Footer } from './@design-system';
 import { useAuthStore } from './stores';
+import ErrorBoundary from './components/ErrorBoundary';
 
 function App() {
   const { checkAuthStatus } = useAuthStore();
@@ -13,15 +14,17 @@ function App() {
   }, [checkAuthStatus]);
 
   return (
-    <div className="min-h-dvh grid grid-rows-[auto_1fr_auto]">
-      <Header />
+    <ErrorBoundary>
+      <div className="min-h-dvh grid grid-rows-[auto_1fr_auto]">
+        <Header />
 
-      <main className="w-full max-w-screen-2xl mx-auto p-5">
-        <Outlet />
-      </main>
+        <main className="w-full max-w-screen-2xl mx-auto p-5">
+          <Outlet />
+        </main>
 
-      <Footer />
-    </div>
+        <Footer />
+      </div>
+    </ErrorBoundary>
   )
 }
 

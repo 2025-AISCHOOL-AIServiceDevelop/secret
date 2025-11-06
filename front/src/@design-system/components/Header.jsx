@@ -1,14 +1,13 @@
-import { useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useState, memo } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { AppTitle } from './Typography';
 import { LoginPromptModal } from './Modal';
 import { useAuthStore } from '../../stores';
 
 // Header component
-export const Header = () => {
-  const location = useLocation();
+export const Header = memo(() => {
   const navigate = useNavigate();
-  const { isAuthenticated, user, logout, login } = useAuthStore();
+  const { isAuthenticated, logout } = useAuthStore();
   const [showLoginModal, setShowLoginModal] = useState(false);
 
   const handleLoginClick = () => {
@@ -81,6 +80,8 @@ export const Header = () => {
       />
     </header>
   )
-}
+})
+
+Header.displayName = 'Header'
 
 export default Header

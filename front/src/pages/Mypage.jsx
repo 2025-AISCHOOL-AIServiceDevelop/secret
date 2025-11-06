@@ -5,7 +5,7 @@ import { useAuthStore, useTutorStore } from '../stores';
 function Mypage() {
   const navigate = useNavigate();
   const { user, isAuthenticated, logout } = useAuthStore();
-  const { feedbackHistory, getUserFeedbackHistory } = useTutorStore();
+  const { getUserFeedbackHistory } = useTutorStore();
 
   // Redirect to login if not authenticated
   useEffect(() => {
