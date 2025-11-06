@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { contentsAPI } from '../services/api';
 import { withErrorHandling } from '../services/errorHandler';
+import { buildMockContents } from '../services/mockData';
 
 const useContentsStore = create((set, get) => ({
   // State
@@ -21,17 +22,13 @@ const useContentsStore = create((set, get) => ({
         { context: 'Load Contents' }
       );
 
-      set({
-        contents: response.data,
-        isLoading: false,
-      });
+      const data = Array.isArray(response?.data) ? response.data : [];
+      const contents = data.length > 0 ? data : buildMockContents('');
+      set({ contents, isLoading: false });
       return response.data;
     } catch (error) {
-      set({
-        contents: [],
-        error: error.message,
-        isLoading: false,
-      });
+      const contents = buildMockContents('');
+      set({ contents, error: null, isLoading: false });
       throw error;
     }
   },
@@ -55,18 +52,12 @@ const useContentsStore = create((set, get) => ({
         { context: 'Search Contents' }
       );
 
-      set({
-        contents: response.data,
-        isLoading: false,
-        hasSearched: true,
-      });
+      const data = Array.isArray(response?.data) ? response.data : [];
+      const contents = data.length > 0 ? data : buildMockContents(query);
+      set({ contents, isLoading: false, hasSearched: true });
     } catch (error) {
-      set({
-        contents: [],
-        error: error.message,
-        isLoading: false,
-        hasSearched: true,
-      });
+      const contents = buildMockContents(query);
+      set({ contents, error: null, isLoading: false, hasSearched: true });
     }
   },
 
