@@ -17,6 +17,7 @@ public class FeedbackService {
     public Feedback saveFeedback(
             Long userId,
             Long contentsId,
+            Long scriptId,
             String lang,
             double finalScore,
             double accuracy,
@@ -28,6 +29,7 @@ public class FeedbackService {
         Feedback feedback = Feedback.builder()
                 .userId(userId)
                 .contentsId(contentsId)
+                .scriptId(scriptId)
                 .lang(lang)
                 .finalScore((int) Math.round(finalScore))
                 .accuracy((int) Math.round(accuracy))

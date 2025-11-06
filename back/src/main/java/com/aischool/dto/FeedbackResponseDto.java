@@ -18,6 +18,8 @@ public class FeedbackResponseDto {
     private Long feedbackId;
     private Long userId;
     private Long contentsId;
+    private Long scriptId;       
+    private String scriptText;
     private String lang;
 
     private Integer finalScore; 
@@ -35,6 +37,7 @@ public class FeedbackResponseDto {
                 .feedbackId(feedback.getFeedbackId())
                 .userId(feedback.getUserId())
                 .contentsId(feedback.getContentsId())
+                .scriptId(feedback.getScriptId())
                 .lang(feedback.getLang())
                 .finalScore(feedback.getFinalScore())
                 .accuracy(feedback.getAccuracy())

@@ -12,6 +12,8 @@ import com.aischool.dto.FeedbackResponseDto;
 import com.aischool.service.TutorService;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.GetMapping;
+
 
     @RestController
     @RequiredArgsConstructor                                                   
@@ -28,17 +30,22 @@ import lombok.RequiredArgsConstructor;
     }
 
     // 분석 api (파일 업로드용)
-    @PostMapping("/analyze")
-    public FeedbackResponseDto analyzePronunication(
-        @RequestParam("file") MultipartFile audioFile,
-        @RequestParam("userId") Long userId,
-        @RequestParam("contentsId") Long contentsId,
-        @RequestParam("lang") String lang,
-        @RequestParam("targetSentence") String targetSentence)
-    {
-        // 파일 전송 + ai 분석 + DB 저장 + 결과 반환
-        return tutorService.processPronunciationFeedback(audioFile, userId, contentsId, lang, targetSentence);
-
+     @PostMapping("/analyze")
+    public FeedbackResponseDto analyzePronunciation(@RequestParam("file") MultipartFile file,
+                                                    @RequestParam("userId") Long userId,
+                                                    @RequestParam("contentsId") Long contentsId,
+                                                    @RequestParam("scriptId") Long scriptId,
+                                                    @RequestParam("lang") String lang) {
+        return tutorService.processPronunciationFeedback(file, userId, contentsId, scriptId, lang);
     }
+
+    // 가장 최근 피드백 조회 API
+    @GetMapping("/feedback/latest")
+    public FeedbackResponseDto getLatestFeedback(@RequestParam Long userId,
+                                                @RequestParam Long contentsId,
+                                                @RequestParam Long scriptId) {
+        return tutorService.getLatestFeedback(userId, contentsId, scriptId);
+    }
+    
     
 }

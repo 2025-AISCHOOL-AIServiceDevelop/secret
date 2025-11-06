@@ -12,6 +12,8 @@ public class FeedbackRequestDto {
 
     private Long contentsId; 
 
+    private Long scriptId; 
+
     private String lang;
 
     private String targetSentence;// 아이가 따라 읽어야 했던 정답 문장

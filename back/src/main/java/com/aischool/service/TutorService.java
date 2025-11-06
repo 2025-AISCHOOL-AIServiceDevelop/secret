@@ -10,7 +10,9 @@ import com.aischool.client.AzureSpeechClient;
 import com.aischool.dto.FeedbackRequestDto;
 import com.aischool.dto.FeedbackResponseDto;
 import com.aischool.entity.Feedback;
-
+import com.aischool.entity.Script;
+import com.aischool.repository.FeedbackRepository;
+import com.aischool.repository.ScriptRepository;
 import com.microsoft.cognitiveservices.speech.PronunciationAssessmentResult;
 
 import lombok.RequiredArgsConstructor;
@@ -25,6 +27,9 @@ public class TutorService {
     private final FeedbackGenerator feedbackGenerator;
     private final FeedbackService feedbackService;
     private final AzureSpeechService azureSpeechService;
+    private final ScriptRepository scriptRepository;
+    private final FeedbackRepository feedbackRepository;
+
 
     private String getMedalFromScore(double score) {
         if (score >= 85)
@@ -54,6 +59,7 @@ public class TutorService {
         Feedback savedFeedback = feedbackService.saveFeedback(
                 requestDto.getUserId(),
                 requestDto.getContentsId(),
+                requestDto.getScriptId(),
                 requestDto.getLang(),
                 generated.getFinalScore(),
                 generated.getAccuracy(),
@@ -70,21 +76,28 @@ public class TutorService {
             MultipartFile audioFile,
             Long userId,
             Long contentsId,
-            String lang,
-            String targetSentence) {
+            Long scriptId,
+            String lang
+            ) {
         try {
-            // 1️⃣ 업로드된 파일을 임시로 로컬에 저장
+
+            // scriptId로 문장 텍스트 조회
+            Script script = scriptRepository.findById(scriptId.intValue())
+                    .orElseThrow(() -> new RuntimeException("해당 scriptId의 문장을 찾을 수 없습니다."));
+            String targetSentence = script.getText();
+
+            // 업로드된 파일을 임시로 로컬에 저장
             File tempFile = File.createTempFile("record_", ".webm");
             audioFile.transferTo(tempFile);
 
-            // 2️⃣ Azure 발음 평가 실행
+            // Azure 발음 평가 실행
             PronunciationAssessmentResult result = azureSpeechService.analyzeWithConvert(
                     tempFile, 
                     targetSentence,
                     lang
             );
 
-            // 3️⃣ 결과 점수 파싱 및 DB 저장 (예시)
+            // 결과 점수 파싱 및 DB 저장 
             double accuracy = result.getAccuracyScore();
             double fluency = result.getFluencyScore();
             double completeness = result.getCompletenessScore();
@@ -92,12 +105,13 @@ public class TutorService {
 
             // 4️⃣ 점수 기반 메달과 피드백 문장 생성
             String medal = getMedalFromScore(finalScore); 
-            String feedbackText = "발음 평가가 완료되었습니다.";
+            String feedbackText = feedbackGenerator.generateSimpleFeedback(finalScore, accuracy, fluency, completeness);
 
             // 5️⃣ DB 저장
             Feedback savedFeedback = feedbackService.saveFeedback(
                     userId,
                     contentsId,
+                    scriptId,
                     lang,
                     (int) Math.round(finalScore),
                     (int) Math.round(accuracy),
@@ -113,5 +127,34 @@ public class TutorService {
         } catch (Exception e) {
             throw new RuntimeException("발음 분석 중 오류: " + e.getMessage());
         }
+         
+    }
+
+    public FeedbackResponseDto getLatestFeedback(Long userId, Long contentsId, Long scriptId) {
+    Feedback latest = feedbackRepository
+            .findTopByUserIdAndContentsIdAndScriptIdOrderByFeedbackDateDesc(userId, contentsId, scriptId)
+            .orElseThrow(() -> new RuntimeException("해당 피드백이 존재하지 않습니다."));
+
+    // script 텍스트도 함께 반환하고 싶다면
+    Script script = scriptRepository.findById(scriptId.intValue())
+            .orElseThrow(() -> new RuntimeException("스크립트 정보를 찾을 수 없습니다."));
+
+    return FeedbackResponseDto.builder()
+            .feedbackId(latest.getFeedbackId())
+            .userId(latest.getUserId())
+            .contentsId(latest.getContentsId())
+            .scriptId(scriptId)
+            .scriptText(script.getText())
+            .lang(latest.getLang())
+            .finalScore(latest.getFinalScore())
+            .accuracy(latest.getAccuracy())
+            .fluency(latest.getFluency())
+            .completeness(latest.getCompleteness())
+            .medal(latest.getMedal().name())
+            .feedbackText(latest.getFeedbackText())
+            .feedbackDate(latest.getFeedbackDate())
+            .build();
+
+
     }
 }

@@ -20,12 +20,12 @@ public class Feedback {
 
     private Long userId;
     private Long contentsId;
+    private Long scriptId;
     private String lang;
     private int finalScore;
-private Integer accuracy;      // 정확도
-private Integer fluency;       // 유창성
-private Integer completeness;  // 완성도
-
+    private Integer accuracy; // 정확도
+    private Integer fluency; // 유창성
+    private Integer completeness; // 완성도
 
     @Enumerated(EnumType.STRING)
     private Medal medal;
