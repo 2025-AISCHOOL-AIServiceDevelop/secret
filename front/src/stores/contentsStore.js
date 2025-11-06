@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { contentsAPI } from '../services/api';
+import { withErrorHandling } from '../services/errorHandler';
 
 const useContentsStore = create((set, get) => ({
   // State
@@ -10,6 +11,31 @@ const useContentsStore = create((set, get) => ({
   hasSearched: false,
 
   // Actions
+  // Load all contents (for initial display)
+  loadContents: async () => {
+    set({ isLoading: true, error: null });
+
+    try {
+      const response = await withErrorHandling(
+        () => contentsAPI.searchContents(''),
+        { context: 'Load Contents' }
+      );
+
+      set({
+        contents: response.data,
+        isLoading: false,
+      });
+      return response.data;
+    } catch (error) {
+      set({
+        contents: [],
+        error: error.message,
+        isLoading: false,
+      });
+      throw error;
+    }
+  },
+
   searchContents: async (query) => {
     if (!query || query.trim() === '') {
       set({
@@ -24,14 +50,17 @@ const useContentsStore = create((set, get) => ({
     set({ isLoading: true, error: null, searchQuery: query });
 
     try {
-      const response = await contentsAPI.searchContents(query);
+      const response = await withErrorHandling(
+        () => contentsAPI.searchContents(query),
+        { context: 'Search Contents' }
+      );
+
       set({
         contents: response.data,
         isLoading: false,
         hasSearched: true,
       });
     } catch (error) {
-      console.error('Content search failed:', error);
       set({
         contents: [],
         error: error.message,

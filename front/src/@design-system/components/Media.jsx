@@ -1,49 +1,46 @@
-// Media components for images, videos, and interactive elements
+import { forwardRef } from 'react'
 
-// Image component with consistent styling
-export const Image = ({
+// Image component with lazy loading and error handling
+export const Image = forwardRef(({
   src,
-  alt,
-  variant = 'default',
-  rounded = 'none',
+  alt = '',
+  fallback = '/vite.svg',
   className = '',
+  onError,
   ...props
-}) => {
-  const variantClasses = {
-    default: '',
-    avatar: 'w-12 h-12',
-    thumbnail: 'w-24 h-24',
-    cover: 'w-full h-[180px]',
-    player: 'w-full h-[360px]'
-  }
-
-  const roundedClasses = {
-    none: 'rounded-none',
-    small: 'rounded-[10px]',
-    medium: 'rounded-[14px]',
-    large: 'rounded-[18px]',
-    full: 'rounded-full'
+}, ref) => {
+  const handleError = (e) => {
+    if (e.target.src !== fallback) {
+      e.target.src = fallback
+    }
+    onError?.(e)
   }
 
   return (
     <img
+      ref={ref}
       src={src}
       alt={alt}
-      className={`object-cover ${variantClasses[variant]} ${roundedClasses[rounded]} ${className}`}
+      onError={handleError}
+      className={className}
+      loading="lazy"
       {...props}
     />
   )
-}
+})
 
-// Avatar component
-export const Avatar = ({
+Image.displayName = 'Image'
+
+// Avatar component for user profiles
+export const Avatar = forwardRef(({
   src,
-  alt = 'Avatar',
+  alt = '',
   size = 'medium',
-  fallback,
+  fallback = '/vite.svg',
   className = '',
+  children,
   ...props
-}) => {
+}, ref) => {
   const sizeClasses = {
     small: 'w-8 h-8',
     medium: 'w-12 h-12',
@@ -53,125 +50,211 @@ export const Avatar = ({
 
   return (
     <div
-      className={`rounded-full overflow-hidden bg-[#f0f0f0] ${sizeClasses[size]} ${className}`}
+      ref={ref}
+      className={`relative rounded-full overflow-hidden bg-gray-200 ${sizeClasses[size]} ${className}`}
       {...props}
     >
       {src ? (
-        <img
+        <Image
           src={src}
           alt={alt}
+          fallback={fallback}
           className="w-full h-full object-cover"
         />
-      ) : (
-        <div className="w-full h-full flex items-center justify-center bg-gradient-radial text-white font-bold text-lg">
-          {fallback || '?'}
+      ) : children ? (
+        <div className="w-full h-full flex items-center justify-center bg-gray-300 text-gray-600 font-semibold">
+          {children}
         </div>
-      )}
+      ) : null}
     </div>
   )
-}
+})
+
+Avatar.displayName = 'Avatar'
 
 // Progress bar component
-export const ProgressBar = ({
+export const ProgressBar = forwardRef(({
   value = 0,
   max = 100,
-  variant = 'default',
+  color = 'primary',
   size = 'medium',
+  showLabel = false,
   className = '',
   ...props
-}) => {
+}, ref) => {
   const percentage = Math.min((value / max) * 100, 100)
 
-  const variantClasses = {
-    default: 'bg-[#f4f7ff] border-[#c8d3f0]',
-    primary: 'bg-[#f4f7ff] border-[#c8d3f0]',
-    accent: 'bg-[#f4f7ff] border-[#c8d3f0]'
+  const sizeClasses = {
+    small: 'h-1',
+    medium: 'h-2',
+    large: 'h-3'
   }
 
-  const sizeClasses = {
-    small: 'h-1.5',
-    medium: 'h-2.5',
-    large: 'h-4'
+  const colorClasses = {
+    primary: 'bg-blue-500',
+    secondary: 'bg-purple-500',
+    success: 'bg-green-500',
+    warning: 'bg-yellow-500',
+    error: 'bg-red-500'
   }
 
   return (
     <div
-      className={`rounded-full overflow-hidden border-2 ${variantClasses[variant]} ${sizeClasses[size]} ${className}`}
+      ref={ref}
+      className={`w-full bg-gray-200 rounded-full overflow-hidden ${sizeClasses[size]} ${className}`}
       {...props}
     >
       <div
-        className="h-full bg-gradient-to-r from-[#a9a3ff] to-[#82b2ff] transition-all duration-300 ease-out"
+        className={`h-full ${colorClasses[color]} transition-all duration-300 ease-in-out`}
         style={{ width: `${percentage}%` }}
+      />
+      {showLabel && (
+        <div className="text-xs text-center mt-1 text-gray-600">
+          {Math.round(percentage)}%
+        </div>
+      )}
+    </div>
+  )
+})
+
+ProgressBar.displayName = 'ProgressBar'
+
+// Video player component (simplified)
+export const VideoPlayer = forwardRef(({
+  src,
+  poster,
+  controls = true,
+  autoplay = false,
+  muted = false,
+  className = '',
+  onPlay,
+  onPause,
+  onEnded,
+  ...props
+}, ref) => {
+  return (
+    <video
+      ref={ref}
+      src={src}
+      poster={poster}
+      controls={controls}
+      autoPlay={autoplay}
+      muted={muted}
+      className={`w-full h-auto ${className}`}
+      onPlay={onPlay}
+      onPause={onPause}
+      onEnded={onEnded}
+      {...props}
+    >
+      브라우저가 비디오 태그를 지원하지 않습니다.
+    </video>
+  )
+})
+
+VideoPlayer.displayName = 'VideoPlayer'
+
+// Audio controls component
+export const AudioControls = forwardRef(({
+  isPlaying = false,
+  currentTime = 0,
+  duration = 0,
+  volume = 1,
+  onPlay,
+  onPause,
+  onSeek,
+  onVolumeChange,
+  className = '',
+  ...props
+}, ref) => {
+  const formatTime = (time) => {
+    const minutes = Math.floor(time / 60)
+    const seconds = Math.floor(time % 60)
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`
+  }
+
+  return (
+    <div
+      ref={ref}
+      className={`flex items-center gap-2 p-2 bg-gray-100 rounded-lg ${className}`}
+      {...props}
+    >
+      <button
+        onClick={isPlaying ? onPause : onPlay}
+        className="w-8 h-8 flex items-center justify-center bg-blue-500 text-white rounded-full hover:bg-blue-600 transition-colors"
+      >
+        {isPlaying ? '⏸️' : '▶️'}
+      </button>
+
+      <div className="flex-1 flex items-center gap-2">
+        <span className="text-xs text-gray-600 min-w-[35px]">
+          {formatTime(currentTime)}
+        </span>
+        <ProgressBar
+          value={currentTime}
+          max={duration}
+          size="small"
+          color="primary"
+          className="flex-1 cursor-pointer"
+          onClick={(e) => {
+            const rect = e.currentTarget.getBoundingClientRect()
+            const percent = (e.clientX - rect.left) / rect.width
+            onSeek?.(percent * duration)
+          }}
+        />
+        <span className="text-xs text-gray-600 min-w-[35px]">
+          {formatTime(duration)}
+        </span>
+      </div>
+
+      <input
+        type="range"
+        min="0"
+        max="1"
+        step="0.1"
+        value={volume}
+        onChange={(e) => onVolumeChange?.(parseFloat(e.target.value))}
+        className="w-16 h-1 bg-gray-300 rounded-lg appearance-none cursor-pointer"
       />
     </div>
   )
-}
+})
 
-// Video player placeholder
-export const VideoPlayer = ({
-  children,
-  className = '',
-  ...props
-}) => (
-  <div
-    className={`rounded-[14px] overflow-hidden bg-gradient-to-br from-[#6657c7] to-[#6aa0ff] grid place-items-center ${className}`}
-    {...props}
-  >
-    {children}
-  </div>
-)
-
-// Audio controls component
-export const AudioControls = ({
-  isPlaying = false,
-  onPlayPause,
-  progress = 0,
-  duration = '00:00',
-  currentTime = '00:00',
-  onSpeedChange,
-  className = '',
-  ...props
-}) => (
-  <div className={`grid grid-cols-[auto_1fr_auto_auto] gap-2 items-center ${className}`} {...props}>
-    <button
-      onClick={onPlayPause}
-      className="w-9 h-9 rounded-full border-2 bg-[#ffe182] border-[#c9a94b] hover:bg-[#ffe182]/90 transition-colors"
-      aria-label={isPlaying ? 'Pause' : 'Play'}
-    >
-      <div className={`w-0 h-0 ml-0.5 border-l-[6px] border-l-[#3a3a3a] border-t-[4px] border-t-transparent border-b-[4px] border-b-transparent ${isPlaying ? 'ml-0.5' : ''}`} />
-    </button>
-
-    <ProgressBar value={progress} />
-
-    <span className="text-[#6d7a9f] text-xs whitespace-nowrap">
-      {currentTime} / {duration}
-    </span>
-
-    <button
-      onClick={onSpeedChange}
-      className="rounded-[10px] px-3 py-2 text-sm font-bold border-2 bg-white border-[#c9d2f1] text-[#4a5b82] hover:bg-[#f0f4ff] transition-colors"
-    >
-      느리게
-    </button>
-  </div>
-)
+AudioControls.displayName = 'AudioControls'
 
 // Placeholder image component
-export const PlaceholderImage = ({
-  width = 60,
-  height = 60,
+export const PlaceholderImage = forwardRef(({
+  width = 400,
+  height = 300,
   text = '이미지',
+  bgColor = '#f3f4f6',
+  textColor = '#6b7280',
   className = '',
   ...props
-}) => (
-  <div
-    className={`bg-[#f0f0f0] flex items-center justify-center text-[#666] text-sm border-2 border-dashed border-[#a9b9d3] ${className}`}
-    style={{ width, height }}
-    {...props}
-  >
-    <div className="text-center">
-      <div className="text-lg mb-1">📷</div>
-      <div className="text-xs">{text}</div>
+}, ref) => {
+  return (
+    <div
+      ref={ref}
+      className={`flex items-center justify-center bg-gray-100 text-gray-500 font-medium ${className}`}
+      style={{
+        width: typeof width === 'number' ? `${width}px` : width,
+        height: typeof height === 'number' ? `${height}px` : height,
+        backgroundColor: bgColor,
+        color: textColor
+      }}
+      {...props}
+    >
+      {text}
     </div>
-  </div>
-)
+  )
+})
+
+PlaceholderImage.displayName = 'PlaceholderImage'
+
+export default {
+  Image,
+  Avatar,
+  ProgressBar,
+  VideoPlayer,
+  AudioControls,
+  PlaceholderImage
+}

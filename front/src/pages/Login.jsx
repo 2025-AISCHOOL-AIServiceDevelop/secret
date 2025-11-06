@@ -6,7 +6,7 @@ import googleLogo from '../assets/google.png';
 
 function Login() {
   const navigate = useNavigate();
-  const { isAuthenticated, checkAuthStatus, login, isLoading } = useAuthStore();
+  const { isAuthenticated, checkAuthStatus, isLoading } = useAuthStore();
 
   useEffect(() => {
     // Check if user is already authenticated
@@ -53,7 +53,6 @@ function Login() {
       {/* 로그인 영역 */}
       <div className="rounded-[18px] p-6 grid gap-3 border-2"
            style={{ background: '#e1ecff', borderColor: '#b7c5e9' }}>
-        
         <button
           onClick={() => handleLogin('kakao')}
           className="w-full flex justify-center items-center"

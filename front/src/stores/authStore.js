@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { authAPI } from '../services/api';
 import axios from 'axios';
 
-const useAuthStore = create((set, get) => ({
+const useAuthStore = create((set) => ({
   user: null,
   isAuthenticated: false,
   isLoading: false,

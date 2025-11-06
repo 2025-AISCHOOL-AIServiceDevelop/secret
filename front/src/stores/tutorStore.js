@@ -94,7 +94,30 @@ const useTutorStore = create((set, get) => ({
     return feedbackHistory.filter(feedback => feedback.contentsId === contentsId);
   },
 
-  // Get latest feedback
+  // Get latest feedback from API
+  fetchLatestFeedback: async (userId, contentsId, scriptId) => {
+    set({ error: null });
+
+    try {
+      const response = await tutorAPI.getLatestFeedback(userId, contentsId, scriptId);
+      const latestFeedback = response.data;
+
+      set((state) => ({
+        currentFeedback: latestFeedback,
+        feedbackHistory: [latestFeedback, ...state.feedbackHistory.filter(f =>
+          !(f.userId === userId && f.contentsId === contentsId && f.scriptId === scriptId)
+        )]
+      }));
+
+      return latestFeedback;
+    } catch (error) {
+      console.error('Fetching latest feedback failed:', error);
+      set({ error: error.message });
+      throw error;
+    }
+  },
+
+  // Get latest feedback from local state
   getLatestFeedback: () => {
     const { feedbackHistory } = get();
     return feedbackHistory.length > 0 ? feedbackHistory[0] : null;

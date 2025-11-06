@@ -19,6 +19,7 @@ function FollowRecorder({ script, contentsId, language = 'en', userId, onAnalyze
 
   const [localScore, setLocalScore] = useState(null)
   const [localMessage, setLocalMessage] = useState('')
+  const [errorMessage, setErrorMessage] = useState('')
 
   useEffect(() => {
     return () => {
@@ -55,6 +56,7 @@ function FollowRecorder({ script, contentsId, language = 'en', userId, onAnalyze
       startRecording()
       setLocalScore(null)
       setLocalMessage('')
+      setErrorMessage('')
     } catch (err) {
       console.error('Microphone access failed', err)
     }
@@ -67,13 +69,23 @@ function FollowRecorder({ script, contentsId, language = 'en', userId, onAnalyze
       const blob = new Blob(chunksRef.current, { type: recorder.mimeType || 'audio/webm' })
       const file = new File([blob], 'recording.webm', { type: blob.type })
       try {
-        const res = await analyzePronunciation(file, userId, contentsId, language)
-        const score = Number(res?.score ?? 0)
+        const scriptId = script?.id || script?.scriptId;
+        if (!scriptId) {
+          console.error('Script ID is missing');
+          return;
+        }
+
+        const res = await analyzePronunciation(file, userId, contentsId, scriptId, language)
+        const score = Number(res?.finalScore ?? res?.score ?? 0)
         setLocalScore(score)
         setLocalMessage(buildMessage(score))
+        setErrorMessage('') // 성공 시 에러 메시지 초기화
         if (onAnalyzed) onAnalyzed(res, script)
       } catch (e) {
         console.error('Analyze failed', e)
+        setErrorMessage(e.message || '발음 분석 중 오류가 발생했습니다.')
+        setLocalScore(null)
+        setLocalMessage('')
       } finally {
         cleanup()
         resetRecording()
@@ -92,7 +104,11 @@ function FollowRecorder({ script, contentsId, language = 'en', userId, onAnalyze
   const cleanup = () => {
     if (rafRef.current) cancelAnimationFrame(rafRef.current)
     if (audioContextRef.current) {
-      try { audioContextRef.current.close() } catch {}
+      try {
+        audioContextRef.current.close()
+      } catch (error) {
+        console.warn('AudioContext cleanup error:', error)
+      }
       audioContextRef.current = null
     }
     if (mediaStreamRef.current) {
@@ -155,12 +171,26 @@ function FollowRecorder({ script, contentsId, language = 'en', userId, onAnalyze
         )}
       </div>
 
-      {(isAnalyzing || localScore !== null) && (
-        <div className="mt-3 grid grid-cols-[80px_1fr] items-center gap-3 rounded-[14px] p-3" style={{ background: '#eaf1ff', border: '2px solid #c9d6f2' }}>
-          <div className="text-[36px] font-black text-[#6b7cff] text-center">{localScore !== null ? Math.round(localScore) : '···'}</div>
-          <div className="text-sm text-[#2c3a72]">
-            {isAnalyzing ? '분석 중입니다…' : localMessage}
-          </div>
+      {/* Analysis Result or Error */}
+      {(isAnalyzing || localScore !== null || errorMessage) && (
+        <div className="mt-3 rounded-[14px] p-3" style={{
+          background: errorMessage ? '#ffeaea' : '#eaf1ff',
+          border: `2px solid ${errorMessage ? '#f5c6c6' : '#c9d6f2'}`
+        }}>
+          {errorMessage ? (
+            <div className="text-sm text-red-600 text-center">
+              ⚠️ {errorMessage}
+            </div>
+          ) : (
+            <div className="grid grid-cols-[80px_1fr] items-center gap-3">
+              <div className="text-[36px] font-black text-[#6b7cff] text-center">
+                {localScore !== null ? Math.round(localScore) : '···'}
+              </div>
+              <div className="text-sm text-[#2c3a72]">
+                {isAnalyzing ? '분석 중입니다…' : localMessage}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

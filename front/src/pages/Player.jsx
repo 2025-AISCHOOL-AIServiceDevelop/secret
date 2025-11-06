@@ -2,14 +2,15 @@ import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { SpeedButton, TagButton } from '../@design-system';
 import { useContentsStore, useTranslationStore, useTutorStore, useAuthStore } from '../stores';
+import FollowRecorder from '../components/FollowRecorder';
 
 function Player() {
   const [searchParams] = useSearchParams();
   const contentId = searchParams.get('contentId');
 
   const { getContentById } = useContentsStore();
-  const { scripts, isLoadingScripts, loadScripts, currentScript, getCurrentScript } = useTranslationStore();
-  const { isAnalyzing, recordingState, startRecording, stopRecording, analyzePronunciation, currentFeedback } = useTutorStore();
+  const { scripts, isLoadingScripts, loadScripts, getCurrentScript } = useTranslationStore();
+  const { currentFeedback } = useTutorStore();
   const { user } = useAuthStore();
 
   const [selectedScript, setSelectedScript] = useState(null);
@@ -31,31 +32,8 @@ function Player() {
   const content = contentId ? getContentById(parseInt(contentId)) : null;
   const displayScript = selectedScript || getCurrentScript();
 
-  const handleRecordAndAnalyze = async () => {
-    if (recordingState === 'idle' && user && contentId && displayScript) {
-      // Start recording (in a real app, this would integrate with Web Audio API)
-      startRecording();
-
-      // Simulate recording for 3 seconds, then analyze
-      setTimeout(async () => {
-        stopRecording();
-
-        // Create a dummy audio blob for demo (in real app, this would be actual recorded audio)
-        const dummyAudioBlob = new Blob(['dummy audio data'], { type: 'audio/wav' });
-        const dummyAudioFile = new File([dummyAudioBlob], 'recording.wav', { type: 'audio/wav' });
-
-        try {
-          await analyzePronunciation(
-            dummyAudioFile,
-            user.id || 1, // Use user ID from auth store
-            parseInt(contentId),
-            content?.language || 'en'
-          );
-        } catch (error) {
-          console.error('Analysis failed:', error);
-        }
-      }, 3000);
-    }
+  const handleAnalysisComplete = (result, script) => {
+    console.log('Analysis completed:', result, 'for script:', script);
   };
 
   return (
@@ -77,41 +55,58 @@ function Player() {
             <SpeedButton>느리게</SpeedButton>
           </div>
         </section>
-        <aside className="grid gap-3 rounded-[18px] p-3 border-2" style={{ background: '#eef3ff', borderColor: '#c7d3f4' }}>
+        <aside className="grid gap-3">
           <div className="font-black text-[#7d8db6]">따라서 말해봐요!</div>
 
-          {/* Recording and Analysis Section */}
-          <div className="grid gap-2">
-            <button
-              onClick={handleRecordAndAnalyze}
-              disabled={isAnalyzing || recordingState === 'recording' || !user}
-              className={`px-4 py-2 rounded-lg font-bold text-white ${
-                recordingState === 'recording'
-                  ? 'bg-red-500 animate-pulse'
-                  : isAnalyzing
-                  ? 'bg-yellow-500'
-                  : !user
-                  ? 'bg-gray-400 cursor-not-allowed'
-                  : 'bg-green-500 hover:bg-green-600'
-              }`}
-            >
-              {recordingState === 'recording' ? '녹음 중...' :
-               isAnalyzing ? '분석 중...' :
-               !user ? '로그인 필요' : '녹음 시작'}
-            </button>
+          {/* FollowRecorder Component */}
+          <FollowRecorder
+            script={displayScript}
+            contentsId={parseInt(contentId)}
+            language={content?.language || 'en'}
+            userId={user?.id || 1}
+            onAnalyzed={handleAnalysisComplete}
+          />
 
-            {currentFeedback && (
-              <div className="bg-white p-3 rounded-lg border">
-                <h4 className="font-bold text-sm mb-2">발음 분석 결과</h4>
-                <p className="text-xs text-gray-600">
-                  점수: {currentFeedback.score || 'N/A'} / 정확도: {currentFeedback.accuracy || 'N/A'}
-                </p>
-                {currentFeedback.feedback && (
-                  <p className="text-xs mt-2">{currentFeedback.feedback}</p>
-                )}
+          {/* Current Feedback Display */}
+          {currentFeedback && (
+            <div className="bg-white p-4 rounded-lg border-2" style={{ borderColor: '#c8d3f0' }}>
+              <h4 className="font-bold text-sm mb-3 text-[#2c3a72]">발음 분석 결과</h4>
+
+              {/* Score Display */}
+              <div className="flex items-center gap-3 mb-3">
+                <div className="text-2xl font-black text-[#6b7cff]">
+                  {currentFeedback.finalScore || currentFeedback.score || 'N/A'}
+                </div>
+                <div className="flex-1">
+                  <div className="text-xs text-[#6d7a9f] mb-1">
+                    정확도: {currentFeedback.accuracy || 'N/A'} | 유창성: {currentFeedback.fluency || 'N/A'} | 완성도: {currentFeedback.completeness || 'N/A'}
+                  </div>
+                  {currentFeedback.medal && (
+                    <div className="text-xs font-bold" style={{
+                      color: currentFeedback.medal === 'GOLD' ? '#ffd700' :
+                             currentFeedback.medal === 'SILVER' ? '#c0c0c0' : '#cd7f32'
+                    }}>
+                      🏆 {currentFeedback.medal}
+                    </div>
+                  )}
+                </div>
               </div>
-            )}
-          </div>
+
+              {/* Feedback Text */}
+              {currentFeedback.feedbackText && (
+                <p className="text-sm text-[#2c3a72] bg-[#f8f9ff] p-2 rounded" style={{ border: '1px solid #e1e8ff' }}>
+                  {currentFeedback.feedbackText}
+                </p>
+              )}
+
+              {/* Timestamp */}
+              {currentFeedback.feedbackDate && (
+                <p className="text-xs text-gray-500 mt-2">
+                  {new Date(currentFeedback.feedbackDate).toLocaleString('ko-KR')}
+                </p>
+              )}
+            </div>
+          )}
 
           {/* Scripts List */}
           <div className="grid gap-2 max-h-[200px] card-scroll pr-1">
