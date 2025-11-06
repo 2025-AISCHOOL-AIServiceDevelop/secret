@@ -69,14 +69,41 @@ function Player() {
 
           {/* Current Feedback Display */}
           {currentFeedback && (
-            <div className="bg-white p-3 rounded-lg border">
-              <h4 className="font-bold text-sm mb-2">발음 분석 결과</h4>
-              <p className="text-xs text-gray-600">
-                점수: {currentFeedback.score || currentFeedback.finalScore || 'N/A'} /
-                정확도: {currentFeedback.accuracy || 'N/A'}
-              </p>
-              {currentFeedback.feedback && (
-                <p className="text-xs mt-2">{currentFeedback.feedback}</p>
+            <div className="bg-white p-4 rounded-lg border-2" style={{ borderColor: '#c8d3f0' }}>
+              <h4 className="font-bold text-sm mb-3 text-[#2c3a72]">발음 분석 결과</h4>
+
+              {/* Score Display */}
+              <div className="flex items-center gap-3 mb-3">
+                <div className="text-2xl font-black text-[#6b7cff]">
+                  {currentFeedback.finalScore || currentFeedback.score || 'N/A'}
+                </div>
+                <div className="flex-1">
+                  <div className="text-xs text-[#6d7a9f] mb-1">
+                    정확도: {currentFeedback.accuracy || 'N/A'} | 유창성: {currentFeedback.fluency || 'N/A'} | 완성도: {currentFeedback.completeness || 'N/A'}
+                  </div>
+                  {currentFeedback.medal && (
+                    <div className="text-xs font-bold" style={{
+                      color: currentFeedback.medal === 'GOLD' ? '#ffd700' :
+                             currentFeedback.medal === 'SILVER' ? '#c0c0c0' : '#cd7f32'
+                    }}>
+                      🏆 {currentFeedback.medal}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Feedback Text */}
+              {currentFeedback.feedbackText && (
+                <p className="text-sm text-[#2c3a72] bg-[#f8f9ff] p-2 rounded" style={{ border: '1px solid #e1e8ff' }}>
+                  {currentFeedback.feedbackText}
+                </p>
+              )}
+
+              {/* Timestamp */}
+              {currentFeedback.feedbackDate && (
+                <p className="text-xs text-gray-500 mt-2">
+                  {new Date(currentFeedback.feedbackDate).toLocaleString('ko-KR')}
+                </p>
               )}
             </div>
           )}
