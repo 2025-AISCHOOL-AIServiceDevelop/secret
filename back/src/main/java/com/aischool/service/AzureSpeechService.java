@@ -2,7 +2,6 @@ package com.aischool.service;
 
 import com.microsoft.cognitiveservices.speech.*;
 import com.microsoft.cognitiveservices.speech.audio.AudioConfig;
-
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -23,7 +22,10 @@ public class AzureSpeechService {
     @Value("${ffmpeg.path:ffmpeg}")
     private String ffmpegPath;
 
-    /** 외부에서 호출: 원본 -> 변환 -> Azure 분석 -> 결과 */
+    /**
+     * ✅ (A) 기존: 음성 분석 후 PronunciationAssessmentResult 반환
+     * - DB 저장 시 단순 점수 기반 피드백용
+     */
     public PronunciationAssessmentResult analyzeWithConvert(File rawAudio, String referenceText, String lang) throws Exception {
         File wav = convertToWavSafe(rawAudio);
         try {
@@ -33,7 +35,20 @@ public class AzureSpeechService {
         }
     }
 
-    /** 1) ffmpeg 변환: 16kHz/mono/PCM16 wav */
+    /**
+     * ✅ (B) 새로 추가: 음성 분석 후 Azure의 원시 JSON 문자열 반환
+     * - 세밀 피드백용 (FeedbackGenerator.generate(json)에서 사용)
+     */
+    public String analyzeWithConvertJson(File rawAudio, String referenceText, String lang) throws Exception {
+        File wav = convertToWavSafe(rawAudio);
+        try {
+            return analyzeWavJson(wav, referenceText, lang);
+        } finally {
+            try { Files.deleteIfExists(wav.toPath()); } catch (Exception ignore) {}
+        }
+    }
+
+    /** 1️⃣ ffmpeg 변환: 16kHz / mono / PCM16 wav */
     private File convertToWavSafe(File inputFile) throws IOException, InterruptedException {
         File out = new File(
                 inputFile.getParentFile(),
@@ -68,23 +83,19 @@ public class AzureSpeechService {
         return out;
     }
 
-    /** 2) Azure Pronunciation Assessment 호출 (WAV 전제) */
+    /** 2️⃣ Azure Pronunciation Assessment 호출 (WAV → 결과 객체) */
     private PronunciationAssessmentResult analyzeWav(File wavFile, String referenceText, String lang) throws Exception {
         if (referenceText == null || referenceText.isBlank()) {
             throw new IllegalArgumentException("referenceText(기준 문장)이 비어있습니다.");
-        } 
+        }
 
         SpeechConfig config = SpeechConfig.fromSubscription(speechKey, speechRegion);
         if (lang == null || lang.isBlank()) lang = "en-US";
         config.setSpeechRecognitionLanguage(lang);
 
-        // PronunciationAssessment 결과를 JSON 형태로 포함시키기
-        config.setProperty(PropertyId.SpeechServiceResponse_JsonResult, "true");
-
         try (AudioConfig audioConfig = AudioConfig.fromWavFileInput(wavFile.getAbsolutePath());
              SpeechRecognizer recognizer = new SpeechRecognizer(config, audioConfig)) {
 
-            // 발음평가 설정 생성 (루트 패키지에서 가져옴)
             PronunciationAssessmentConfig paConfig = new PronunciationAssessmentConfig(
                     referenceText,
                     PronunciationAssessmentGradingSystem.HundredMark,
@@ -92,10 +103,9 @@ public class AzureSpeechService {
             );
             paConfig.applyTo(recognizer);
 
-            // 음성 인식 실행
             SpeechRecognitionResult result = recognizer.recognizeOnceAsync().get();
 
-            // 오류 케이스 처리
+            // 오류 처리
             if (result.getReason() != ResultReason.RecognizedSpeech) {
                 String err = (result.getReason() == ResultReason.Canceled)
                         ? CancellationDetails.fromResult(result).getReason().toString()
@@ -103,12 +113,53 @@ public class AzureSpeechService {
                 throw new RuntimeException("Azure 인식 실패: " + err);
             }
 
-            // 최신 SDK에서는 fromResult()로 변환해야 함
+            // PronunciationAssessmentResult 변환
             return PronunciationAssessmentResult.fromResult(result);
         }
     }
 
-    /** 유틸: 확장자 제거 */
+    /** 3️⃣ Azure Pronunciation Assessment 호출 (WAV → JSON 반환) */
+    private String analyzeWavJson(File wavFile, String referenceText, String lang) throws Exception {
+        if (referenceText == null || referenceText.isBlank()) {
+            throw new IllegalArgumentException("referenceText(기준 문장)이 비어있습니다.");
+        }
+
+        SpeechConfig config = SpeechConfig.fromSubscription(speechKey, speechRegion);
+        if (lang == null || lang.isBlank()) lang = "en-US";
+        config.setSpeechRecognitionLanguage(lang);
+
+        try (AudioConfig audioConfig = AudioConfig.fromWavFileInput(wavFile.getAbsolutePath());
+             SpeechRecognizer recognizer = new SpeechRecognizer(config, audioConfig)) {
+
+            PronunciationAssessmentConfig paConfig = new PronunciationAssessmentConfig(
+                    referenceText,
+                    PronunciationAssessmentGradingSystem.HundredMark,
+                    PronunciationAssessmentGranularity.Phoneme
+            );
+            paConfig.applyTo(recognizer);
+
+            SpeechRecognitionResult result = recognizer.recognizeOnceAsync().get();
+
+            // 오류 처리
+            if (result.getReason() != ResultReason.RecognizedSpeech) {
+                String err = (result.getReason() == ResultReason.Canceled)
+                        ? CancellationDetails.fromResult(result).getReason().toString()
+                        : result.getReason().toString();
+                throw new RuntimeException("Azure 인식 실패: " + err);
+            }
+
+            // ✅ 핵심: Azure에서 반환한 원시 JSON 문자열 추출
+            String json = result.getProperties().getProperty(PropertyId.SpeechServiceResponse_JsonResult);
+
+            if (json == null || json.isEmpty()) {
+                throw new RuntimeException("Azure JSON 결과를 가져오지 못했습니다.");
+            }
+
+            return json;
+        }
+    }
+
+    /** 4️⃣ 파일명 유틸 */
     private String stripExt(String name) {
         int idx = name.lastIndexOf('.');
         return (idx > 0) ? name.substring(0, idx) : name;

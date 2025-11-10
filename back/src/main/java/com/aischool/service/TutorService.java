@@ -73,62 +73,54 @@ public class TutorService {
     }
 
     public FeedbackResponseDto processPronunciationFeedback(
-            MultipartFile audioFile,
-            Long userId,
-            Long contentsId,
-            Long scriptId,
-            String lang
-            ) {
-        try {
+        MultipartFile audioFile,
+        Long userId,
+        Long contentsId,
+        Long scriptId,
+        String lang
+) {
+    try {
+        // 1️⃣ scriptId로 문장 텍스트 조회
+        Script script = scriptRepository.findById(scriptId.intValue())
+                .orElseThrow(() -> new RuntimeException("해당 scriptId의 문장을 찾을 수 없습니다."));
+        String targetSentence = script.getText();
 
-            // scriptId로 문장 텍스트 조회
-            Script script = scriptRepository.findById(scriptId.intValue())
-                    .orElseThrow(() -> new RuntimeException("해당 scriptId의 문장을 찾을 수 없습니다."));
-            String targetSentence = script.getText();
+        // 2️⃣ 업로드된 파일을 임시로 로컬에 저장
+        File tempFile = File.createTempFile("record_", ".webm");
+        audioFile.transferTo(tempFile);
 
-            // 업로드된 파일을 임시로 로컬에 저장
-            File tempFile = File.createTempFile("record_", ".webm");
-            audioFile.transferTo(tempFile);
+        // 3️⃣ Azure 발음 평가 실행 (JSON 결과 받기)
+        String azureJson = azureSpeechService.analyzeWithConvertJson(
+                tempFile,
+                targetSentence,
+                lang
+        );
 
-            // Azure 발음 평가 실행
-            PronunciationAssessmentResult result = azureSpeechService.analyzeWithConvert(
-                    tempFile, 
-                    targetSentence,
-                    lang
-            );
+        // 4️⃣ 세밀한 피드백 생성
+        GeneratedFeedbackResult generated = feedbackGenerator.generate(azureJson);
 
-            // 결과 점수 파싱 및 DB 저장 
-            double accuracy = result.getAccuracyScore();
-            double fluency = result.getFluencyScore();
-            double completeness = result.getCompletenessScore();
-            double finalScore = result.getPronunciationScore();
+        // 5️⃣ DB 저장
+        Feedback savedFeedback = feedbackService.saveFeedback(
+                userId,
+                contentsId,
+                scriptId,
+                lang,
+                generated.getFinalScore(),
+                generated.getAccuracy(),
+                generated.getFluency(),
+                generated.getCompleteness(),
+                generated.getMedal(),
+                generated.getFeedbackText()
+        );
 
-            // 4️⃣ 점수 기반 메달과 피드백 문장 생성
-            String medal = getMedalFromScore(finalScore); 
-            String feedbackText = feedbackGenerator.generateSimpleFeedback(finalScore, accuracy, fluency, completeness);
+        // 6️⃣ 프론트 응답 리턴
+        return FeedbackResponseDto.fromEntity(savedFeedback);
 
-            // 5️⃣ DB 저장
-            Feedback savedFeedback = feedbackService.saveFeedback(
-                    userId,
-                    contentsId,
-                    scriptId,
-                    lang,
-                    (int) Math.round(finalScore),
-                    (int) Math.round(accuracy),
-                    (int) Math.round(fluency),
-                    (int) Math.round(completeness),
-                    medal,
-                    feedbackText
-            );
-
-            // 6️⃣ 프론트 응답
-           return FeedbackResponseDto.fromEntity(savedFeedback);
-
-        } catch (Exception e) {
-            throw new RuntimeException("발음 분석 중 오류: " + e.getMessage());
-        }
-         
+    } catch (Exception e) {
+        throw new RuntimeException("발음 분석 중 오류: " + e.getMessage());
     }
+}
+
 
     public FeedbackResponseDto getLatestFeedback(Long userId, Long contentsId, Long scriptId) {
     Feedback latest = feedbackRepository

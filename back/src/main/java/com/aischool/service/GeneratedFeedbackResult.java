@@ -14,4 +14,6 @@ public class GeneratedFeedbackResult {
     private int completeness;
     private String medal;
     private String feedbackText;
+
+    
 }

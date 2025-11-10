@@ -10,6 +10,8 @@ import org.springframework.web.multipart.MultipartFile;
 import com.aischool.dto.FeedbackRequestDto;
 import com.aischool.dto.FeedbackResponseDto;
 import com.aischool.service.TutorService;
+import com.aischool.service.FeedbackGenerator;   
+import com.aischool.service.GeneratedFeedbackResult; 
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -21,6 +23,7 @@ import org.springframework.web.bind.annotation.GetMapping;
     public class TutorController {
     
     private final TutorService tutorService;
+    private final FeedbackGenerator feedbackGenerator;
 
 
     // 발음 평가 요청 api
@@ -45,6 +48,11 @@ import org.springframework.web.bind.annotation.GetMapping;
                                                 @RequestParam Long contentsId,
                                                 @RequestParam Long scriptId) {
         return tutorService.getLatestFeedback(userId, contentsId, scriptId);
+    }
+
+    @PostMapping("/feedback-test")
+    public GeneratedFeedbackResult testFeedback(@RequestBody String azureJson) {
+        return feedbackGenerator.generate(azureJson);
     }
     
     
