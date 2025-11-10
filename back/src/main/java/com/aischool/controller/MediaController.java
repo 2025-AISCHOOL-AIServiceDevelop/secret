@@ -1,4 +1,4 @@
-﻿package com.aischool.controller;
+package com.aischool.controller;
 
 import com.aischool.entity.Contents;
 import com.aischool.repository.ContentsRepository;

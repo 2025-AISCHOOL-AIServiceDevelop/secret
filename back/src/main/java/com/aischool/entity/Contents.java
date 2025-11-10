@@ -47,4 +47,7 @@ public class Contents {
 
     @Column(name = "completed_at")
     private LocalDateTime completedAt;
+
+    @Column(name = "source_key", length = 128)
+    private String sourceKey;
 }

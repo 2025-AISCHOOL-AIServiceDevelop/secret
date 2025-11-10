@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface ContentsRepository extends JpaRepository<Contents, Integer> {
 
@@ -19,4 +20,8 @@ public interface ContentsRepository extends JpaRepository<Contents, Integer> {
         WHERE LOWER(REPLACE(c.title, ' ', '')) LIKE LOWER(CONCAT('%', REPLACE(:query, ' ', ''), '%'))
     """)
     List<Contents> searchIgnoringSpaces(@Param("query") String query);
+
+    Optional<Contents> findFirstBySourceKeyAndParentIdIsNull(String sourceKey);
+
+    Optional<Contents> findFirstByTitleIgnoreCaseAndLanguageAndParentIdIsNull(String title, String language);
 }

@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.DigestUtils;
 
 import java.net.HttpURLConnection;
 import java.net.URI;
@@ -52,7 +53,7 @@ public class TranslationService {
         catch (Exception e) { return s; }
     }
 
-    /** 여러 키 중 최초로 값이 있는 문자열 반환 (필요 시 사용) */
+    /** 키 후보 중에서 처음으로 값이 있는 문자열 반환 (작은 유틸) */
     private static String firstNonBlank(Map<String, Object> src, String... keys) {
         if (src == null) return null;
         for (String k : keys) {
@@ -62,7 +63,7 @@ public class TranslationService {
         return null;
     }
 
-    /** Perso 응답에서 썸네일 URL 선택 (지금은 로컬 탐색을 쓰니 보조용) */
+    /** Perso 응답에서 썸네일 URL 선택 (로컬 썸네일 탐색과 별개) */
     private static String pickThumbnailUrl(Map<String, Object> data) {
         if (data == null) return null;
         return firstNonBlank(
@@ -75,7 +76,7 @@ public class TranslationService {
         );
     }
 
-    /** URL에서 파일명(제목) 추출 */
+    /** URL에서 파일명(=제목) 추출 */
     private String resolveTitleFromUrl(String url, String fallback) {
         try {
             HttpURLConnection conn = (HttpURLConnection) new java.net.URL(url).openConnection();
@@ -119,7 +120,7 @@ public class TranslationService {
         return FileStorage.sanitize(fb);
     }
 
-    /** Dropbox 공유 URL을 실제 다운로드 URL로 정규화(dl.dropboxusercontent.com) */
+    /** Dropbox 공유 URL을 직접 다운로드 URL로 변환 (dl.dropboxusercontent.com) */
     private String normalizeInputFileUrl(String url) {
         if (url == null || url.isBlank()) return url;
         try {
@@ -127,7 +128,8 @@ public class TranslationService {
             String host = uri.getHost();
             if (host == null || !host.equalsIgnoreCase("www.dropbox.com")) return url;
 
-            String path = uri.getRawPath(); // /s/... 또는 /scl/fi/...
+            // /s/... 또는 /scl/fi/... 만 변환 허용
+            String path = uri.getRawPath();
             if (path == null || !path.startsWith("/s")) return url;
 
             String rlkey = null;
@@ -153,26 +155,26 @@ public class TranslationService {
         }
     }
 
-    /** ✅ 로컬 썸네일 탐색(여러 후보 경로 + 이름 변형) */
+    /** 로컬 썸네일 탐색(후보 경로 + 이름 변형) */
     private static String findLocalThumbPath(String storyTitle) {
-        Path wd = Paths.get("").toAbsolutePath();   // 보통 ...\secret\back
-        Path parent = wd.getParent();               // 보통 ...\secret
+        Path wd = Paths.get("").toAbsolutePath();   // ...\secret\back
+        Path parent = wd.getParent();               // ...\secret
 
         List<Path> dirCandidates = new ArrayList<>();
-        // 현재 작업 디렉토리 기준
-        dirCandidates.add(wd.resolve(Paths.get("contents", "thumnail")));   // 오타 폴더 지원
+        // 현재 작업 폴더 기준 후보 경로
+        dirCandidates.add(wd.resolve(Paths.get("contents", "thumnail")));   // 오타 폴더도 탐색
         dirCandidates.add(wd.resolve(Paths.get("contents", "thumbnail")));
-        dirCandidates.add(Paths.get("contents", "thumnail"));               // 상대 경로도 시도
+        dirCandidates.add(Paths.get("contents", "thumnail"));               // 상대 경로도 탐색
         dirCandidates.add(Paths.get("contents", "thumbnail"));
-        // back의 형제(프로젝트 루트) 기준
+        // back 상위(모노레포 루트) 기준 후보 경로
         if (parent != null) {
             dirCandidates.add(parent.resolve(Paths.get("contents", "thumnail")));
             dirCandidates.add(parent.resolve(Paths.get("contents", "thumbnail")));
         }
 
-        log.info("🔎 WD={}", wd);
-        if (parent != null) log.info("🔎 PARENT={}", parent);
-        for (Path d : dirCandidates) log.info("🔎 탐색: {}", d.toAbsolutePath());
+        log.info("[Thumb] WD={}", wd);
+        if (parent != null) log.info("[Thumb] PARENT={}", parent);
+        for (Path d : dirCandidates) log.info("[Thumb] 후보 경로: {}", d.toAbsolutePath());
 
         String base = storyTitle.trim();
         Set<String> nameCandidates = new LinkedHashSet<>(List.of(
@@ -189,18 +191,18 @@ public class TranslationService {
             try {
                 if (!Files.isDirectory(dir)) continue;
 
-                // 직접 조합 매칭
+                // 정확히 동일한 파일명 우선 탐색
                 for (String n : nameCandidates) {
                     for (String ext : exts) {
                         Path p = dir.resolve(n + ext);
                         if (Files.isRegularFile(p)) {
                             String found = p.toAbsolutePath().toString();
-                            log.info("🖼️ 썸네일 찾음: {}", found);
+                            log.info("[Thumb] 발견: {}", found);
                             return found;
                         }
                     }
                 }
-                // 디렉토리 스캔(대소문자/특수문자 차이 대응)
+                // 디렉터리 전체 스캔(대소문자/특수문자 이슈 대응)
                 try (DirectoryStream<Path> ds = Files.newDirectoryStream(dir)) {
                     for (Path p : ds) {
                         if (!Files.isRegularFile(p)) continue;
@@ -211,36 +213,141 @@ public class TranslationService {
                         for (String n : nameCandidates) {
                             if (noExt.equalsIgnoreCase(n)) {
                                 String found = p.toAbsolutePath().toString();
-                                log.info("🖼️ 썸네일 찾음: {}", found);
+                                log.info("[Thumb] 발견: {}", found);
                                 return found;
                             }
                         }
                     }
                 }
             } catch (Exception e) {
-                log.warn("썸네일 탐색 중 예외(무시): dir={}", dir, e);
+                log.warn("[Thumb] 탐색 예외: dir={}", dir, e);
             }
         }
-        log.warn("⚠️ 썸네일을 어떤 후보 경로에서도 찾지 못했습니다. title='{}'", storyTitle);
+        log.warn("[Thumb] 제목 '{}'에 해당하는 썸네일을 로컬에서 찾지 못했습니다.", storyTitle);
         return null;
+    }
+
+    /** 로컬 동영상 탐색(후보 경로 + 이름 변형) */
+    private static String findLocalVideoPath(String storyTitle) {
+        Path wd = Paths.get("").toAbsolutePath();   // ...\secret\back
+        Path parent = wd.getParent();               // ...\secret
+
+        List<Path> dirCandidates = new ArrayList<>();
+        // 현재 작업 폴더 기준
+        dirCandidates.add(wd.resolve(Paths.get("contents")));
+        dirCandidates.add(wd.resolve(Paths.get("contents", "video")));
+        dirCandidates.add(wd.resolve(Paths.get("contents", "videos")));
+        // 상대 경로도 시도
+        dirCandidates.add(Paths.get("contents"));
+        dirCandidates.add(Paths.get("contents", "video"));
+        dirCandidates.add(Paths.get("contents", "videos"));
+        // 상위 기준
+        if (parent != null) {
+            dirCandidates.add(parent.resolve(Paths.get("contents")));
+            dirCandidates.add(parent.resolve(Paths.get("contents", "video")));
+            dirCandidates.add(parent.resolve(Paths.get("contents", "videos")));
+        }
+
+        String base = storyTitle.trim();
+        Set<String> nameCandidates = new LinkedHashSet<>(List.of(
+                base,
+                base.replace(' ', '_'),
+                base.replace(' ', '-'),
+                base.toLowerCase(Locale.ROOT),
+                base.toLowerCase(Locale.ROOT).replace(' ', '_'),
+                base.toLowerCase(Locale.ROOT).replace(' ', '-')
+        ));
+        String[] exts = {".mp4", ".mov", ".m4v", ".mkv", ".webm"};
+
+        for (Path dir : dirCandidates) {
+            try {
+                if (!Files.isDirectory(dir)) continue;
+
+                // 정확 매칭 우선
+                for (String n : nameCandidates) {
+                    for (String ext : exts) {
+                        Path p = dir.resolve(n + ext);
+                        if (Files.isRegularFile(p)) {
+                            String found = p.toAbsolutePath().toString();
+                            log.info("[Video] 발견: {}", found);
+                            return found;
+                        }
+                    }
+                }
+                // 느슨 스캔
+                try (DirectoryStream<Path> ds = Files.newDirectoryStream(dir)) {
+                    for (Path p : ds) {
+                        if (!Files.isRegularFile(p)) continue;
+                        String fname = p.getFileName().toString();
+                        int dot = fname.lastIndexOf('.');
+                        if (dot < 0) continue;
+                        String noExt = fname.substring(0, dot);
+                        for (String n : nameCandidates) {
+                            if (noExt.equalsIgnoreCase(n)) {
+                                String found = p.toAbsolutePath().toString();
+                                log.info("[Video] 발견: {}", found);
+                                return found;
+                            }
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                log.warn("[Video] 탐색 예외: dir={}", dir, e);
+            }
+        }
+        log.warn("[Video] 제목 '{}'에 해당하는 로컬 동영상을 찾지 못했습니다.", storyTitle);
+        return null;
+    }
+
+    private String buildSourceKey(String normalizedInputUrl, String sourceLang) {
+        if (normalizedInputUrl == null || normalizedInputUrl.isBlank()) return null;
+        String lang = Optional.ofNullable(sourceLang).orElse("").trim().toLowerCase(Locale.ROOT);
+        String payload = normalizedInputUrl.trim().toLowerCase(Locale.ROOT) + "|" + lang;
+        return DigestUtils.md5DigestAsHex(payload.getBytes(StandardCharsets.UTF_8));
+    }
+
+    private Contents resolveOriginalContents(String sourceKey, String storyTitle, String sourceLang) {
+        if (sourceKey != null && !sourceKey.isBlank()) {
+            Optional<Contents> byKey = contentsRepo.findFirstBySourceKeyAndParentIdIsNull(sourceKey);
+            if (byKey.isPresent()) return byKey.get();
+        }
+
+        if (storyTitle != null && !storyTitle.isBlank()
+                && sourceLang != null && !sourceLang.isBlank()) {
+            Optional<Contents> byTitle = contentsRepo
+                    .findFirstByTitleIgnoreCaseAndLanguageAndParentIdIsNull(storyTitle, sourceLang);
+            if (byTitle.isPresent()) {
+                Contents original = byTitle.get();
+                if (sourceKey != null
+                        && (original.getSourceKey() == null || !original.getSourceKey().equals(sourceKey))) {
+                    original.setSourceKey(sourceKey);
+                    return contentsRepo.save(original);
+                }
+                return original;
+            }
+        }
+
+        return contentsRepo.save(Contents.builder()
+                .parentId(null)
+                .title(storyTitle)
+                .thumbUrl(null)
+                .language(sourceLang)
+                .sourceKey(sourceKey)
+                .createdAt(LocalDateTime.now())
+                .build());
     }
 
     @Transactional
     public TranslateResponse translateAndSave(TranslateRequest req) throws Exception {
-        // 0) 입력 URL 정규화 + 제목 산출
+        // 0) 입력 URL 정규화 + 제목 도출
         String inputUrl = normalizeInputFileUrl(req.getInputFileUrl());
         String storyTitle = resolveTitleFromUrl(inputUrl, req.getTitle());
+        String sourceKey = buildSourceKey(inputUrl, req.getSourceLang());
 
-        // 1) 원본 row(일단 duration은 null)
-        Contents original = contentsRepo.save(Contents.builder()
-                .parentId(null)
-                .title(storyTitle)
-                .thumbUrl(null) // 로컬 탐색 후 채움
-                .language(req.getSourceLang())
-                .createdAt(LocalDateTime.now())
-                .build());
+        // 1) 원본 row 확보(초기 duration=null)
+        Contents original = resolveOriginalContents(sourceKey, storyTitle, req.getSourceLang());
 
-        // 2) Perso 프로젝트 생성(필수 duration은 PersoClient에서 대체값 전송)
+        // 2) Perso 프로젝트 생성(정확한 duration은 PersoClient에서 유효성 포함 전송)
         String uniqueTitleForPerso = storyTitle + "-" + System.currentTimeMillis();
         String inputName = FileStorage.sanitize(uniqueTitleForPerso) + ".mp4";
         Map<String, Object> project = perso.createProject(
@@ -248,7 +355,7 @@ public class TranslationService {
                 req.getDurationSec(), req.getNumberOfSpeakers());
         String projectId = getStr(project, "project_id");
 
-        // 3) INITIAL_EXPORT 생성 → 완료 대기
+        // 3) INITIAL_EXPORT 생성 후 완료 대기
         Map<String, Object> export = perso.createExport(
                 projectId, req.getTargetLang(), "INITIAL_EXPORT",
                 req.isLipsync(), req.isWatermark(), "");
@@ -285,11 +392,11 @@ public class TranslationService {
         if (outUrl == null)
             throw new IllegalStateException("No output video url from Perso.");
 
-        // 5) 실제 duration 재조회 (Export 완료 후 Perso가 채웠을 수 있음)
+        // 5) 실제 duration 산출(Export 완료 후 Perso가 채움)
         Map<String, Object> projectDetail = perso.getProject(projectId);
         Integer realDuration = getInt(projectDetail, "input_file_video_duration_sec");
 
-        // 5-1) 그래도 null/1이면 스크립트의 max(end_ms)로 보정
+        // 5-1) 여전히 null/1이면 스크립트의 max(end_ms)로 보정
         if (realDuration == null || realDuration <= 1) {
             List<Map<String, Object>> scripts =
                     (List<Map<String, Object>>) projectDetail.getOrDefault("scripts", List.of());
@@ -303,27 +410,40 @@ public class TranslationService {
             }
         }
 
-        // 5-2) 여전히 없으면 요청값이나 0 적용
+        // 5-2) 그래도 없으면 요청값 사용(없으면 0)
         if (realDuration == null || realDuration <= 1) {
             realDuration = (req.getDurationSec() != null) ? req.getDurationSec() : 0;
         }
 
-        // 6) 비디오 저장
+        // 6) 번역 비디오 저장(다운로드)
         String videoName = storyTitle + "_" + req.getTargetLang() + ".mp4";
         String savedVideoPath = storage.downloadToRoot(videoName, outUrl);
 
-        // 6-1) ✅ 로컬 썸네일 탐색 (루트/백 폴더 모두 시도)
+        // 6-1) 로컬 썸네일/동영상 탐색 (루트/부모 폴더 모두 시도)
         String localThumbPath = findLocalThumbPath(storyTitle);
+        String localVideoPath = findLocalVideoPath(storyTitle);
 
-        // 7) DB 업데이트
-        // 원본: duration/썸네일 반영
-        original.setDurationSec(realDuration);
-        if (localThumbPath != null) original.setThumbUrl(localThumbPath);
-        contentsRepo.save(original);
+        // 7) DB 업데이트(원본은 "한 번만" 세팅될 값만 채움)
+        boolean dirty = false;
+        // duration 은 원본이 비어있을 때만 세팅 (이미 값 있으면 보존)
+        if (original.getDurationSec() == null || original.getDurationSec() <= 1) {
+            original.setDurationSec(realDuration);
+            dirty = true;
+        }
+        if (localThumbPath != null && (original.getThumbUrl() == null || original.getThumbUrl().isBlank())) {
+            original.setThumbUrl(localThumbPath);
+            dirty = true;
+        }
+        if (localVideoPath != null && (original.getContentsPath() == null || original.getContentsPath().isBlank())) {
+            original.setContentsPath(localVideoPath);
+            dirty = true;
+        }
+        // sourceKey 는 resolveOriginalContents 에서 이미 보정함
+        if (dirty) contentsRepo.save(original);
 
-        // 번역본: 로컬 썸네일 경로(없으면 원본과 동일), 비디오 경로, 프로젝트/익스포트ID, duration
+        // 8) 번역본 저장(부모-자식 연결)
         Contents translated = contentsRepo.save(Contents.builder()
-                .parentId(original.getContentsId())
+                .parentId(original.getContentsId()) // 같은 동화의 번역본 관계
                 .title(storyTitle)
                 .thumbUrl(localThumbPath != null ? localThumbPath : original.getThumbUrl())
                 .language(req.getTargetLang())
@@ -331,11 +451,12 @@ public class TranslationService {
                 .exportId(exportId)
                 .durationSec(realDuration)
                 .contentsPath(savedVideoPath)
+                .sourceKey(sourceKey)
                 .createdAt(LocalDateTime.now())
                 .completedAt(LocalDateTime.now())
                 .build());
 
-        // 8) 스크립트 저장 (줄×언어=1행)
+        // 9) 스크립트 저장 (원문/번역문 1:1)
         List<Map<String, Object>> scripts =
                 (List<Map<String, Object>>) projectDetail.getOrDefault("scripts", List.of());
 
@@ -374,8 +495,9 @@ public class TranslationService {
         }
         scriptRepo.saveAll(rows);
 
-        log.info("💾 Saved video: {}", savedVideoPath);
-        if (localThumbPath != null) log.info("🖼  Saved thumbnail: {}", localThumbPath);
+        log.info("✅ Saved video: {}", savedVideoPath);
+        if (localThumbPath != null) log.info("🖼️  Saved thumbnail: {}", localThumbPath);
+        if (localVideoPath != null) log.info("🎬  Local original video: {}", localVideoPath);
 
         return new TranslateResponse(
                 translated.getContentsId(),
