@@ -79,6 +79,7 @@ public class TutorService {
         Long scriptId,
         String lang
 ) {
+        File tempFile = null; // finally에서 접근 가능하도록 try 밖에서 선언
     try {
         // 1️⃣ scriptId로 문장 텍스트 조회
         Script script = scriptRepository.findById(scriptId.intValue())
@@ -86,7 +87,7 @@ public class TutorService {
         String targetSentence = script.getText();
 
         // 2️⃣ 업로드된 파일을 임시로 로컬에 저장
-        File tempFile = File.createTempFile("record_", ".webm");
+        tempFile = File.createTempFile("record_", ".webm");
         audioFile.transferTo(tempFile);
 
         // 3️⃣ Azure 발음 평가 실행 (JSON 결과 받기)
@@ -113,11 +114,35 @@ public class TutorService {
                 generated.getFeedbackText()
         );
 
-        // 6️⃣ 프론트 응답 리턴
-        return FeedbackResponseDto.fromEntity(savedFeedback);
+        // 6️⃣ 프론트 응답 리턴 (✅ scriptText 포함되도록 수정)
+        return FeedbackResponseDto.builder()
+                .feedbackId(savedFeedback.getFeedbackId())
+                .userId(userId)
+                .contentsId(contentsId)
+                .scriptId(scriptId)
+                .scriptText(targetSentence)  
+                .lang(lang)
+                .finalScore(generated.getFinalScore())
+                .accuracy(generated.getAccuracy())
+                .fluency(generated.getFluency())
+                .completeness(generated.getCompleteness())
+                .medal(generated.getMedal())
+                .feedbackText(generated.getFeedbackText())
+                .feedbackDate(savedFeedback.getFeedbackDate())
+                .build();
 
     } catch (Exception e) {
         throw new RuntimeException("발음 분석 중 오류: " + e.getMessage());
+    } finally{
+        // 분석이 끝난 후 임시 파일 삭제 시도 (예외 발생 여부 상관없이 실행)
+        if (tempFile != null && tempFile.exists()){
+                boolean deleted = tempFile.delete(); 
+                if (deleted){
+                        System.out.println("[TempFileCleaner] 즉시 삭제됨: " + tempFile.getName());
+                } else {
+                         System.out.println("[TempFileCleaner] 삭제 실패(스케줄러가 처리 예정): " + tempFile.getName());
+                }
+        }
     }
 }
 
@@ -131,12 +156,13 @@ public class TutorService {
     Script script = scriptRepository.findById(scriptId.intValue())
             .orElseThrow(() -> new RuntimeException("스크립트 정보를 찾을 수 없습니다."));
 
+    // ✅ FeedbackResponseDto에 scriptText 포함
     return FeedbackResponseDto.builder()
             .feedbackId(latest.getFeedbackId())
             .userId(latest.getUserId())
             .contentsId(latest.getContentsId())
             .scriptId(scriptId)
-            .scriptText(script.getText())
+            .scriptText(script.getText()) 
             .lang(latest.getLang())
             .finalScore(latest.getFinalScore())
             .accuracy(latest.getAccuracy())
@@ -146,7 +172,5 @@ public class TutorService {
             .feedbackText(latest.getFeedbackText())
             .feedbackDate(latest.getFeedbackDate())
             .build();
-
-
     }
 }
