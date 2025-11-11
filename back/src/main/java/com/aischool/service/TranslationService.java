@@ -34,6 +34,7 @@ public class TranslationService {
     private final FileStorage storage;
     private final ContentsRepository contentsRepo;
     private final ScriptRepository scriptRepo;
+    private final ThumbnailUrlService thumbnailUrlService;
 
     /* ---------- 공용 유틸 ---------- */
     private static String getStr(Map<String, Object> m, String k) {
@@ -62,6 +63,7 @@ public class TranslationService {
         }
         return null;
     }
+
 
     /** Perso 응답에서 썸네일 URL 선택 (로컬 썸네일 탐색과 별개) */
     private static String pickThumbnailUrl(Map<String, Object> data) {
@@ -421,6 +423,7 @@ public class TranslationService {
 
         // 6-1) 로컬 썸네일/동영상 탐색 (루트/부모 폴더 모두 시도)
         String localThumbPath = findLocalThumbPath(storyTitle);
+        String publicThumbUrl = thumbnailUrlService.toPublicUrl(localThumbPath);
         String localVideoPath = findLocalVideoPath(storyTitle);
 
         // 7) DB 업데이트(원본은 "한 번만" 세팅될 값만 채움)
@@ -430,8 +433,8 @@ public class TranslationService {
             original.setDurationSec(realDuration);
             dirty = true;
         }
-        if (localThumbPath != null && (original.getThumbUrl() == null || original.getThumbUrl().isBlank())) {
-            original.setThumbUrl(localThumbPath);
+        if (publicThumbUrl != null && (original.getThumbUrl() == null || original.getThumbUrl().isBlank())) {
+            original.setThumbUrl(publicThumbUrl);
             dirty = true;
         }
         if (localVideoPath != null && (original.getContentsPath() == null || original.getContentsPath().isBlank())) {
@@ -445,7 +448,7 @@ public class TranslationService {
         Contents translated = contentsRepo.save(Contents.builder()
                 .parentId(original.getContentsId()) // 같은 동화의 번역본 관계
                 .title(storyTitle)
-                .thumbUrl(localThumbPath != null ? localThumbPath : original.getThumbUrl())
+                .thumbUrl(publicThumbUrl != null ? publicThumbUrl : original.getThumbUrl())
                 .language(req.getTargetLang())
                 .projectId(projectId)
                 .exportId(exportId)
