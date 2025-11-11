@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -24,4 +25,10 @@ public interface ContentsRepository extends JpaRepository<Contents, Integer> {
     Optional<Contents> findFirstBySourceKeyAndParentIdIsNull(String sourceKey);
 
     Optional<Contents> findFirstByTitleIgnoreCaseAndLanguageAndParentIdIsNull(String title, String language);
+
+    List<Contents> findByParentIdIn(Collection<Integer> parentIds);
+
+    List<Contents> findByParentId(Integer parentId);
+
+    List<Contents> findByContentsIdIn(Collection<Integer> ids);
 }
