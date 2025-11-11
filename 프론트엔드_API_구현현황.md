@@ -1,3 +1,11 @@
+Feat: 프론트엔드 영상 재생페이지 기능 및 디자인 수정 & 에러 시스템 구현
+- 피드백 히스토리 영속화 (localStorage persist)
+- 번역 요청 UI 구현 (TranslationModal)
+- Grouped-search API 활용
+- 자막 싱크 기능
+- 전역 에러 토스트 시스템
+- scriptId 파라미터 전달 수정
+
 
 ### ✅ 1. 피드백 히스토리 영속화
 ```javascript
