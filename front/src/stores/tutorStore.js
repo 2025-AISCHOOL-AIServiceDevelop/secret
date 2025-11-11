@@ -1,14 +1,17 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 import { tutorAPI } from '../services/api';
 
-const useTutorStore = create((set, get) => ({
-  // State
-  currentFeedback: null,
-  feedbackHistory: [],
-  isAnalyzing: false,
-  isCreatingFeedback: false,
-  error: null,
-  recordingState: 'idle', // 'idle', 'recording', 'stopped'
+const useTutorStore = create(
+  persist(
+    (set, get) => ({
+      // State
+      currentFeedback: null,
+      feedbackHistory: [],
+      isAnalyzing: false,
+      isCreatingFeedback: false,
+      error: null,
+      recordingState: 'idle', // 'idle', 'recording', 'stopped'
 
   // Actions
   // Create feedback from text input
@@ -37,11 +40,11 @@ const useTutorStore = create((set, get) => ({
   },
 
   // Analyze pronunciation from audio file
-  analyzePronunciation: async (audioFile, userId, contentsId, lang) => {
+  analyzePronunciation: async (audioFile, userId, contentsId, scriptId, lang) => {
     set({ isAnalyzing: true, error: null });
 
     try {
-      const response = await tutorAPI.analyzePronunciation(audioFile, userId, contentsId, lang);
+      const response = await tutorAPI.analyzePronunciation(audioFile, userId, contentsId, scriptId, lang);
       const feedback = response.data;
 
       set((state) => ({
@@ -122,6 +125,15 @@ const useTutorStore = create((set, get) => ({
     const { feedbackHistory } = get();
     return feedbackHistory.length > 0 ? feedbackHistory[0] : null;
   },
-}));
+    }),
+    {
+      name: 'tutor-storage', // localStorage key
+      partialize: (state) => ({
+        feedbackHistory: state.feedbackHistory,
+        currentFeedback: state.currentFeedback,
+      }),
+    }
+  )
+);
 
 export default useTutorStore;

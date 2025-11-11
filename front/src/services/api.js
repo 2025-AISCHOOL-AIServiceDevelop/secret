@@ -18,6 +18,9 @@ export const authAPI = {
 export const contentsAPI = {
   // Search contents by title
   searchContents: (query) => api.get('/api/contents/search', { params: { query } }),
+  
+  // Search contents with grouped results (original + translations)
+  groupedSearch: (query) => api.get('/api/contents/grouped-search', { params: { query } }),
 };
 
 // Translation API

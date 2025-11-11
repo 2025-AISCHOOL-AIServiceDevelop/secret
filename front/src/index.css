@@ -96,3 +96,19 @@
 .card-scroll::-webkit-scrollbar-thumb:hover {
   background: linear-gradient(180deg, #8A99B2 0%, #3A4B63 100%);
 }
+
+/* Toast Animation */
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.animate-slideIn {
+  animation: slideIn 0.3s ease-out;
+}

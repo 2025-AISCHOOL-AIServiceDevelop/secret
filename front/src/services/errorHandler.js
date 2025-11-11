@@ -1,4 +1,5 @@
 // Error handling utilities for consistent error management
+import { useToastStore } from '../components/Toast';
 
 /**
  * API 에러를 사용자 친화적인 메시지로 변환
@@ -85,11 +86,14 @@ export const withErrorHandling = async (apiCall, options = {}) => {
       logError(error, context);
     }
 
-    // 사용자에게 에러 표시 (추후 토스트 알림 등으로 구현)
+    // 사용자에게 에러 표시
     if (showToast) {
       const message = getErrorMessage(error);
       console.warn(`[${context}] ${message}`);
-      // TODO: 토스트 알림 표시
+      
+      // 토스트 알림 표시
+      const toast = useToastStore.getState();
+      toast.error(message, 4000);
     }
 
     throw error;
