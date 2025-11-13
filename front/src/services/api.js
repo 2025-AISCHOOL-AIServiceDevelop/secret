@@ -33,7 +33,10 @@ export const translationAPI = {
   translate: (translateRequest) => api.post('/api/translate', translateRequest),
 
   // Get scripts for content
-  getScripts: (contentsId) => api.get(`/api/translate/${contentsId}/scripts`),
+  getScripts: (contentsId, lang) => {
+    const params = lang ? { lang } : {};
+    return api.get(`/api/translate/${contentsId}/scripts`, { params });
+  },
 };
 
 // Tutor API

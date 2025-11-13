@@ -39,7 +39,7 @@ export const Header = memo(() => {
         
         {/* 중앙 로고 */}
         <Link to="/"  className="flex justify-center items-center">
-          <AppTitle><img src = "/rogo.png" alt ="두근두근지구말" className="h-40 object-contain mx-auto pointer-events-none"/> </AppTitle>
+          <AppTitle><img src = "/rogo2.png" alt ="두근두근지구말" className="h-40 object-contain mx-auto pointer-events-none"/> </AppTitle>
           
         </Link>
         {/* 오른쪽 버튼 고정 */}

@@ -11,7 +11,7 @@ export const Footer = memo(() => {
           {/* Logo and Description */}
           <div className="col-span-1 md:col-span-2">
             <div className="flex items-center gap-3 mb-4">
-              <img src="/rogo.png" alt="두근두근 지구말" className="h-12 w-auto" />
+              <img src="/logo.png" alt="두근두근 지구말" className="h-12 w-auto" />
             </div>
             <p className="text-gray-300 text-sm leading-relaxed">
               어린이를 위한 다국어 학습 플랫폼입니다.

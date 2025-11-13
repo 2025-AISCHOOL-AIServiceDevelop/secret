@@ -48,12 +48,12 @@ function Player() {
     { code: 'ru', name: '러시아어', flag: '🇷🇺' }
   ];
 
-  // Load content and scripts on mount
+  // Load content and scripts on mount and when language changes
   useEffect(() => {
     if (contentId) {
-      loadScripts(parseInt(contentId));
+      loadScripts(parseInt(contentId), selectedLanguage);
     }
-  }, [contentId, loadScripts]);
+  }, [contentId, selectedLanguage, loadScripts]);
 
   // Set initial selected script
   useEffect(() => {
@@ -298,7 +298,7 @@ function Player() {
           </div>
 
           {/* 스크립트 목록 */}
-          <div className="bg-white rounded-[14px] border-2 p-4" style={{ borderColor: '#c8d3f0', maxHeight: '550px', overflowY: 'auto' }}>
+          <div className="bg-white rounded-[14px] border-2 p-4" style={{ borderColor: '#c8d3f0', maxHeight: '530px', overflowY: 'auto' }}>
             <div className="text-sm text-gray-600 font-bold mb-3 flex items-center gap-2">
               <FileText className="w-4 h-4" />
               전체 스크립트

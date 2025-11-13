@@ -31,11 +31,11 @@ const useTranslationStore = create((set, get) => ({
   },
 
   // Load scripts for a content
-  loadScripts: async (contentsId) => {
+  loadScripts: async (contentsId, lang) => {
     set({ isLoadingScripts: true, error: null });
 
     try {
-      const response = await translationAPI.getScripts(contentsId);
+      const response = await translationAPI.getScripts(contentsId, lang);
       set({
         scripts: response.data,
         isLoadingScripts: false,
