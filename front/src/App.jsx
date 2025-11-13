@@ -19,7 +19,14 @@ function App() {
       <div className="min-h-dvh grid grid-rows-[auto_1fr_auto]">
         <Header />
 
-        <main className="w-full max-w-screen-2xl mx-auto px-4 py-2">
+        <main className="
+          w-full                     /* 헤더처럼 전체폭 */
+          my-[0.05rem]                /* 상하 여백 */
+          rounded-[23px] border-[3px] border-[#5E5A6A]
+          bg-[#E0EEFF]
+          shadow-[0_2px_4px_rgba(0,0,0,0.08)]
+          p-10
+          ">
           <Outlet />
         </main>
 
