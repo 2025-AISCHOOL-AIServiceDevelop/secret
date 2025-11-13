@@ -8,6 +8,9 @@ function Home() {
   const [searchInput, setSearchInput] = useState('');
   const { contents, isLoading, error, hasSearched, searchContents, clearError, loadContents } = useContentsStore();
 
+  const koreanContents = contents.filter(content => content.language === 'ko');
+
+
   // 페이지 진입할 때 콘텐츠 로드
   useEffect(() => {
     loadContents();
@@ -83,7 +86,7 @@ function Home() {
             ))
           ) : contents.length > 0 ? (
             // Show contents
-            contents.map((content) => (
+            koreanContents.map((content) => (
               <article
                 className="rounded-[18px] overflow-hidden border-2 border-[#d7c6c6]"
                 key={content.contentsId}
@@ -103,8 +106,7 @@ function Home() {
                   <div>
                     <h3 className="font-extrabold mb-1">{content.title}</h3>
                     <div className="text-muted text-xs" aria-label="콘텐츠 정보">
-                      {content.language && `언어: ${content.language.toUpperCase()}`}
-                      {content.durationSec && ` • ${Math.floor(content.durationSec / 60)}분`}
+                      {content.durationSec && `${Math.floor(content.durationSec / 60)}분`}
                     </div>
                   </div>
                   <PlayButton to={`/player?contentId=${content.contentsId}`} aria-label={`${content.title} 재생`}>재생</PlayButton>
