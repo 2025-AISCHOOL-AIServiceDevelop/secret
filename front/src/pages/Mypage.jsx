@@ -2,6 +2,10 @@ import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore, useTutorStore } from '../stores';
 import saturn from '../assets/saturn.png';
+import userIcon from "../assets/user-icon.png";
+import level1 from "../assets/level1.png";
+import level2 from "../assets/level2.png";
+import level3 from "../assets/level3.png";
 
 function Mypage() {
   const navigate = useNavigate();
@@ -50,10 +54,9 @@ function Mypage() {
   
 
   return (
-    <div className="container mx-auto max-w-5xl">
+    <div className="container mx-auto max-w-6xl">
       
       <div className="mb-8">
-        <div className="relative mb-8 pt-7 text-center"></div>
         <div className="relative mb-8 pt-7 text-center">
           <img src={saturn} alt="토성 아이콘" aria-hidden="true"
             className="absolute left-1/2 -translate-x-1/2 -top-[0.5px] h-auto max-w-[34px] drop-shadow"/>
@@ -61,61 +64,103 @@ function Mypage() {
         </div>
         
         {/* 사용자 정보 */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-5 ">
         {/* 1번: 프로필 카드 */}
-        <div className="bg-white/95 rounded-[20px] shadow-md border border-[#d5d9eb] px-8 py-6 flex items-center gap-6">
-          {/* 아바타 영역 */}
+        <div className="bg-white/60 rounded-[20px] shadow-md border border-transparent px-8 py-12 flex items-center gap-6
+          hover:shadow-[0_8px_16px_0_rgba(0,0,0,0.16)] transition-shadow duration-300">
           <div className="flex-shrink-0">
-            <div className="w-24 h-24 rounded-full bg-[#FFEEC2] flex items-center justify-center shadow-inner border border-[#f2cfa0]">
-              <span className="text-3xl">🌞</span>
+            <div className="w-35 h-35 rounded-full bg-white flex items-center justify-center shadow-[0_4px_8px_rgba(0,0,0,0.12)] border border-transparent">
+              <img src={userIcon} alt="프로필 아이콘" className="w-28 h-28 object-cover"/>
             </div>
           </div>
 
-          
-          <div>
-            <h2 className="text-xl font-semibold text-gray-700">{user.name || user.userName || '사용자'}</h2>
-            <p className="text-gray-600">{user.email}</p>
+            {/* 텍스트 영역 */}
+          <div className="flex-1">
+            {/* <p className="text-sm text-[#9b93b2] mb-1">오늘의 지구 수호자</p> */}
+            <h2 className="text-xl font-[DungeonFighterOnlineBeatBeat] text-[#333333] -mt-1">
+              {user.name || user.userName || '사용자'} 님
+            </h2>
+            {/* <p className="text-sm text-gray-600 mt-1">{user.email}</p> */}
+            <p className="mt-3 font-[DungeonFighterOnlineBeatBeat] text-xl text-[#8C85A5] mt-8">
+              “배움으로 지구가 더 빛나고 있어요!”
+            </p>
           </div>
-          <button
-            onClick={handleLogout}
-            className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
-          >
-            로그아웃
-          </button>
         </div>
-      </div>
-      </div>
+          
+         {/* 2번: 학습 요약 / 스티커 카드 */}
+        <div className="bg-white/60 rounded-[20px] shadow-md border border-transparent px-8 py-4
+         hover:shadow-[0_8px_16px_0_rgba(0,0,0,0.16)] transition-shadow duration-300">
+          <h3 className="text-xl font-[DungeonFighterOnlineBeatBeat] text-[#8C85A5] mt-3">
+            나의 학습 레벨 스티커
+          </h3>
 
-      {/* Statistics Section */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div className="bg-blue-50 p-6 rounded-lg border border-blue-200">
-          <h3 className="text-lg font-semibold text-blue-800 mb-2">총 연습 횟수</h3>
-          <p className="text-3xl font-bold text-blue-600">{userFeedbackHistory.length}</p>
-        </div>
-        <div className="bg-green-50 p-6 rounded-lg border border-green-200">
-          <h3 className="text-lg font-semibold text-green-800 mb-2">평균 점수</h3>
-          <p className="text-3xl font-bold text-green-600">
-            {userFeedbackHistory.length > 0
-              ? Math.round(userFeedbackHistory.reduce((sum, fb) => sum + (fb.score || 0), 0) / userFeedbackHistory.length)
-              : 0}
-          </p>
-        </div>
-        <div className="bg-purple-50 p-6 rounded-lg border border-purple-200">
-          <h3 className="text-lg font-semibold text-purple-800 mb-2">학습 언어</h3>
-          <p className="text-3xl font-bold text-purple-600">
-            {new Set(userFeedbackHistory.map(fb => fb.lang).filter(Boolean)).size}
-          </p>
+          {/* Statistics Section (3개 박스) */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 -mt-6">
+
+            <div className="p-4 rounded-lg border border-transparent text-center">
+            <img src={level1} alt="레벨1아이콘" className="w-36 h-36 object-contain -mb-5" />
+              <p className="text-2xl font-[DungeonFighterOnlineBeatBeat] text-[#8C85A5]">x {totalPractice}</p>
+            </div>
+
+            <div className="p-4 rounded-lg border border-transparent text-center">
+              <img src={level2} alt="레벨2아이콘" className="w-36 h-36 object-contain -mb-5" />
+              <p className="text-2xl font-[DungeonFighterOnlineBeatBeat] text-[#8C85A5]">x {avgScore}</p>
+            </div>
+
+            <div className="p-4 rounded-lg border border-transparent text-center">
+              <img src={level3} alt="레벨3아이콘" className="w-36 h-36 object-contain -mb-5" />
+              <p className="text-2xl font-[DungeonFighterOnlineBeatBeat] text-[#8C85A5]">x {languageCount}</p>
+            </div>
+          </div>
         </div>
       </div>
+    </div>
+
+      
+
+      
 
       {/* Feedback History Section */}
-      <div className="bg-white rounded-lg shadow-sm border">
+      <div className="bg-white rounded-[20px] shadow-md border-transparent
+       hover:shadow-[0_-6px_16px_0_rgba(0,0,0,0.16)] transition-shadow duration-300">
         <div className="p-6 border-b border-gray-200">
           <h2 className="text-xl font-semibold text-gray-800">최근 학습한 동화</h2>
-          <p className="text-gray-600 mt-1">최근 학습한 동화</p>
+          <p className="text-gray-600 mt-1">오늘도 멋지게 우주 여행 중이에요 🚀</p>
         </div>
 
-        <div className="p-6">
+         {/* 간단 통계 3개 */}
+          <div className="grid grid-cols-3 gap-4 mb-4">
+            <div className="text-center">
+              <div className="w-14 h-14 mx-auto rounded-full bg-[#E3F2FF] flex items-center justify-center mb-2">
+                <span className="text-2xl">📚</span>
+              </div>
+              <p className="text-xs text-[#7b88a0]">총 연습</p>
+              <p className="text-lg font-bold text-[#3c6fd8]">
+                {totalPractice}
+              </p>
+            </div>
+
+            <div className="text-center">
+              <div className="w-14 h-14 mx-auto rounded-full bg-[#E9F7EF] flex items-center justify-center mb-2">
+                <span className="text-2xl">⭐</span>
+              </div>
+              <p className="text-xs text-[#7b88a0]">평균 점수</p>
+              <p className="text-lg font-bold text-[#2e8b57]">{avgScore}</p>
+            </div>
+
+            <div className="text-center">
+              <div className="w-14 h-14 mx-auto rounded-full bg-[#F3E9FF] flex items-center justify-center mb-2">
+                <span className="text-2xl">🌐</span>
+              </div>
+              <p className="text-xs text-[#7b88a0]">학습 언어</p>
+              <p className="text-lg font-bold text-[#7b3fb9]">
+                {languageCount}
+              </p>
+            </div>
+          </div>
+
+
+        <div className="p-8">
           {userFeedbackHistory.length === 0 ? (
             <div className="text-center py-12">
               <div className="text-gray-400 mb-4">
