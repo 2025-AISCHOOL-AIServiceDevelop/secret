@@ -91,7 +91,7 @@ function Home() {
       )}
 
       {/* 콘텐츠 + 오른쪽 영역 */}
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-4">
         
         {/* === 동화 목록 === */}
         <section className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -115,12 +115,17 @@ function Home() {
                 <Link to={`/player?contentId=${content.contentsId}`}>
 
                 <div
-                  className="relative h-[300px] bg-no-repeat bg-center bg-cover cursor-pointer hover:opacity-100 transition"
+                  className="
+                    relative h-[300px] bg-no-repeat bg-center bg-cover 
+                    cursor-pointer transition-all duration-300
+                    hover:shadow-2xl hover:scale-[1.02] hover:brightness-105
+                    rounded-xl
+                  "
                   style={{
                     backgroundColor: '#f4efe7',
                     backgroundImage: content.thumbUrl
                       ? `url(${content.thumbUrl})`
-                      : "url('/vite.svg')"
+                      : "url('/vite.svg')",
                   }}
                 >
 
@@ -151,7 +156,9 @@ function Home() {
                 {/* 제목 + 시간 */}
                 <div className="flex items-center justify-between gap-3 px-3 py-3 bg-[#f1f6ff]">
                   <div>
-                    <h3 className="font-extrabold mb-1">{content.title}</h3>                    
+                    <h3 className="font-black text-lg tracking-tight drop-shadow-sm mb-1">
+                      {content.title}
+                    </h3>
                   </div>
                 </div>
 
@@ -169,13 +176,15 @@ function Home() {
 
           {/* 추천 박스 */}
           <div
-            className="sticky top-[90px] grid gap-2 rounded-[18px] p-4 border-2"
-            style={{ background: '#e6eefc', borderColor: '#bfcde8' }}
+            className="sticky top-[90px] grid gap-3 rounded-[22px] p-6 border-2"
+            style={{ background: '#e6eefc', borderColor: '#a9b9d3' }}
           >
-            <div className="font-extrabold text-[#5a6ea0]">나이별 추천동화</div>
+            <div className="font-black text-lg text-[#4a5b8c]">
+              🌍 나이별 추천동화 
+            </div>
 
             {contents.length > 0 && (
-              <div className="h-[160px] rounded-[14px] border-2 bg-white overflow-hidden" style={{ borderColor: '#c9d6f2' }}>
+              <div className="h-[190px] rounded-[18px] border-2 bg-white overflow-hidden" style={{ borderColor: '#c9d6f2' }}>
                 <div
                   className="w-full h-full bg-no-repeat bg-center bg-cover opacity-70"
                   style={{
@@ -191,17 +200,28 @@ function Home() {
               </div>
             )}
 
-            <div className="flex flex-wrap gap-2">
+              <div className="flex gap-2 flex-nowrap justify-between">
               {['2-4세', '4-5세', '7-9세', '10세이상'].map((age) => (
                 <button
                   key={age}
-                  className="px-3 py-1 rounded-full text-xs border-2 bg-white text-[#5a6ea0]"
+                  className="
+                    px-4 py-1 
+                    rounded-full 
+                    text-xs 
+                    border-2 
+                    bg-white 
+                    text-[#5a6ea0] 
+                    whitespace-nowrap
+                    min-w-[65px]      /* 버튼 최소 너비 */
+                    text-center       /* 가운데 정렬 */
+                  "
                   style={{ borderColor: '#c6ccee' }}
                 >
                   {age}
                 </button>
               ))}
             </div>
+
 
             <div className="flex gap-1.5 justify-center">
               <span className="inline-block w-2 h-2 rounded-full bg-[#9fb2e9]" />
@@ -211,7 +231,7 @@ function Home() {
           </div>
 
           {/* 마스코트 + 말풍선 */}
-          <div className="sticky top-[360px] mt-6 flex flex-col items-center">
+          <div className="sticky top-[500px] mt-10 flex flex-col items-center">
 
             <div className="relative bg-white rounded-2xl px-4 py-3 shadow-md text-sm text-gray-700 border border-[#d3dff7] w-[240px]">
               🌍 전래동화를 다양한 언어로 배워보세요!
@@ -221,7 +241,7 @@ function Home() {
             <img 
               src={mascotImg} 
               alt="Mascot" 
-              className="w-32 mt-3 drop-shadow-lg animate-bounce-slow"
+              className="w-52 mt-3 drop-shadow-lg animate-bounce-slow"
             />
 
           </div>
