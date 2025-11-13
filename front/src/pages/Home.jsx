@@ -1,6 +1,6 @@
-
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { Search, Loader2, AlertCircle, X } from 'lucide-react';
 import { PlayButton } from '../@design-system';
 import { useContentsStore } from '../stores';
 
@@ -49,11 +49,21 @@ function Home() {
           />
           <button
             type="submit"
-            className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-blue-500 text-white px-3 py-1 rounded-full text-xs hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-gradient-to-r from-blue-500 to-purple-500 text-white px-4 py-2 rounded-full text-sm font-bold hover:shadow-lg transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2"
             disabled={isLoading}
             aria-label={isLoading ? '검색 중' : '검색'}
           >
-            {isLoading ? '검색중...' : '검색'}
+            {isLoading ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                검색중...
+              </>
+            ) : (
+              <>
+                <Search className="w-4 h-4" />
+                검색
+              </>
+            )}
           </button>
         </form>
       </div>
@@ -61,9 +71,12 @@ function Home() {
       {/* Error message */}
       {error && (
         <div className="text-center mb-4">
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-            {error}
-            <button onClick={clearError} className="ml-2 underline">닫기</button>
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg mb-4 flex items-center justify-center gap-2">
+            <AlertCircle className="w-5 h-5" />
+            <span>{error}</span>
+            <button onClick={clearError} className="ml-2 hover:bg-red-200 p-1 rounded transition-colors">
+              <X className="w-4 h-4" />
+            </button>
           </div>
         </div>
       )}

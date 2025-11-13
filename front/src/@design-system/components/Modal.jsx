@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { Heart, LogIn, X as XIcon } from 'lucide-react';
 
 // Modal component
 export const Modal = ({ isOpen, onClose, children }) => {
@@ -37,8 +38,10 @@ export const LoginPromptModal = ({ isOpen, onClose, onConfirm }) => {
   return (
     <Modal isOpen={isOpen} onClose={onClose}>
       <div className="text-center">
-        {/* 귀여운 이모티콘 */}
-        <div className="text-6xl mb-4">🥺</div>
+        {/* 귀여운 아이콘 */}
+        <div className="mb-4">
+          <Heart className="w-16 h-16 mx-auto text-pink-400 fill-pink-200 animate-pulse" />
+        </div>
 
         {/* 메시지 */}
         <h3 className="text-xl font-bold text-[#394b69] mb-2">
@@ -46,21 +49,23 @@ export const LoginPromptModal = ({ isOpen, onClose, onConfirm }) => {
         </h3>
         <p className="text-[#6C798A] mb-6">
           더 많은 기능을 이용하시려면<br />
-          로그인이 필요해요 😊
+          로그인이 필요해요
         </p>
 
         {/* 버튼들 */}
         <div className="flex gap-3">
           <button
             onClick={onClose}
-            className="flex-1 px-4 py-2 rounded-full border-2 border-[#bfb3a1] bg-[#f8f4e9] text-[#394b69] font-bold hover:bg-[#f0e8d6] transition-colors duration-150"
+            className="flex-1 px-4 py-2 rounded-full border-2 border-[#bfb3a1] bg-[#f8f4e9] text-[#394b69] font-bold hover:bg-[#f0e8d6] transition-colors duration-150 flex items-center justify-center gap-2"
           >
+            <XIcon className="w-4 h-4" />
             취소
           </button>
           <button
             onClick={onConfirm}
-            className="flex-1 px-4 py-2 rounded-full border-2 border-[#a89a77] bg-[#B1D2FA] text-[#394b69] font-bold hover:bg-[#c9ddff] transition-colors duration-150"
+            className="flex-1 px-4 py-2 rounded-full border-2 border-[#a89a77] bg-[#B1D2FA] text-[#394b69] font-bold hover:bg-[#c9ddff] transition-colors duration-150 flex items-center justify-center gap-2"
           >
+            <LogIn className="w-4 h-4" />
             로그인하기
           </button>
         </div>

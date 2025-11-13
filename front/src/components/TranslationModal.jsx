@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Globe, CheckCircle, Clock, AlertCircle, Loader2 } from 'lucide-react';
 import { Modal } from '../@design-system';
 import { useTranslationStore } from '../stores';
 import { useToastStore } from './Toast';
@@ -78,7 +79,9 @@ function TranslationModal({ isOpen, onClose, content }) {
     <Modal isOpen={isOpen} onClose={handleClose}>
       <div className="text-center">
         {/* 헤더 */}
-        <div className="text-5xl mb-4">🌍</div>
+        <div className="mb-4">
+          <Globe className="w-16 h-16 mx-auto text-blue-500 animate-pulse" />
+        </div>
         <h3 className="text-2xl font-bold text-[#394b69] mb-2">
           다른 언어로 번역하기
         </h3>
@@ -89,7 +92,7 @@ function TranslationModal({ isOpen, onClose, content }) {
         {success ? (
           // 성공 메시지
           <div className="py-8">
-            <div className="text-6xl mb-4 animate-bounce">✅</div>
+            <CheckCircle className="w-20 h-20 mx-auto mb-4 text-green-500 animate-bounce" />
             <p className="text-xl font-bold text-green-600">
               번역 요청 완료!
             </p>
@@ -130,15 +133,17 @@ function TranslationModal({ isOpen, onClose, content }) {
 
             {/* 에러 메시지 */}
             {error && (
-              <div className="mb-4 p-3 bg-red-50 rounded-lg border border-red-200">
-                <p className="text-sm text-red-600 font-bold">⚠️ {error}</p>
+              <div className="mb-4 p-3 bg-red-50 rounded-lg border border-red-200 flex items-center gap-2">
+                <AlertCircle className="w-5 h-5 text-red-500" />
+                <p className="text-sm text-red-600 font-bold">{error}</p>
               </div>
             )}
 
             {/* 안내 메시지 */}
-            <div className="mb-6 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+            <div className="mb-6 p-3 bg-yellow-50 rounded-lg border border-yellow-200 flex items-center gap-2">
+              <Clock className="w-4 h-4 text-yellow-600" />
               <p className="text-xs text-yellow-800">
-                ⏱️ 번역 작업은 몇 분 정도 소요될 수 있습니다.
+                번역 작업은 몇 분 정도 소요될 수 있습니다.
               </p>
             </div>
 
@@ -154,15 +159,18 @@ function TranslationModal({ isOpen, onClose, content }) {
               <button
                 onClick={handleSubmit}
                 disabled={!selectedLanguage || isTranslating}
-                className="flex-1 px-4 py-3 rounded-full border-2 border-blue-600 bg-gradient-to-r from-blue-500 to-purple-500 text-white font-bold hover:from-blue-600 hover:to-purple-600 transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 px-4 py-3 rounded-full border-2 border-blue-600 bg-gradient-to-r from-blue-500 to-purple-500 text-white font-bold hover:from-blue-600 hover:to-purple-600 transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {isTranslating ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white"></div>
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
                     번역 중...
-                  </span>
+                  </>
                 ) : (
-                  '번역 요청'
+                  <>
+                    <Globe className="w-4 h-4" />
+                    번역 요청
+                  </>
                 )}
               </button>
             </div>

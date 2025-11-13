@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { create } from 'zustand';
+import { CheckCircle, XCircle, AlertTriangle, Info, X } from 'lucide-react';
 
 /**
  * Toast Store - 전역 토스트 메시지 관리
@@ -53,22 +54,22 @@ function ToastItem({ toast, onClose }) {
   const typeStyles = {
     success: {
       bg: 'bg-gradient-to-r from-green-500 to-emerald-500',
-      icon: '✅',
+      icon: <CheckCircle className="w-6 h-6" />,
       border: 'border-green-600'
     },
     error: {
       bg: 'bg-gradient-to-r from-red-500 to-pink-500',
-      icon: '❌',
+      icon: <XCircle className="w-6 h-6" />,
       border: 'border-red-600'
     },
     warning: {
       bg: 'bg-gradient-to-r from-yellow-500 to-orange-500',
-      icon: '⚠️',
+      icon: <AlertTriangle className="w-6 h-6" />,
       border: 'border-yellow-600'
     },
     info: {
       bg: 'bg-gradient-to-r from-blue-500 to-purple-500',
-      icon: 'ℹ️',
+      icon: <Info className="w-6 h-6" />,
       border: 'border-blue-600'
     }
   };
@@ -79,13 +80,13 @@ function ToastItem({ toast, onClose }) {
     <div
       className={`${style.bg} ${style.border} border-2 rounded-xl px-4 py-3 shadow-lg transform transition-all duration-300 animate-slideIn flex items-center gap-3 min-w-[300px] max-w-[500px]`}
     >
-      <div className="text-2xl flex-shrink-0">{style.icon}</div>
+      <div className="text-white flex-shrink-0">{style.icon}</div>
       <div className="flex-1 text-white font-bold text-sm">{toast.message}</div>
       <button
         onClick={() => onClose(toast.id)}
-        className="text-white hover:text-gray-200 transition-colors flex-shrink-0 text-lg"
+        className="text-white hover:text-gray-200 transition-colors flex-shrink-0"
       >
-        ✕
+        <X className="w-5 h-5" />
       </button>
     </div>
   );

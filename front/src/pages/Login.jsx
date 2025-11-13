@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../stores';
 import kakaoLogo from '../assets/kakao.png';
 import googleLogo from '../assets/google.png';
+import { API_BASE_URL } from '../services/api';
 
 function Login() {
   const navigate = useNavigate();
@@ -21,9 +22,8 @@ function Login() {
   }, [isAuthenticated, navigate]);
 
   const handleLogin = (provider) => {
-    // For now, redirect directly to backend OAuth endpoint
-    // In production, you might want to use the login method from auth store
-    window.location.href = `http://localhost:8082/oauth2/authorization/${provider}`;
+    // Redirect to backend OAuth endpoint
+    window.location.href = `${API_BASE_URL}/oauth2/authorization/${provider}`;
   };
 
   if (isLoading) {

@@ -1,11 +1,15 @@
 import axios from 'axios';
 
+// Backend API URL from environment variable
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8082';
+
 // Create axios instance with base configuration
 const api = axios.create({
-  baseURL: 'http://localhost:8082', // Backend URL
+  baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
-  },   withCredentials: true, // ✅ 반드시 있어야 함
+  },
+  withCredentials: true, // ✅ 반드시 있어야 함
 });
 
 // Auth API
@@ -103,4 +107,6 @@ export const tutorAPI = {
   },
 };
 
+// Export API_BASE_URL for components that need direct access
+export { API_BASE_URL };
 export default api;
