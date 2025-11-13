@@ -35,13 +35,33 @@ public class MediaController {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Contents not found"));
 
         String storedPath = contents.getContentsPath();
-        if (storedPath == null || storedPath.isBlank()) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Video file not prepared yet");
+        Path filePath = null;
+        
+        // 1) 현재 콘텐츠의 동영상 경로 확인
+        if (storedPath != null && !storedPath.isBlank()) {
+            filePath = Paths.get(storedPath);
         }
 
-        Path filePath = Paths.get(storedPath);
-        if (!Files.exists(filePath) || !Files.isRegularFile(filePath)) {
-            log.warn("Requested video file missing. id={}, path={}", contentsId, storedPath);
+        // 2) 파일이 없고 원본 콘텐츠(parentId=null)인 경우, 첫 번째 번역본의 비디오 사용
+        if ((filePath == null || !Files.exists(filePath)) && contents.getParentId() == null) {
+            log.info("Original content {} has no video, checking translations...", contentsId);
+            var translations = contentsRepo.findByParentId(contentsId);
+            for (Contents translation : translations) {
+                String transPath = translation.getContentsPath();
+                if (transPath != null && !transPath.isBlank()) {
+                    Path transFilePath = Paths.get(transPath);
+                    if (Files.exists(transFilePath) && Files.isRegularFile(transFilePath)) {
+                        log.info("Using video from translation: contentsId={}", translation.getContentsId());
+                        filePath = transFilePath;
+                        break;
+                    }
+                }
+            }
+        }
+
+        // 3) 최종 파일 존재 여부 확인
+        if (filePath == null || !Files.exists(filePath) || !Files.isRegularFile(filePath)) {
+            log.warn("Video file not found for contentsId={}, path={}", contentsId, storedPath);
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Video file not found");
         }
 

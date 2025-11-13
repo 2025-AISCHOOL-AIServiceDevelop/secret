@@ -46,15 +46,41 @@ public class TranslationController {
             @PathVariable Integer contentsId,
             @RequestParam(value = "lang", required = false) String language
     ) {
+        Contents contents = contentsRepo.findById(contentsId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Contents not found"));
+
+        // 요청 언어 정규화 (없으면 콘텐츠의 언어 사용)
         String normalizedLang = normalizeLanguage(language)
-                .or(() -> contentsRepo.findById(contentsId)
-                        .map(Contents::getLanguage)
-                        .flatMap(this::normalizeLanguage))
+                .or(() -> normalizeLanguage(contents.getLanguage()))
                 .orElse(null);
 
-        List<Script> scripts = (normalizedLang == null)
-                ? scriptRepo.findByContentsIdOrderByOrderNoAsc(contentsId)
-                : scriptRepo.findByContentsIdAndLanguageOrderByOrderNoAsc(contentsId, normalizedLang);
+        List<Script> scripts;
+        
+        // 1) 먼저 현재 contentsId로 스크립트 조회
+        if (normalizedLang == null) {
+            scripts = scriptRepo.findByContentsIdOrderByOrderNoAsc(contentsId);
+        } else {
+            scripts = scriptRepo.findByContentsIdAndLanguageOrderByOrderNoAsc(contentsId, normalizedLang);
+        }
+
+        // 2) 스크립트가 없고, 이 콘텐츠가 원본(parentId=null)이면 첫 번째 번역본에서 찾기
+        if (scripts.isEmpty() && contents.getParentId() == null) {
+            List<Contents> translations = contentsRepo.findByParentId(contentsId);
+            if (!translations.isEmpty()) {
+                Contents firstTranslation = translations.get(0);
+                if (normalizedLang == null) {
+                    scripts = scriptRepo.findByContentsIdOrderByOrderNoAsc(firstTranslation.getContentsId());
+                } else {
+                    scripts = scriptRepo.findByContentsIdAndLanguageOrderByOrderNoAsc(
+                            firstTranslation.getContentsId(), normalizedLang);
+                }
+            }
+        }
+
+        // 3) 여전히 없으면 언어 필터 없이 재시도
+        if (scripts.isEmpty() && normalizedLang != null) {
+            scripts = scriptRepo.findByContentsIdOrderByOrderNoAsc(contentsId);
+        }
 
         return ResponseEntity.ok(scripts);
     }

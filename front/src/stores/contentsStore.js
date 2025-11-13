@@ -1,7 +1,6 @@
 import { create } from 'zustand';
 import { contentsAPI } from '../services/api';
-import { withErrorHandling } from '../services/errorHandler';
-import { buildMockContents } from '../services/mockData';
+import { withErrorHandling, getErrorMessage } from '../services/errorHandler';
 
 const useContentsStore = create((set, get) => ({
   // State
@@ -25,13 +24,24 @@ const useContentsStore = create((set, get) => ({
       );
 
       const data = Array.isArray(response?.data) ? response.data : [];
-      const contents = data.length > 0 ? data : buildMockContents('');
-      set({ contents, isLoading: false });
-      return response.data;
+      set({
+        contents: data,
+        groupedContents: [],
+        searchQuery: '',
+        hasSearched: false,
+        isLoading: false,
+      });
+      return data;
     } catch (error) {
-      const contents = buildMockContents('');
-      set({ contents, error: null, isLoading: false });
-      throw error;
+      const message = getErrorMessage(error);
+      set({
+        contents: [],
+        groupedContents: [],
+        searchQuery: '',
+        error: message,
+        isLoading: false,
+      });
+      return [];
     }
   },
 
@@ -57,20 +67,39 @@ const useContentsStore = create((set, get) => ({
       );
 
       const data = Array.isArray(response?.data) ? response.data : [];
-      
+
       if (useGrouped) {
         // Grouped search: 그룹별로 데이터 구조화
-        const groupedContents = data.length > 0 ? data : [];
+        const groupedContents = data;
         // Flatten for backward compatibility
-        const contents = groupedContents.flatMap(group => [group.original, ...group.translations]);
-        set({ contents, groupedContents, isLoading: false, hasSearched: true });
+        const contents = groupedContents.flatMap(group =>
+          [group?.original, ...(group?.translations || [])].filter(Boolean)
+        );
+        set({
+          contents,
+          groupedContents,
+          isLoading: false,
+          hasSearched: true,
+          error: null,
+        });
       } else {
-        const contents = data.length > 0 ? data : buildMockContents(query);
-        set({ contents, isLoading: false, hasSearched: true });
+        set({
+          contents: data,
+          groupedContents: [],
+          isLoading: false,
+          hasSearched: true,
+          error: null,
+        });
       }
     } catch (error) {
-      const contents = buildMockContents(query);
-      set({ contents, error: null, isLoading: false, hasSearched: true });
+      const message = getErrorMessage(error);
+      set({
+        contents: [],
+        groupedContents: [],
+        error: message,
+        isLoading: false,
+        hasSearched: true,
+      });
     }
   },
 

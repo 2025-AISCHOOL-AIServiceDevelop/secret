@@ -36,5 +36,7 @@ build/
 # Environment variables
 .env
 
+# FFmpeg tools
+tools/
 
 contents/

@@ -8,7 +8,11 @@ import {
   Frown,
   Loader2,
   FileText,
-  MessageCircle
+  MessageCircle,
+  Star,
+  ThumbsUp,
+  Smile,
+  Sparkles
 } from 'lucide-react'
 
 const AZURE_LANGUAGE_MAP = {
@@ -34,7 +38,7 @@ const normalizeScore = (value) => {
  * VoiceRecordingBanner - 유아용 음성 녹음 전용 배너
  * 영상과 스크립트 목록 하단에 배치되며, 귀여운 캐릭터와 함께 녹음 기능 제공
  */
-function VoiceRecordingBanner({ script, contentsId, language = 'en', userId, onAnalyzed, onRecordingStart }) {
+function VoiceRecordingBanner({ script, contentsId, language = 'en', userId, onAnalyzed, onRecordingStart, onContinueVideo }) {
   const canvasRef = useRef(null)
   const mediaStreamRef = useRef(null)
   const mediaRecorderRef = useRef(null)
@@ -127,7 +131,7 @@ function VoiceRecordingBanner({ script, contentsId, language = 'en', userId, onA
       }
     } catch (err) {
       console.error('Microphone access failed', err)
-      setErrorMessage('마이크 접근 권한이 필요해요! 🎤')
+      setErrorMessage('마이크 접근 권한이 필요해요!')
     }
   }
 
@@ -146,7 +150,7 @@ function VoiceRecordingBanner({ script, contentsId, language = 'en', userId, onA
       
       // 녹음 파일 크기 체크
       if (blob.size < 1000) {
-        setErrorMessage('녹음이 너무 짧아요! 다시 시도해주세요. 🎤')
+        setErrorMessage('녹음이 너무 짧아요! 다시 시도해주세요.')
         cleanup()
         resetRecording()
         return
@@ -182,16 +186,17 @@ function VoiceRecordingBanner({ script, contentsId, language = 'en', userId, onA
         setLocalCompleteness(normalizeScore(res?.completeness))
         const medal = res?.medal ? String(res.medal).toUpperCase() : null
         setLocalMedal(medal)
-        setLocalMessage(buildMessage(score, medal))
+        const messageObj = buildMessage(score, medal)
+        setLocalMessage(messageObj)
         setLocalFeedbackText(res?.feedbackText ?? '')
         setLocalScriptText(res?.scriptText ?? script?.text ?? '')
         setErrorMessage('')
         if (onAnalyzed) onAnalyzed(res, script)
       } catch (e) {
         console.error('Analyze failed', e)
-        setErrorMessage(e.message || '발음 분석 중 오류가 발생했습니다. 다시 시도해주세요! 🔄')
+        setErrorMessage(e.message || '발음 분석 중 오류가 발생했습니다. 다시 시도해주세요!')
         setLocalScore(null)
-        setLocalMessage('')
+        setLocalMessage(null)
         setLocalFeedbackText('')
         setLocalAccuracy(null)
         setLocalFluency(null)
@@ -207,10 +212,10 @@ function VoiceRecordingBanner({ script, contentsId, language = 'en', userId, onA
   }
 
   const buildMessage = (score, medal) => {
-    if (medal === 'GOLD' || score >= 90) return '🌟 와우! 정말 완벽해요! 천재인가요?'
-    if (medal === 'SILVER' || score >= 75) return '👍 정말 잘했어요! 조금만 더 연습하면 완벽해요!'
-    if (score >= 60) return '😊 좋아요! 다시 한번 또박또박 말해볼까요?'
-    return '💪 괜찮아요! 천천히 따라 해봐요!'
+    if (medal === 'GOLD' || score >= 90) return { icon: Star, text: '와우! 정말 완벽해요! 천재인가요?' }
+    if (medal === 'SILVER' || score >= 75) return { icon: ThumbsUp, text: '정말 잘했어요! 조금만 더 연습하면 완벽해요!' }
+    if (score >= 60) return { icon: Smile, text: '좋아요! 다시 한번 또박또박 말해볼까요?' }
+    return { icon: Sparkles, text: '괜찮아요! 천천히 따라 해봐요!' }
   }
 
   const cleanup = () => {
@@ -310,7 +315,7 @@ function VoiceRecordingBanner({ script, contentsId, language = 'en', userId, onA
   }
 
   return (
-    <div className="h-full rounded-[16px] p-3 border-2 shadow-md transition-all flex overflow-hidden gap-3" 
+    <div className="h-full rounded-[16px] p-3 border-2 shadow-md transition-all flex overflow-hidden gap-3 relative" 
          style={{ 
            background: 'linear-gradient(135deg, #E3F2FD 0%, #F3E5F5 25%, #FFF9E6 50%, #E1F5FE 75%, #FCE4EC 100%)',
            borderColor: recordingState === 'recording' ? '#FFE082' : '#81D4FA'
@@ -371,80 +376,123 @@ function VoiceRecordingBanner({ script, contentsId, language = 'en', userId, onA
         ) : null}
       </div>
 
-      {/* 결과 표시 (간소화) */}
-      {(isAnalyzing || localScore !== null || errorMessage) && (
+      {/* 분석 중 오버레이 */}
+      {isAnalyzing && (
         <div className="absolute inset-0 bg-white/95 backdrop-blur-sm rounded-[16px] flex items-center justify-center z-10">
-          {errorMessage ? (
-            <div className="text-center">
-              <Frown className="w-12 h-12 mx-auto mb-2 text-[#F57C00]" />
-              <div className="text-sm font-bold text-[#F57C00]">{errorMessage}</div>
-            </div>
-          ) : isAnalyzing ? (
-            <div className="flex items-center gap-3">
-              <Loader2 className="w-8 h-8 animate-spin text-[#81D4FA]" />
-              <div className="text-base font-bold text-[#0277BD]">AI가 분석 중...</div>
-            </div>
-          ) : (
-            <div className="w-full max-w-xl mx-auto flex flex-col gap-4">
-              <div className="flex items-start gap-4">
-                {getMedalIcon(localMedal)}
-                <div className="flex flex-col gap-1">
-                  <div className="text-4xl font-black bg-gradient-to-r from-[#FFE082] via-[#81D4FA] to-[#BA68C8] bg-clip-text text-transparent">
-                    {(localScore ?? 0)}점
-                  </div>
-                  {localMedal && (
-                    <span className="text-xs font-semibold uppercase tracking-widest text-[#0277BD]">
-                      {localMedal}
-                    </span>
-                  )}
-                  {localMessage && (
-                    <div className="text-sm text-[#0277BD] font-semibold">
-                      {localMessage}
-                    </div>
-                  )}
-                </div>
-              </div>
+          <div className="flex items-center gap-3">
+            <Loader2 className="w-8 h-8 animate-spin text-[#81D4FA]" />
+            <div className="text-base font-bold text-[#0277BD]">AI가 분석 중...</div>
+          </div>
+        </div>
+      )}
 
-              {localScriptText && (
-                <div className="flex items-start gap-3 p-3 bg-[#E1F5FE] rounded-lg border-2 border-[#B3E5FC] shadow-sm">
-                  <FileText className="w-5 h-5 text-[#0277BD] flex-shrink-0 mt-1" />
-                  <p className="text-sm text-[#01579B] leading-relaxed">{localScriptText}</p>
+      {/* 에러 메시지 오버레이 */}
+      {errorMessage && !isAnalyzing && (
+        <div className="absolute inset-0 bg-white/95 backdrop-blur-sm rounded-[16px] flex items-center justify-center z-10">
+          <div className="text-center">
+            <Frown className="w-12 h-12 mx-auto mb-2 text-[#F57C00]" />
+            <div className="text-sm font-bold text-[#F57C00] mb-3">{errorMessage}</div>
+            <button
+              onClick={() => setErrorMessage('')}
+              className="px-4 py-2 rounded-lg bg-gradient-to-r from-[#81D4FA] to-[#4FC3F7] border-2 border-[#0277BD] text-white font-bold text-sm shadow-md hover:shadow-lg transform hover:scale-105 transition-all"
+            >
+              확인
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* 분석 결과 오버레이 */}
+      {localScore !== null && !isAnalyzing && !errorMessage && (
+        <div className="absolute inset-0 bg-white/95 backdrop-blur-sm rounded-[16px] flex items-center justify-center z-10 p-4">
+          <div className="w-full h-full grid grid-cols-[auto_1fr] gap-4">
+            {/* 왼쪽: 점수 + 메달 */}
+            <div className="flex flex-col items-center justify-center gap-2 px-4">
+              {getMedalIcon(localMedal)}
+              <div className="text-center">
+                <div className="text-4xl font-black bg-gradient-to-r from-[#FFE082] via-[#81D4FA] to-[#BA68C8] bg-clip-text text-transparent">
+                  {(localScore ?? 0)}점
+                </div>
+                {localMedal && (
+                  <span className="text-xs font-semibold uppercase tracking-widest text-[#0277BD] block mt-1">
+                    {localMedal}
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* 오른쪽: 상세 정보 */}
+            <div className="flex flex-col gap-2.5 justify-center">
+              {/* 메시지 */}
+              {localMessage && (
+                <div className="flex items-center gap-2 text-sm text-[#0277BD] font-bold">
+                  {localMessage.icon && <localMessage.icon className="w-5 h-5 text-[#FFD54F]" />}
+                  <span>{localMessage.text || localMessage}</span>
                 </div>
               )}
 
+              {/* 스크립트 */}
+              {localScriptText && (
+                <div className="flex items-start gap-2 p-2 bg-[#E1F5FE] rounded-lg border border-[#B3E5FC] shadow-sm">
+                  <FileText className="w-4 h-4 text-[#0277BD] flex-shrink-0 mt-0.5" />
+                  <p className="text-xs text-[#01579B] leading-relaxed">{localScriptText}</p>
+                </div>
+              )}
+
+              {/* 세부 점수 */}
               <div className="grid grid-cols-3 gap-2">
                 {breakdownItems.map(({ label, value, color }) => (
                   <div
                     key={label}
-                    className="p-3 rounded-lg border-2 shadow-sm bg-white flex flex-col items-center justify-center gap-1"
+                    className="p-2 rounded-lg border-2 shadow-sm bg-white flex flex-col items-center justify-center gap-0.5"
                     style={{ borderColor: color }}
                   >
                     <span className="text-xs font-semibold text-[#0277BD]">{label}</span>
                     <span className="text-xl font-bold text-[#01579B]">
-                      {value !== null ? `${value}점` : '-'}
+                      {value !== null ? `${value}` : '-'}
                     </span>
                   </div>
                 ))}
               </div>
 
+              {/* 피드백 텍스트 */}
               {localFeedbackText && (
-                <div className="flex items-start gap-3 p-4 rounded-lg border-2 border-[#FFD54F] bg-gradient-to-r from-[#FFFDE7] to-[#FFECB3] shadow-sm">
-                  <MessageCircle className="w-5 h-5 text-[#F57C00] flex-shrink-0 mt-1" />
-                  <p className="text-sm text-[#F57C00] leading-relaxed">{localFeedbackText}</p>
+                <div className="flex items-start gap-2 p-2.5 rounded-lg border-2 border-[#FFD54F] bg-gradient-to-r from-[#FFFDE7] to-[#FFECB3] shadow-sm">
+                  <MessageCircle className="w-4 h-4 text-[#F57C00] flex-shrink-0 mt-0.5" />
+                  <p className="text-xs text-[#F57C00] leading-relaxed line-clamp-2">{localFeedbackText}</p>
                 </div>
               )}
 
-              <div className="flex justify-end">
+              {/* 버튼 */}
+              <div className="flex justify-between gap-2.5 mt-1">
                 <button
                   onClick={start}
-                  className="px-4 py-2 rounded-lg bg-gradient-to-r from-[#81D4FA] to-[#4FC3F7] border-2 border-[#0277BD] text-white font-bold text-sm shadow-md hover:shadow-lg transform hover:scale-105 transition-all inline-flex items-center gap-2"
+                  className="flex-1 px-4 py-2 rounded-lg bg-gradient-to-r from-[#81D4FA] to-[#4FC3F7] border-2 border-[#0277BD] text-white font-bold text-sm shadow-md hover:shadow-lg transform hover:scale-105 transition-all inline-flex items-center justify-center gap-2"
                 >
                   <RefreshCw className="w-4 h-4" />
                   다시 도전!
                 </button>
+                {onContinueVideo && (
+                  <button
+                    onClick={() => {
+                      setLocalScore(null)
+                      setLocalMessage('')
+                      setLocalFeedbackText('')
+                      setLocalAccuracy(null)
+                      setLocalFluency(null)
+                      setLocalCompleteness(null)
+                      setLocalMedal(null)
+                      setErrorMessage('')
+                      onContinueVideo()
+                    }}
+                    className="flex-1 px-4 py-2 rounded-lg bg-gradient-to-r from-[#FFE082] to-[#FFECB3] border-2 border-[#FFD54F] text-[#F57C00] font-bold text-sm shadow-md hover:shadow-lg transform hover:scale-105 transition-all inline-flex items-center justify-center gap-2"
+                  >
+                    ▶ 영상 이어보기
+                  </button>
+                )}
               </div>
             </div>
-          )}
+          </div>
         </div>
       )}
     </div>

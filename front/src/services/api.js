@@ -68,11 +68,19 @@ export const tutorAPI = {
     formData.append('scriptId', scriptId);
     formData.append('lang', lang);
 
+    console.log('=== Sending to /api/tutor/analyze ===');
+    console.log('File:', audioFile.name, 'Size:', audioFile.size);
+    console.log('UserId:', userId, 'ContentsId:', contentsId);
+    console.log('ScriptId:', scriptId, 'Lang:', lang);
+
     return api.post('/api/tutor/analyze', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
     }).catch(error => {
+      console.error('=== Analyze Error ===', error);
+      console.error('Response:', error.response?.data);
+      
       // Handle specific pronunciation analysis errors
       if (error.response?.status === 400) {
         throw new Error('필수 정보가 누락되었습니다.');
@@ -82,6 +90,10 @@ export const tutorAPI = {
       }
       if (error.response?.status === 422) {
         throw new Error('음성 변환 또는 분석에 실패했습니다. 다시 녹음해주세요.');
+      }
+      if (error.response?.status === 500) {
+        const detail = error.response?.data?.message || error.response?.data?.trace || '';
+        throw new Error('서버 오류: ' + detail.substring(0, 200));
       }
       if (error.response?.status === 502) {
         throw new Error('Azure AI 서비스에 문제가 있습니다. 잠시 후 다시 시도해주세요.');

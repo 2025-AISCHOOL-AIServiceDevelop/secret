@@ -22,12 +22,13 @@ function Player() {
   const [searchParams] = useSearchParams();
   const contentId = searchParams.get('contentId');
 
-  const { getContentById } = useContentsStore();
+  const { getContentById, loadContents, contents } = useContentsStore();
   const { scripts, isLoadingScripts, loadScripts, getCurrentScript } = useTranslationStore();
   const { currentFeedback } = useTutorStore();
   const { user } = useAuthStore();
 
   const videoRef = useRef(null);
+  const videoSectionRef = useRef(null);
   const [selectedScript, setSelectedScript] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -44,9 +45,16 @@ function Player() {
     { code: 'zh', name: '중국어', flag: '🇨🇳' },
     { code: 'ja', name: '일본어', flag: '🇯🇵' },
     { code: 'vi', name: '베트남어', flag: '🇻🇳' },
-    { code: 'th', name: '태국어', flag: '🇹🇭' },
-    { code: 'ru', name: '러시아어', flag: '🇷🇺' }
+    { code: 'ru', name: '러시아어', flag: '🇷🇺' },
+    { code: 'th', name: '태국어', flag: '🇹🇭' }
   ];
+
+  // Load contents if not already loaded (직접 접근 시)
+  useEffect(() => {
+    if (contentId && contents.length === 0) {
+      loadContents();
+    }
+  }, [contentId, contents.length, loadContents]);
 
   // Load content and scripts on mount and when language changes
   useEffect(() => {
@@ -185,12 +193,25 @@ function Player() {
     }
   };
 
+  // 영상 이어보기 (분석 결과 후)
+  const handleContinueVideo = () => {
+    // 영상 섹션으로 스크롤
+    if (videoSectionRef.current) {
+      videoSectionRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    // 영상 재생
+    if (videoRef.current) {
+      videoRef.current.play();
+      setIsPlaying(true);
+    }
+  };
+
   return (
     <div className="flex flex-col gap-4 p-4">
       {/* 상단 영상 + 스크립트 목록 */}
       <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-4">
         {/* 왼쪽: 비디오 플레이어 */}
-        <section className="flex flex-col gap-3 rounded-[18px] p-4 border-2" style={{ background: '#e1e8ff', borderColor: '#b9c5ef' }}>
+        <section ref={videoSectionRef} className="flex flex-col gap-3 rounded-[18px] p-4 border-2" style={{ background: '#e1e8ff', borderColor: '#b9c5ef' }}>
           <div className="rounded-[14px] overflow-hidden bg-black relative w-full" style={{ aspectRatio: '16/9' }}>
             {videoUrl ? (
               <>
@@ -366,66 +387,9 @@ function Player() {
           userId={user?.id || 1}
           onAnalyzed={handleAnalysisComplete}
           onRecordingStart={handleRecordingStart}
+          onContinueVideo={handleContinueVideo}
         />
       </div>
-
-      {analysisResult && (
-        <section
-          className="rounded-[18px] border-2 p-5 flex flex-col gap-4 shadow-md"
-          style={{ background: '#FFF9E6', borderColor: '#FFD54F' }}
-        >
-          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-            <div className="flex items-start gap-3">
-              <Award className="w-10 h-10 text-[#F57C00]" />
-              <div>
-                <h3 className="text-lg font-bold text-[#F57C00]">AI 발음 분석 결과</h3>
-                {analysisResult.scriptText && (
-                  <p className="text-sm text-[#855C00] mt-1 leading-relaxed">
-                    {analysisResult.scriptText}
-                  </p>
-                )}
-              </div>
-            </div>
-            <div className="text-center md:text-right">
-              <div className="text-4xl font-black text-[#F57C00]">
-                {(analysisResult.finalScore ?? analysisResult.score ?? 0)}점
-              </div>
-              {analysisResult.medal && (
-                <div className="text-xs font-semibold text-[#855C00] uppercase tracking-widest mt-1">
-                  {analysisResult.medal}
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            {[
-              { label: '정확도', key: 'accuracy' },
-              { label: '유창성', key: 'fluency' },
-              { label: '완성도', key: 'completeness' }
-            ].map(({ label, key }) => (
-              <div
-                key={key}
-                className="p-3 rounded-lg border-2 border-[#FFE082] bg-white flex flex-col items-center gap-1 shadow-sm"
-              >
-                <span className="text-xs font-semibold text-[#855C00]">{label}</span>
-                <span className="text-xl font-bold text-[#F57C00]">
-                  {analysisResult[key] != null ? `${analysisResult[key]}점` : '-'}
-                </span>
-              </div>
-            ))}
-          </div>
-
-          {analysisResult.feedbackText && (
-            <div className="flex items-start gap-3 p-4 rounded-lg border-2 border-[#FFE082] bg-white shadow-sm">
-              <MessageCircle className="w-5 h-5 text-[#F57C00] flex-shrink-0 mt-1" />
-              <p className="text-sm text-[#855C00] leading-relaxed">
-                {analysisResult.feedbackText}
-              </p>
-            </div>
-          )}
-        </section>
-      )}
 
     </div>
   )

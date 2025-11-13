@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, Loader2, AlertCircle, X } from 'lucide-react';
+import { Search, Loader2, AlertCircle, X , Earth} from 'lucide-react';
 import { PlayButton } from '../@design-system';
 import { useContentsStore } from '../stores';
 import mascotImg from '../assets/mascot.png';

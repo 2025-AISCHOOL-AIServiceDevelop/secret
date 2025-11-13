@@ -55,8 +55,19 @@ public class AzureSpeechService {
                 stripExt(inputFile.getName()) + "-" + UUID.randomUUID() + ".wav"
         );
 
+        // ffmpeg 경로 체크
+        String effectiveFfmpeg = findFfmpeg();
+        if (effectiveFfmpeg == null) {
+            throw new IOException(
+                "FFmpeg를 찾을 수 없습니다. Windows에서 설치 방법:\n" +
+                "1. choco install ffmpeg (Chocolatey 사용)\n" +
+                "2. https://ffmpeg.org/download.html 에서 다운로드 후 PATH 추가\n" +
+                "3. application.properties에 ffmpeg.path 설정"
+            );
+        }
+
         ProcessBuilder pb = new ProcessBuilder(
-                ffmpegPath, "-y",
+                effectiveFfmpeg, "-y",
                 "-i", inputFile.getAbsolutePath(),
                 "-ar", "16000",
                 "-ac", "1",
@@ -81,6 +92,47 @@ public class AzureSpeechService {
             throw new IOException("ffmpeg 변환 실패(exit=" + exit + "). ffmpeg 경로/입력파일/코덱을 확인하세요.");
         }
         return out;
+    }
+
+    /** ffmpeg 실행 파일 찾기 */
+    private String findFfmpeg() {
+        // 1) application.properties 설정 확인
+        if (ffmpegPath != null && !ffmpegPath.equals("ffmpeg")) {
+            File custom = new File(ffmpegPath);
+            if (custom.exists() && custom.canExecute()) {
+                return ffmpegPath;
+            }
+        }
+
+        // 2) PATH에서 ffmpeg 찾기
+        String[] candidates = {"ffmpeg", "ffmpeg.exe"};
+        for (String cmd : candidates) {
+            try {
+                Process p = new ProcessBuilder(cmd, "-version").start();
+                p.waitFor();
+                if (p.exitValue() == 0) {
+                    return cmd;
+                }
+            } catch (Exception ignore) {}
+        }
+
+        // 3) 일반적인 Windows 설치 경로
+        String[] windowsPaths = {
+            "C:\\ffmpeg\\bin\\ffmpeg.exe",
+            "C:\\Program Files\\ffmpeg\\bin\\ffmpeg.exe",
+            System.getenv("ProgramFiles") + "\\ffmpeg\\bin\\ffmpeg.exe",
+            System.getenv("LOCALAPPDATA") + "\\Programs\\ffmpeg\\bin\\ffmpeg.exe"
+        };
+        for (String path : windowsPaths) {
+            if (path != null) {
+                File f = new File(path);
+                if (f.exists() && f.canExecute()) {
+                    return path;
+                }
+            }
+        }
+
+        return null;
     }
 
     /** 2️⃣ Azure Pronunciation Assessment 호출 (WAV → 결과 객체) */
