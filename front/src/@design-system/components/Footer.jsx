@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { memo } from 'react'
+import { Facebook, Instagram, Youtube } from 'lucide-react'
 
 // Footer component
 export const Footer = memo(() => {
@@ -69,17 +70,17 @@ export const Footer = memo(() => {
             © 2025 두근두근 지구말. All rights reserved.
           </p>
           <div className="flex items-center gap-4 mt-4 md:mt-0">
-            <a href="#" className="text-gray-400 hover:text-white transition-colors">
+            <a href="#" className="text-gray-400 hover:text-white transition-colors hover:scale-110 transform">
               <span className="sr-only">페이스북</span>
-              📘
+              <Facebook className="w-5 h-5" />
             </a>
-            <a href="#" className="text-gray-400 hover:text-white transition-colors">
+            <a href="#" className="text-gray-400 hover:text-white transition-colors hover:scale-110 transform">
               <span className="sr-only">인스타그램</span>
-              📷
+              <Instagram className="w-5 h-5" />
             </a>
-            <a href="#" className="text-gray-400 hover:text-white transition-colors">
+            <a href="#" className="text-gray-400 hover:text-white transition-colors hover:scale-110 transform">
               <span className="sr-only">유튜브</span>
-              📺
+              <Youtube className="w-5 h-5" />
             </a>
           </div>
         </div>

@@ -1,11 +1,40 @@
 import { useEffect, useRef, useState } from 'react'
 import { useTutorStore } from '../stores'
+import {
+  Mic,
+  StopCircle,
+  Award,
+  RefreshCw,
+  Frown,
+  Loader2,
+  FileText,
+  MessageCircle
+} from 'lucide-react'
+
+const AZURE_LANGUAGE_MAP = {
+  ko: 'ko-KR',
+  en: 'en-US',
+  ja: 'ja-JP',
+  zh: 'zh-CN',
+  vi: 'vi-VN',
+  th: 'th-TH',
+  ru: 'ru-RU',
+  es: 'es-ES',
+  fr: 'fr-FR',
+}
+
+const normalizeScore = (value) => {
+  if (value === null || value === undefined) return null
+  const numeric = Number(value)
+  if (Number.isNaN(numeric)) return null
+  return Math.round(numeric)
+}
 
 /**
  * VoiceRecordingBanner - 유아용 음성 녹음 전용 배너
  * 영상과 스크립트 목록 하단에 배치되며, 귀여운 캐릭터와 함께 녹음 기능 제공
  */
-function VoiceRecordingBanner({ script, contentsId, language = 'en', userId, onAnalyzed }) {
+function VoiceRecordingBanner({ script, contentsId, language = 'en', userId, onAnalyzed, onRecordingStart }) {
   const canvasRef = useRef(null)
   const mediaStreamRef = useRef(null)
   const mediaRecorderRef = useRef(null)
@@ -22,11 +51,24 @@ function VoiceRecordingBanner({ script, contentsId, language = 'en', userId, onA
   const [localCompleteness, setLocalCompleteness] = useState(null)
   const [localMedal, setLocalMedal] = useState(null)
   const [localMessage, setLocalMessage] = useState('')
+  const [localFeedbackText, setLocalFeedbackText] = useState('')
+  const [localScriptText, setLocalScriptText] = useState('')
   const [errorMessage, setErrorMessage] = useState('')
+  const [recordingTime, setRecordingTime] = useState(0)
+  const recordingTimerRef = useRef(null)
+
+  const breakdownItems = [
+    { label: '정확도', value: localAccuracy, color: '#81D4FA' },
+    { label: '유창성', value: localFluency, color: '#BA68C8' },
+    { label: '완성도', value: localCompleteness, color: '#FFD54F' }
+  ]
 
   useEffect(() => {
     return () => {
       cleanup()
+      if (recordingTimerRef.current) {
+        clearInterval(recordingTimerRef.current)
+      }
     }
   }, [])
 
@@ -61,7 +103,28 @@ function VoiceRecordingBanner({ script, contentsId, language = 'en', userId, onA
       setLocalCompleteness(null)
       setLocalMedal(null)
       setLocalMessage('')
+      setLocalFeedbackText('')
+      setLocalScriptText(script?.text ?? '')
       setErrorMessage('')
+      setRecordingTime(0)
+      
+      // 녹음 시간 타이머 시작
+      recordingTimerRef.current = setInterval(() => {
+        setRecordingTime(prev => {
+          const newTime = prev + 1
+          // 30초 초과 시 자동 중지
+          if (newTime >= 30) {
+            stop()
+            return 0
+          }
+          return newTime
+        })
+      }, 1000)
+      
+      // 녹음 시작 시 부모 컴포넌트에 알림
+      if (onRecordingStart) {
+        onRecordingStart();
+      }
     } catch (err) {
       console.error('Microphone access failed', err)
       setErrorMessage('마이크 접근 권한이 필요해요! 🎤')
@@ -70,25 +133,58 @@ function VoiceRecordingBanner({ script, contentsId, language = 'en', userId, onA
 
   const stop = async () => {
     if (!mediaRecorderRef.current) return
+    
+    // 타이머 정지
+    if (recordingTimerRef.current) {
+      clearInterval(recordingTimerRef.current)
+      recordingTimerRef.current = null
+    }
+    
     const recorder = mediaRecorderRef.current
     recorder.onstop = async () => {
       const blob = new Blob(chunksRef.current, { type: recorder.mimeType || 'audio/webm' })
+      
+      // 녹음 파일 크기 체크
+      if (blob.size < 1000) {
+        setErrorMessage('녹음이 너무 짧아요! 다시 시도해주세요. 🎤')
+        cleanup()
+        resetRecording()
+        return
+      }
+      
       const file = new File([blob], 'recording.webm', { type: blob.type })
+      
       try {
         const scriptId = script?.id || script?.scriptId
         if (!scriptId) {
           console.error('Script ID is missing')
+          setErrorMessage('스크립트 정보가 없습니다. 다시 시도해주세요.')
+          cleanup()
+          resetRecording()
           return
         }
 
-        const res = await analyzePronunciation(file, userId, contentsId, scriptId, language)
-        const score = Number(res?.finalScore ?? res?.score ?? 0)
+        const preferredLanguage = script?.language || language
+        const languageKey = typeof preferredLanguage === 'string' ? preferredLanguage.toLowerCase() : ''
+        const fallbackLanguageKey = typeof language === 'string' ? language.toLowerCase() : ''
+        const azureLanguage =
+          AZURE_LANGUAGE_MAP[languageKey] ||
+          AZURE_LANGUAGE_MAP[fallbackLanguageKey] ||
+          preferredLanguage ||
+          'en-US'
+
+        const res = await analyzePronunciation(file, userId, contentsId, scriptId, azureLanguage)
+        const score = normalizeScore(res?.finalScore ?? res?.score) ?? 0
+
         setLocalScore(score)
-        setLocalAccuracy(res?.accuracy ?? null)
-        setLocalFluency(res?.fluency ?? null)
-        setLocalCompleteness(res?.completeness ?? null)
-        setLocalMedal(res?.medal ?? null)
-        setLocalMessage(buildMessage(score, res?.medal))
+        setLocalAccuracy(normalizeScore(res?.accuracy))
+        setLocalFluency(normalizeScore(res?.fluency))
+        setLocalCompleteness(normalizeScore(res?.completeness))
+        const medal = res?.medal ? String(res.medal).toUpperCase() : null
+        setLocalMedal(medal)
+        setLocalMessage(buildMessage(score, medal))
+        setLocalFeedbackText(res?.feedbackText ?? '')
+        setLocalScriptText(res?.scriptText ?? script?.text ?? '')
         setErrorMessage('')
         if (onAnalyzed) onAnalyzed(res, script)
       } catch (e) {
@@ -96,6 +192,11 @@ function VoiceRecordingBanner({ script, contentsId, language = 'en', userId, onA
         setErrorMessage(e.message || '발음 분석 중 오류가 발생했습니다. 다시 시도해주세요! 🔄')
         setLocalScore(null)
         setLocalMessage('')
+        setLocalFeedbackText('')
+        setLocalAccuracy(null)
+        setLocalFluency(null)
+        setLocalCompleteness(null)
+        setLocalMedal(null)
       } finally {
         cleanup()
         resetRecording()
@@ -200,150 +301,145 @@ function VoiceRecordingBanner({ script, contentsId, language = 'en', userId, onA
     draw()
   }
 
-  const getMedalEmoji = (medal) => {
-    if (medal === 'GOLD') return '🥇'
-    if (medal === 'SILVER') return '🥈'
-    if (medal === 'BRONZE') return '🥉'
-    return '⭐'
+  const getMedalIcon = (medal) => {
+    const className = "w-12 h-12"
+    if (medal === 'GOLD') return <Award className={`${className} text-yellow-400 fill-yellow-400`} />
+    if (medal === 'SILVER') return <Award className={`${className} text-gray-400 fill-gray-400`} />
+    if (medal === 'BRONZE') return <Award className={`${className} text-orange-600 fill-orange-600`} />
+    return <Award className={`${className} text-purple-400 fill-purple-400`} />
   }
 
   return (
-    <div className="h-full rounded-[20px] p-3 border-3 shadow-lg transition-all flex flex-col overflow-hidden" 
+    <div className="h-full rounded-[16px] p-3 border-2 shadow-md transition-all flex overflow-hidden gap-3" 
          style={{ 
-           background: 'linear-gradient(135deg, #ffeef8 0%, #e8f5ff 50%, #fff4e8 100%)',
-           borderColor: recordingState === 'recording' ? '#ff6b9d' : '#a8d8ff'
+           background: 'linear-gradient(135deg, #E3F2FD 0%, #F3E5F5 25%, #FFF9E6 50%, #E1F5FE 75%, #FCE4EC 100%)',
+           borderColor: recordingState === 'recording' ? '#FFE082' : '#81D4FA'
          }}>
       
-      {/* 헤더 */}
-      <div className="flex items-center justify-between mb-1.5 flex-shrink-0">
-        <div className="flex items-center gap-2">
-          <div className="text-2xl">{recordingState === 'recording' ? '🎤' : '🎵'}</div>
-          <p className="text-md text-gray-600 font-bold">
-            {script ? '준비 완료! 녹음 시작을 눌러주세요' : '스크립트를 선택해주세요'}
-          </p>
-        </div>
-        {recordingState === 'recording' && (
-          <div className="flex items-center gap-1.5 px-2 py-1 bg-red-100 rounded-full border border-red-400 animate-pulse">
-            <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-            <span className="text-[10px] font-bold text-red-600">녹음 중!</span>
+      {/* 왼쪽: 스크립트 + 녹음 버튼 */}
+      <div className="flex-1 flex flex-col gap-2">
+        {/* 스크립트 표시 */}
+        {script ? (
+          <div className="flex-1 p-3 bg-white/95 rounded-lg border-2 border-[#81D4FA] overflow-y-auto shadow-sm">
+            <div className="text-base font-bold text-[#01579B] leading-relaxed">
+              {script.text}
+            </div>
+          </div>
+        ) : (
+          <div className="flex-1 p-3 bg-[#E1F5FE] rounded-lg border-2 border-[#B3E5FC] flex items-center justify-center">
+            <div className="text-sm text-[#0277BD]">스크립트를 선택해주세요</div>
           </div>
         )}
-      </div>
-
-      {/* 선택된 스크립트 표시 */}
-      {script && (
-        <div className="mb-1.5 p-1.5 bg-white rounded-lg border border-blue-200 flex-shrink-0">
-          <div className="text-[9px] text-gray-500 mb-0.5 font-bold">🎯 따라할 문장</div>
-          <div className="text-xs font-bold text-gray-800 line-clamp-1">{script.text}</div>
-        </div>
-      )}
-
-      {/* 음성 시각화 캔버스 */}
-      <div className="relative flex-1 rounded-[12px] overflow-hidden bg-white border-2 border-purple-200 shadow-md mb-1.5 min-h-[100px]">
-        <canvas ref={canvasRef} width={1000} height={120} className="w-full h-full" />
-        {!recordingState || recordingState === 'idle' ? (
-          <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <div className="text-4xl mb-1 animate-pulse">🎙️</div>
-            <div className="text-sm font-bold text-gray-600">아래 버튼을 눌러 녹음 시작!</div>
-            <div className="text-[10px] text-gray-500 mt-0.5">또박또박 말해보세요 ✨</div>
-          </div>
-        ) : null}
-      </div>
-
-      {/* 컨트롤 버튼 */}
-      <div className="flex items-center justify-center gap-2 mb-1.5 flex-shrink-0">
+        
+        {/* 녹음 버튼 */}
         {recordingState === 'recording' ? (
           <button 
             onClick={stop} 
-            className="relative px-5 py-2 rounded-full bg-gradient-to-r from-red-400 to-pink-500 text-white font-bold text-base shadow-md hover:shadow-lg transform hover:scale-105 transition-all flex items-center gap-1.5"
+            className="py-3 rounded-lg bg-gradient-to-r from-[#FFE082] to-[#FFECB3] border-2 border-[#FFD54F] text-[#F57C00] font-bold text-base shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2"
           >
-            <span className="w-3 h-3 bg-white rounded-sm animate-pulse"></span>
+            <StopCircle className="w-5 h-5" />
             녹음 멈추기
           </button>
         ) : (
           <button 
             onClick={start} 
             disabled={!script || isAnalyzing} 
-            className="relative px-6 py-2 rounded-full bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 text-white font-bold text-lg shadow-md hover:shadow-lg transform hover:scale-105 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center gap-1.5"
+            className="py-3 rounded-lg bg-gradient-to-r from-[#FFE082] to-[#FFECB3] border-2 border-[#FFD54F] text-[#F57C00] font-bold text-lg shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
-            <span className="text-xl">🎤</span>
+            <Mic className="w-6 h-6" />
             녹음 시작!
           </button>
         )}
+        
+        {/* 녹음 시간 표시 */}
+        {recordingState === 'recording' && (
+          <div className="flex items-center justify-center gap-1.5 px-3 py-1 bg-[#FFF9E6] rounded-lg border-2 border-[#FFE082]">
+            <div className="w-2 h-2 bg-[#FFD54F] rounded-full animate-pulse"></div>
+            <span className="text-sm font-bold text-[#F57C00]">{recordingTime}초</span>
+          </div>
+        )}
       </div>
 
-      {/* 결과 표시 영역 */}
+      {/* 오른쪽: 음성 시각화 */}
+      <div className="flex-[2] relative rounded-lg overflow-hidden bg-white border-2 border-[#81D4FA]">
+        <canvas ref={canvasRef} width={1000} height={180} className="w-full h-full" />
+        {!recordingState || recordingState === 'idle' ? (
+          <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-[#E1F5FE] via-[#F3E5F5] to-[#FFF9E6] gap-2">
+            <Mic className="w-16 h-16 text-[#81D4FA] animate-pulse" />
+            <div className="text-sm font-medium text-[#0277BD]">왼쪽 녹음 버튼을 눌러주세요</div>
+          </div>
+        ) : null}
+      </div>
+
+      {/* 결과 표시 (간소화) */}
       {(isAnalyzing || localScore !== null || errorMessage) && (
-        <div className="rounded-[12px] p-2 border-2 shadow-md transition-all flex-shrink-0" style={{
-          background: errorMessage 
-            ? 'linear-gradient(135deg, #ffe0e0, #fff0f0)' 
-            : isAnalyzing 
-            ? 'linear-gradient(135deg, #e0f0ff, #f0e0ff)'
-            : 'linear-gradient(135deg, #fff9e0, #e0ffe0)',
-          borderColor: errorMessage ? '#ff6b6b' : isAnalyzing ? '#9d6bff' : '#6bff9d'
-        }}>
+        <div className="absolute inset-0 bg-white/95 backdrop-blur-sm rounded-[16px] flex items-center justify-center z-10">
           {errorMessage ? (
-            <div className="text-center py-1">
-              <div className="text-3xl mb-1">😢</div>
-              <div className="text-xs font-bold text-red-600">{errorMessage}</div>
+            <div className="text-center">
+              <Frown className="w-12 h-12 mx-auto mb-2 text-[#F57C00]" />
+              <div className="text-sm font-bold text-[#F57C00]">{errorMessage}</div>
             </div>
           ) : isAnalyzing ? (
-            <div className="flex items-center justify-center gap-2 py-2">
-              <div className="relative">
-                <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-purple-500"></div>
-                <div className="absolute inset-0 flex items-center justify-center text-sm">🤖</div>
-              </div>
-              <div className="text-sm font-bold text-purple-700">분석 중...</div>
+            <div className="flex items-center gap-3">
+              <Loader2 className="w-8 h-8 animate-spin text-[#81D4FA]" />
+              <div className="text-base font-bold text-[#0277BD]">AI가 분석 중...</div>
             </div>
           ) : (
-            <div className="space-y-1.5">
-              {/* 점수 및 메달 */}
-              <div className="flex items-center justify-center gap-3">
-                <div className="text-4xl">{getMedalEmoji(localMedal)}</div>
-                <div className="text-5xl font-black bg-gradient-to-r from-yellow-400 via-pink-400 to-purple-400 bg-clip-text text-transparent">
-                  {Math.round(localScore)}
+            <div className="w-full max-w-xl mx-auto flex flex-col gap-4">
+              <div className="flex items-start gap-4">
+                {getMedalIcon(localMedal)}
+                <div className="flex flex-col gap-1">
+                  <div className="text-4xl font-black bg-gradient-to-r from-[#FFE082] via-[#81D4FA] to-[#BA68C8] bg-clip-text text-transparent">
+                    {(localScore ?? 0)}점
+                  </div>
+                  {localMedal && (
+                    <span className="text-xs font-semibold uppercase tracking-widest text-[#0277BD]">
+                      {localMedal}
+                    </span>
+                  )}
+                  {localMessage && (
+                    <div className="text-sm text-[#0277BD] font-semibold">
+                      {localMessage}
+                    </div>
+                  )}
                 </div>
               </div>
 
-              {/* 메시지 */}
-              <div className="text-center">
-                <div className="text-sm font-black text-gray-800">{localMessage}</div>
-              </div>
-
-              {/* 상세 점수 */}
-              {(localAccuracy !== null || localFluency !== null || localCompleteness !== null) && (
-                <div className="grid grid-cols-3 gap-1.5">
-                  <div className="bg-white/80 rounded-lg p-1.5 border border-blue-200 text-center">
-                    <div className="text-lg">🎯</div>
-                    <div className="text-[9px] text-gray-600 font-bold">정확도</div>
-                    <div className="text-sm font-black text-blue-600">
-                      {localAccuracy !== null ? localAccuracy : '-'}
-                    </div>
-                  </div>
-                  <div className="bg-white/80 rounded-lg p-1.5 border border-purple-200 text-center">
-                    <div className="text-lg">💬</div>
-                    <div className="text-[9px] text-gray-600 font-bold">유창성</div>
-                    <div className="text-sm font-black text-purple-600">
-                      {localFluency !== null ? localFluency : '-'}
-                    </div>
-                  </div>
-                  <div className="bg-white/80 rounded-lg p-1.5 border border-pink-200 text-center">
-                    <div className="text-lg">✨</div>
-                    <div className="text-[9px] text-gray-600 font-bold">완성도</div>
-                    <div className="text-sm font-black text-pink-600">
-                      {localCompleteness !== null ? localCompleteness : '-'}
-                    </div>
-                  </div>
+              {localScriptText && (
+                <div className="flex items-start gap-3 p-3 bg-[#E1F5FE] rounded-lg border-2 border-[#B3E5FC] shadow-sm">
+                  <FileText className="w-5 h-5 text-[#0277BD] flex-shrink-0 mt-1" />
+                  <p className="text-sm text-[#01579B] leading-relaxed">{localScriptText}</p>
                 </div>
               )}
 
-              {/* 다시 하기 버튼 */}
-              <div className="text-center">
+              <div className="grid grid-cols-3 gap-2">
+                {breakdownItems.map(({ label, value, color }) => (
+                  <div
+                    key={label}
+                    className="p-3 rounded-lg border-2 shadow-sm bg-white flex flex-col items-center justify-center gap-1"
+                    style={{ borderColor: color }}
+                  >
+                    <span className="text-xs font-semibold text-[#0277BD]">{label}</span>
+                    <span className="text-xl font-bold text-[#01579B]">
+                      {value !== null ? `${value}점` : '-'}
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              {localFeedbackText && (
+                <div className="flex items-start gap-3 p-4 rounded-lg border-2 border-[#FFD54F] bg-gradient-to-r from-[#FFFDE7] to-[#FFECB3] shadow-sm">
+                  <MessageCircle className="w-5 h-5 text-[#F57C00] flex-shrink-0 mt-1" />
+                  <p className="text-sm text-[#F57C00] leading-relaxed">{localFeedbackText}</p>
+                </div>
+              )}
+
+              <div className="flex justify-end">
                 <button
                   onClick={start}
-                  className="px-4 py-1.5 rounded-full bg-gradient-to-r from-green-400 to-blue-400 text-white font-bold text-sm shadow-sm hover:shadow-md transform hover:scale-105 transition-all inline-flex items-center gap-1.5"
+                  className="px-4 py-2 rounded-lg bg-gradient-to-r from-[#81D4FA] to-[#4FC3F7] border-2 border-[#0277BD] text-white font-bold text-sm shadow-md hover:shadow-lg transform hover:scale-105 transition-all inline-flex items-center gap-2"
                 >
-                  <span className="text-base">🔄</span>
+                  <RefreshCw className="w-4 h-4" />
                   다시 도전!
                 </button>
               </div>

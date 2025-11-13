@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { forwardRef } from 'react'
+import { Play } from 'lucide-react'
 
 // Base Button component
 const BaseButton = forwardRef(({
@@ -81,7 +82,14 @@ export const Button = BaseButton
 export const PrimaryButton = (props) => <BaseButton {...props} variant="primary" />
 export const SecondaryButton = (props) => <BaseButton {...props} variant="secondary" />
 export const OutlineButton = (props) => <BaseButton {...props} variant="outline" />
-export const PlayButton = (props) => <BaseButton {...props} variant="play" size="small" rounded="full" />
+export const PlayButton = ({ children, ...props }) => (
+  <BaseButton {...props} variant="play" size="small" rounded="full">
+    <span className="flex items-center gap-1.5">
+      <Play className="w-3 h-3 fill-current" />
+      {children}
+    </span>
+  </BaseButton>
+)
 export const KakaoButton = (props) => <BaseButton {...props} variant="kakao" rounded="medium" />
 export const GoogleButton = (props) => <BaseButton {...props} variant="google" rounded="medium" />
 export const TagButton = (props) => <BaseButton {...props} variant="tag" size="small" rounded="full" />

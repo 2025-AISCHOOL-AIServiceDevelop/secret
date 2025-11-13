@@ -1,5 +1,6 @@
 import { useState, memo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { User, LogOut, LogIn } from 'lucide-react';
 import { AppTitle } from './Typography';
 import { LoginPromptModal } from './Modal';
 import { useAuthStore } from '../../stores';
@@ -44,7 +45,8 @@ export const Header = memo(() => {
         {/* 오른쪽 버튼 고정 */}
         <nav className="absolute right-8 top-1/2 -translate-y-1/2 flex gap-3 z-10">
           {!isAuthenticated ? (
-            <button onClick={handleLoginClick} className={pillBtn}>
+            <button onClick={handleLoginClick} className={`${pillBtn} flex items-center gap-2`}>
+              <LogIn className="w-5 h-5" />
               로그인
             </button>
 
@@ -52,19 +54,21 @@ export const Header = memo(() => {
             <>
               <Link to="/mypage"
                 className="no-underline font-extrabold text-[#394b69]
-              inline-flex items-center justify-center
+              inline-flex items-center justify-center gap-2
               w-[130.7px] h-[57.3px] shrink-0
               rounded-full border-[2.5px] border-[#6C798A] bg-[#B1D2FA]
               leading-none select-none
               transition-colors duration-150
               hover:bg-[#c9ddff] focus:outline-none focus:ring-2 focus:ring-[#B1D2FA]/50"
               >
+                <User className="w-5 h-5" />
                 마이페이지
               </Link>
               <button
                 onClick={handleLogout}
-                className="no-underline font-bold rounded-full px-5 py-2 border-2 border-[#a89a77] bg-white/70 text-[#394b69] cursor-pointer hover:bg-white transition-colors duration-150"
+                className="no-underline font-bold rounded-full px-5 py-2 border-2 border-[#a89a77] bg-white/70 text-[#394b69] cursor-pointer hover:bg-white transition-colors duration-150 flex items-center gap-2"
               >
+                <LogOut className="w-4 h-4" />
                 로그아웃
               </button>
             </>

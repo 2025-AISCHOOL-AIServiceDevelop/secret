@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { authAPI } from '../services/api';
+import { authAPI, API_BASE_URL } from '../services/api';
 import axios from 'axios';
 
 const useAuthStore = create((set) => ({
@@ -41,13 +41,13 @@ const useAuthStore = create((set) => ({
 
   // ✅ 로그인 (백엔드 OAuth2)
   login: () => {
-    window.location.href = 'http://localhost:8082/oauth2/authorization/google';
+    window.location.href = `${API_BASE_URL}/oauth2/authorization/google`;
   },
 
   // ✅ 로그아웃 (백엔드 세션 + 프론트 상태 둘 다 종료)
   logout: async () => {
     try {
-      await axios.get('http://localhost:8082/api/logout', { withCredentials: true });
+      await axios.get(`${API_BASE_URL}/api/logout`, { withCredentials: true });
     } catch (error) {
       console.error('Logout failed:', error);
     }
