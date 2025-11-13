@@ -4,7 +4,7 @@ import { memo } from 'react'
 // Footer component
 export const Footer = memo(() => {
   return (
-    <footer className="bg-[#5E5A6A] text-white py-8 mt-auto">
+    <footer className="bg-[#5E5A6A]  py-8 border-[3px] border-[#5E5A6A] rounded-[18px] shadow-sm w-full">
       <div className="w-full max-w-screen-2xl mx-auto px-5">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Logo and Description */}
