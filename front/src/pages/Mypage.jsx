@@ -34,8 +34,23 @@ function Mypage() {
     );
   }
 
+    // 통계 값 계산
+  const totalPractice = userFeedbackHistory.length;
+  const avgScore =
+    totalPractice > 0
+      ? Math.round(
+          userFeedbackHistory.reduce((sum, fb) => sum + (fb.score || 0), 0) /
+            totalPractice
+        )
+      : 0;
+  const languageCount = new Set(
+    userFeedbackHistory.map((fb) => fb.lang).filter(Boolean)
+  ).size;
+
+  
+
   return (
-    <div className="container mx-auto max-w-4xl">
+    <div className="container mx-auto max-w-5xl">
       
       <div className="mb-8">
         <div className="relative mb-8 pt-7 text-center"></div>
@@ -44,11 +59,22 @@ function Mypage() {
             className="absolute left-1/2 -translate-x-1/2 -top-[0.5px] h-auto max-w-[34px] drop-shadow"/>
           <h1 className="text-4xl font-[DungeonFighterOnlineBeatBeat] text-[#8C85A5] mb-2">마이페이지</h1>
         </div>
-        <div className="flex items-center justify-between bg-white p-6 rounded-lg shadow-sm border">
+        
+        {/* 사용자 정보 */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
+        {/* 1번: 프로필 카드 */}
+        <div className="bg-white/95 rounded-[20px] shadow-md border border-[#d5d9eb] px-8 py-6 flex items-center gap-6">
+          {/* 아바타 영역 */}
+          <div className="flex-shrink-0">
+            <div className="w-24 h-24 rounded-full bg-[#FFEEC2] flex items-center justify-center shadow-inner border border-[#f2cfa0]">
+              <span className="text-3xl">🌞</span>
+            </div>
+          </div>
+
+          
           <div>
             <h2 className="text-xl font-semibold text-gray-700">{user.name || user.userName || '사용자'}</h2>
             <p className="text-gray-600">{user.email}</p>
-            <p className="text-sm text-gray-500 mt-1">가입일: {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}</p>
           </div>
           <button
             onClick={handleLogout}
@@ -57,6 +83,7 @@ function Mypage() {
             로그아웃
           </button>
         </div>
+      </div>
       </div>
 
       {/* Statistics Section */}
@@ -84,8 +111,8 @@ function Mypage() {
       {/* Feedback History Section */}
       <div className="bg-white rounded-lg shadow-sm border">
         <div className="p-6 border-b border-gray-200">
-          <h2 className="text-xl font-semibold text-gray-800">발음 연습 기록</h2>
-          <p className="text-gray-600 mt-1">지금까지의 발음 연습 결과를 확인하세요.</p>
+          <h2 className="text-xl font-semibold text-gray-800">최근 학습한 동화</h2>
+          <p className="text-gray-600 mt-1">최근 학습한 동화</p>
         </div>
 
         <div className="p-6">
