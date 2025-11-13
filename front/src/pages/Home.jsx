@@ -119,7 +119,7 @@ function Home() {
                     relative h-[300px] bg-no-repeat bg-center bg-cover 
                     cursor-pointer transition-all duration-300
                     hover:shadow-2xl hover:scale-[1.02] hover:brightness-105
-                    rounded-xl
+                    rounded-xl group
                   "
                   style={{
                     backgroundColor: '#f4efe7',
@@ -129,7 +129,38 @@ function Home() {
                   }}
                 >
 
-                  {/* 🔥 업그레이드된 영상 길이 배지 */}
+                  {/* ▶️ 중앙 재생 버튼 */}
+                  <div
+                    className="
+                      absolute inset-0 flex items-center justify-center
+                      bg-black/20 opacity-0 group-hover:opacity-100
+                      transition-opacity duration-300
+                    "
+                  >
+                    <div
+                      className="
+                        w-16 h-16 bg-black/40 rounded-full 
+                        flex items-center justify-center 
+                        backdrop-blur-sm
+                      "
+                    >
+                      <svg
+                        xmlns='http://www.w3.org/2000/svg'
+                        fill='white'
+                        viewBox='0 0 24 24'
+                        strokeWidth='1'
+                        className="w-8 h-8 ml-1"
+                      >
+                        <path
+                          strokeLinecap='round'
+                          strokeLinejoin='round'
+                          d='M5 3l14 9-14 9V3z'
+                        />
+                      </svg>
+                    </div>
+                  </div>
+
+                  {/* ⏱️ 영상 길이 배지 (기존 유지) */}
                   {content.durationSec && (
                     <span
                       className="
@@ -144,11 +175,10 @@ function Home() {
                       {Math.floor(content.durationSec / 60)}:
                       {String(content.durationSec % 60).padStart(2, '0')}
                     </span>
-
                   )}
 
-
                 </div>
+
 
               </Link>
 
