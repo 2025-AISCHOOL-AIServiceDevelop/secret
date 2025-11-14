@@ -69,7 +69,7 @@ export const Footer = memo(() => {
           <p className="text-gray-400 text-sm">
             © 2025 두근두근 지구말. All rights reserved.
           </p>
-          <div className="flex items-center gap-4 mt-4 md:mt-0">
+          {/* <div className="flex items-center gap-4 mt-4 md:mt-0">
             <a href="#" className="text-gray-400 hover:text-white transition-colors hover:scale-110 transform">
               <span className="sr-only">페이스북</span>
               <Facebook className="w-5 h-5" />
@@ -81,8 +81,8 @@ export const Footer = memo(() => {
             <a href="#" className="text-gray-400 hover:text-white transition-colors hover:scale-110 transform">
               <span className="sr-only">유튜브</span>
               <Youtube className="w-5 h-5" />
-            </a>
-          </div>
+            </a> */}
+          {/* </div> */}
         </div>
       </div>
     </footer>

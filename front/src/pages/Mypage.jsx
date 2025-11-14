@@ -7,6 +7,7 @@ import level1 from "../assets/level1.png";
 import level2 from "../assets/level2.png";
 import level3 from "../assets/level3.png";
 
+
 function Mypage() {
   const navigate = useNavigate();
   const { user, isAuthenticated, logout } = useAuthStore();
@@ -19,8 +20,42 @@ function Mypage() {
     }
   }, [isAuthenticated, navigate]);
 
-  // Get user feedback history
+
+
+
+
+
+  // Get user feedback history🌱🌱이부분은 밑에 지운다음에 다시 살리면 됨!  🌱🌱2번!!
   const userFeedbackHistory = user ? getUserFeedbackHistory(user.id || 1) : [];
+
+
+  ///🌱🌱🌱🌱🌱🌱🌱🌱🌱🌱🌱🌱이부분 나중에 지워야함 임시로 넣어둔것  🌱1번!!
+  // 1) 실제 기록 불러오기
+// const realHistory = user ? getUserFeedbackHistory(user.id || 1) : [];
+
+// // 2) UI 미리보기용 더미 데이터 (원하는 내용으로 바꿔도 됨)
+// const mockHistory = [
+//   {
+//     id: 1,
+//     contentsId: 3,
+//     contentsTitle: '콩쥐 팥쥐',
+//     score: 85,
+//     lang: 'ko',
+//     accuracy: 92,
+//     targetSentence: '학습한 동화의 예시 문장입니다.',
+//     createdAt: new Date().toISOString(),
+//   },
+// ];
+
+// // 3) 실제 기록이 있으면 그걸 쓰고, 없으면 mockHistory 사용
+// const userFeedbackHistory =
+//   realHistory.length > 0 ? realHistory : mockHistory;
+///🌱🌱🌱🌱🌱🌱🌱🌱🌱🌱🌱🌱이부분 나중에 지워야함 임시로 넣어둔것
+  
+
+
+
+
 
   const handleLogout = () => {
     logout();
@@ -160,80 +195,147 @@ function Mypage() {
           </div>
 
 
-        <div className="p-8">
-          {userFeedbackHistory.length === 0 ? (
-            <div className="text-center py-12">
-              <div className="text-gray-400 mb-4">
-                <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-              </div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">아직 연습 기록이 없습니다</h3>
-              <p className="text-gray-500 mb-4">동화 재생 페이지에서 발음을 연습해보세요!</p>
-              <button
-                onClick={() => navigate('/')}
-                className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-              >
-                동화 보러가기
-              </button>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {userFeedbackHistory.map((feedback, index) => (
-                <div key={feedback.id || index} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-4 mb-2">
-                        <span className="text-sm text-gray-500">
-                          {feedback.createdAt ? new Date(feedback.createdAt).toLocaleDateString() : '날짜 없음'}
-                        </span>
-                        <span className={`px-2 py-1 text-xs rounded-full ${
-                          feedback.score >= 80 ? 'bg-green-100 text-green-800' :
-                          feedback.score >= 60 ? 'bg-yellow-100 text-yellow-800' :
-                          'bg-red-100 text-red-800'
-                        }`}>
-                          점수: {feedback.score || 'N/A'}
-                        </span>
-                        <span className="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full">
-                          {feedback.lang || '언어 미정'}
-                        </span>
-                      </div>
 
-                      {feedback.targetSentence && (
-                        <div className="mb-2">
-                          <p className="text-sm text-gray-700">
-                            <span className="font-medium">연습 문장:</span> {feedback.targetSentence}
-                          </p>
-                        </div>
-                      )}
 
-                      {feedback.feedback && (
-                        <div className="mb-2">
-                          <p className="text-sm text-gray-700">
-                            <span className="font-medium">피드백:</span> {feedback.feedback}
-                          </p>
-                        </div>
-                      )}
+<div className="p-8">
+  {userFeedbackHistory.length === 0 ? (
+    // 연습 기록 없을 때 그대로 사용
+    <div className="text-center py-12">
+      <div className="text-gray-400 mb-4">
+        <svg
+          className="w-16 h-16 mx-auto"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={1}
+            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+          />
+        </svg>
+      </div>
+      <h3 className="text-lg font-medium text-gray-900 mb-2">
+        아직 연습 기록이 없습니다
+      </h3>
+      <p className="text-gray-500 mb-4">
+        동화 재생 페이지에서 발음을 연습해보세요!
+      </p>
+      <button
+        onClick={() => navigate("/")}
+        className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+      >
+        동화 보러가기
+      </button>
+    </div>
+  ) : (
+    <div className="space-y-4 relative cursor-pointer">
+      {userFeedbackHistory
+        // .slice(0, 5) // 최근 5개만 보여주고 싶으면 유지, 전부 보여줄 거면 제거
+        .map((feedback, index) => {
+          const title = feedback.contentsTitle || "콩쥐 팥쥐";
+          const desc =
+            feedback.targetSentence ||
+            "학습한 동화의 핵심 문장, 발음이 여기에 표시됩니다.";
+          const dateText = feedback.createdAt
+            ? new Date(feedback.createdAt).toLocaleDateString()
+            : "";
+          const progress =
+            typeof feedback.score === "number"
+              ? Math.min(100, feedback.score)
+              : 60; // 점수 없으면 임시 60%
 
-                      {feedback.accuracy && (
-                        <div className="text-sm text-gray-600">
-                          정확도: {feedback.accuracy}%
-                        </div>
-                      )}
-                    </div>
+          return (
+            <div
+              key={feedback.id || index}
+              className="bg-[#F4F7FF] rounded-[20px] px-6 py-4 shadow-sm border border-white
+                         hover:shadow-[0_8px_16px_0_rgba(0,0,0,0.12)] transition-shadow duration-300 group"
+            >
+              <div className="flex items-center gap-4">
+                {/* 왼쪽 썸네일 영역 */}
+                <div
+                  className="w-30 h-30 rounded-[18px]
+                             bg-gradient-to-br from-[#FFE0CF] via-[#F9E5FF] to-[#E0EEFF]
+                             flex items-center justify-center shadow-md flex-shrink-0"
+                >
+                  <span className="text-3xl">📖</span>
+                </div>
 
-                    <button
-                      onClick={() => navigate(`/player?contentId=${feedback.contentsId}`)}
-                      className="px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
-                    >
-                      다시 연습
-                    </button>
+                {/* 가운데 텍스트 영역 */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between mb-1">
+                    <h3 className="text-2xl font-[DungeonFighterOnlineBeatBeat] text-[#333333] truncate">
+                      {title}
+                    </h3>
+                    <span className="text-xs text-[#8A99B2] ml-2 flex-shrink-0">
+                      {dateText}
+                    </span>
+                  </div>
+                  <p className="text-xs text-[#7B88A0] line-clamp-2">
+                    {desc}
+                  </p>
+
+                  {/* 태그들 (언어, 점수) */}
+                  <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px]">
+                    {/* <span className="px-2 py-0.5 rounded-full bg-[#E9F7EF] text-[#2E8B57]">
+                      {feedback.lang || "언어 미정"}
+                    </span> */}
+                    {typeof feedback.score === "number" && (
+                      <span className="px-2 py-0.5 rounded-full bg-[#FFF4D6] text-[#B58500]">
+                        점수 {feedback.score}점
+                      </span>
+                    )}
+                    {/* {feedback.accuracy && (
+                      <span className="px-2 py-0.5 rounded-full bg-[#E3F2FF] text-[#3C6FD8]">
+                        정확도 {feedback.accuracy}%
+                      </span>
+                    )} */}
                   </div>
                 </div>
-              ))}
+
+                {/* 오른쪽 버튼/남은시간 영역 */}
+                <div className="flex flex-col items-end gap-2 flex-shrink-0">
+                  {/* 남은 시간 데이터가 있다면 */}
+                  {feedback.remainingTime && (
+                    <span className="inline-flex items-center rounded-full bg-[#F3F4FF] px-3 py-1 text-[11px] text-[#7B88A0]">
+                      {feedback.remainingTime} 남음
+                    </span>
+                  )}
+                  <button
+                    onClick={() =>
+                      navigate(`/player?contentId=${feedback.contentsId}`)
+                    }
+                    className="
+                      px-4 py-2 rounded-full bg-[#6B7CFF] text-white text-xs font-semibold
+                      shadow-sm hover:bg-[#5462E8] transition-all duration-300
+                      opacity-0 group-hover:opacity-100
+                    "
+                  >
+                    이어서 보기
+                  </button>
+                </div>
+              </div>
+
+              {/* 하단 진행 바 */}
+              <div className="mt-4 h-2 rounded-full bg-[#E3EDFF] overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-[#6B7CFF] transition-all"
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
             </div>
-          )}
-        </div>
+          );
+        })}
+    </div>
+  )}
+</div>
+
+
+
+
+
+
       </div>
     </div>
   );

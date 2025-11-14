@@ -22,9 +22,6 @@ function App() {
         <main className="
           w-full                     /* 헤더처럼 전체폭 */
           my-[0.05rem]                /* 상하 여백 */
-          rounded-[23px] border-[3px] border-[#5E5A6A]
-          bg-[#E0EEFF] 
-          shadow-[0_2px_4px_rgba(0,0,0,0.08)]
           p-10
           ">
           <Outlet />
