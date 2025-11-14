@@ -112,3 +112,18 @@
 .animate-slideIn {
   animation: slideIn 0.3s ease-out;
 }
+
+@keyframes fadeInSlow {
+  0% { 
+    opacity: 0; 
+    transform: translateY(20px); 
+  }
+  100% { 
+    opacity: 1; 
+    transform: translateY(0); 
+  }
+}
+
+.animate-fadeInSlow {
+  animation: fadeInSlow 0.9s ease forwards;
+}
