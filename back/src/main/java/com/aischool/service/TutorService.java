@@ -40,17 +40,31 @@ public class TutorService {
             return "BRONZE";
     }
 
+    private String mapToAzureLocale(String lang) {
+    return switch (lang.toLowerCase()) {
+        case "en" -> "en-US";
+        case "ko" -> "ko-KR";
+        case "ja" -> "ja-JP";
+        case "zh" -> "zh-CN";
+        case "th" -> "th-TH";
+        case "vi" -> "vi-VN";
+        case "ru" -> "ru-RU";
+        default -> throw new IllegalArgumentException("지원하지 않는 언어 코드: " + lang);
+    };
+}
+
     public FeedbackResponseDto createFeedback(FeedbackRequestDto requestDto) {
 
         // 기본정보 확인
         Long userId = requestDto.getUserId();
         String targetSentence = requestDto.getTargetSentence();
         String filePath = requestDto.getRecordedFilePath();
+        String azureLocale = mapToAzureLocale(requestDto.getLang());
 
         // azure api에 음성 파일 전송 + 분석 결과 받기
         var aiResult = azureSpeechClient.analyzeAudio(
                 requestDto.getAudioFileUrl(),
-                requestDto.getLang());
+                azureLocale);
 
         // 2. ai 응답을 가공하여 점수와 피드백 문장 생성
         GeneratedFeedbackResult generated = feedbackGenerator.generate(aiResult);
@@ -90,11 +104,13 @@ public class TutorService {
         tempFile = File.createTempFile("record_", ".webm");
         audioFile.transferTo(tempFile);
 
+        String azureLocale = mapToAzureLocale(lang);
+
         // 3️⃣ Azure 발음 평가 실행 (JSON 결과 받기)
         String azureJson = azureSpeechService.analyzeWithConvertJson(
                 tempFile,
                 targetSentence,
-                lang
+                azureLocale
         );
 
         // 4️⃣ 세밀한 피드백 생성
