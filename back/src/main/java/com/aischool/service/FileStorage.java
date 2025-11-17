@@ -7,7 +7,9 @@ import org.springframework.stereotype.Component;
 
 import java.io.File;
 import java.net.URL;
-import java.nio.charset.StandardCharsets; // (필요 시 유지)
+import java.nio.charset.StandardCharsets; // (?�요 ???��?)
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.UUID;
 
 @Component
@@ -17,7 +19,7 @@ public class FileStorage {
     @Value("${storage.root-dir}")
     private String rootDir;
 
-    /** 공용: 디렉터리 보장 생성 */
+    /** 공용: ?�렉?�리 보장 ?�성 */
     private File ensureDir(File dir) {
         if (!dir.exists() && !dir.mkdirs()) {
             throw new IllegalStateException("Cannot create directory: " + dir.getAbsolutePath());
@@ -25,7 +27,7 @@ public class FileStorage {
         return dir;
     }
 
-    /** 공용: 동일 파일명 충돌 시 -1, -2 … 붙여서 고유 파일 생성 */
+    /** 공용: ?�일 ?�일�?충돌 ??-1, -2 ??붙여??고유 ?�일 ?�성 */
     private File uniqueDest(File dir, String fileName) {
         String safe = sanitize(fileName);
         File dest = new File(dir, safe);
@@ -43,15 +45,15 @@ public class FileStorage {
         return alt;
     }
 
-    /** ⬇️ 루트 바로 아래에 저장 (하위 폴더 X) */
+    /** ⬇️ 루트 바로 ?�래???�??(?�위 ?�더 X) */
     public String downloadToRoot(String fileName, String fileUrl) throws Exception {
         File root = ensureDir(new File(rootDir));
         File dest = uniqueDest(root, fileName);
         FileUtils.copyURLToFile(new URL(fileUrl), dest, 30_000, 120_000);
-        return dest.getAbsolutePath();
+        return buildPublicPath(null, dest);
     }
 
-    /** ⬇️ 지정한 서브폴더에 저장 (예: subDir="contents") */
+    /** ⬇️ 지?�한 ?�브?�더???�??(?? subDir="contents") */
     public String downloadTo(String subDir, String fileName, String fileUrl) throws Exception {
         File base = (subDir == null || subDir.isBlank())
                 ? new File(rootDir)
@@ -60,22 +62,40 @@ public class FileStorage {
 
         File dest = uniqueDest(base, fileName);
         FileUtils.copyURLToFile(new URL(fileUrl), dest, 30_000, 120_000);
-        return dest.getAbsolutePath();
+        return buildPublicPath(subDir, dest);
     }
 
-    /** 파일명에 사용할 수 없는 문자 정리 */
+    /**
+     * 저장된 실제 파일 경로를 서비스에서 노출할 형태(상대/절대 문자열)로 변환
+     */
+    private String buildPublicPath(String subDir, File dest) {
+        Path base = Paths.get(rootDir);
+        if (subDir != null && !subDir.isBlank()) {
+            base = base.resolve(subDir);
+        }
+        Path logical = base.resolve(dest.getName()).normalize();
+        String result = logical.toString().replace("\\", "/");
+        if (!logical.isAbsolute()
+                && !result.startsWith("./")
+                && !result.startsWith("../")) {
+            result = "./" + result;
+        }
+        return result;
+    }
+
+    /** ?�일명에 ?�용?????�는 문자 ?�리 */
     public static String sanitize(String name) {
         String s = (name == null) ? "" : name;
-        // 기본 금지 문자 치환
+        // 기본 금�? 문자 치환
         s = s.replaceAll("[\\\\/:*?\"<>|]", "_").trim();
-        // 제어문자 제거
+        // ?�어문자 ?�거
         s = s.replaceAll("[\\p{Cntrl}]", "");
         if (s.isBlank()) s = "untitled_" + UUID.randomUUID().toString().substring(0, 8);
-        // Windows 예약어 회피
+        // Windows ?�약???�피
         if (s.matches("(?i)^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])$")) {
             s = "_" + s;
         }
-        // 너무 길면 자르기
+        // ?�무 길면 ?�르�?
         if (s.length() > 120) s = s.substring(0, 120);
         return s;
     }
