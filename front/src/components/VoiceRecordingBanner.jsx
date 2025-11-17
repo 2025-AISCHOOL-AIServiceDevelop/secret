@@ -14,6 +14,9 @@ import {
   Smile,
   Sparkles
 } from 'lucide-react'
+import level1 from '../assets/level1.png'
+import level2 from '../assets/level2.png'
+import level3 from '../assets/level3.png'
 
 const AZURE_LANGUAGE_MAP = {
   ko: 'ko-KR',
@@ -62,6 +65,7 @@ function VoiceRecordingBanner({ script, contentsId, language = 'en', userId, onA
   const recordingTimerRef = useRef(null)
 
   const breakdownItems = [
+    { label: '총점', value: localScore, color: '#FFE082' },
     { label: '정확도', value: localAccuracy, color: '#81D4FA' },
     { label: '유창성', value: localFluency, color: '#BA68C8' },
     { label: '완성도', value: localCompleteness, color: '#FFD54F' }
@@ -307,11 +311,18 @@ function VoiceRecordingBanner({ script, contentsId, language = 'en', userId, onA
   }
 
   const getMedalIcon = (medal) => {
-    const className = "w-12 h-12"
-    if (medal === 'GOLD') return <Award className={`${className} text-yellow-400 fill-yellow-400`} />
-    if (medal === 'SILVER') return <Award className={`${className} text-gray-400 fill-gray-400`} />
-    if (medal === 'BRONZE') return <Award className={`${className} text-orange-600 fill-orange-600`} />
-    return <Award className={`${className} text-purple-400 fill-purple-400`} />
+    const className = "w-40 h-40 object-contain drop-shadow-lg -mt-14"
+    if (medal === 'GOLD') {
+      return <img src={level3} alt="골드 레벨 배지" className={className} />
+    }
+    if (medal === 'SILVER') {
+      return <img src={level2} alt="실버 레벨 배지" className={className} />
+    }
+    if (medal === 'BRONZE') {
+      return <img src={level1} alt="브론즈 레벨 배지" className={className} />
+    }
+    // 메달 정보가 없을 때는 기본 레벨1 이미지 사용
+    return <img src={level1} alt="연습 레벨 배지" className={className} />
   }
 
   return (
@@ -406,19 +417,9 @@ function VoiceRecordingBanner({ script, contentsId, language = 'en', userId, onA
       {localScore !== null && !isAnalyzing && !errorMessage && (
         <div className="absolute inset-0 bg-white/95 backdrop-blur-sm rounded-[16px] flex items-center justify-center z-10 p-4">
           <div className="w-full h-full grid grid-cols-[auto_1fr] gap-4">
-            {/* 왼쪽: 점수 + 메달 */}
-            <div className="flex flex-col items-center justify-center gap-2 px-4">
+            {/* 왼쪽: 메달 이미지만 표시 */}
+            <div className="flex flex-col items-center justify-center px-4">
               {getMedalIcon(localMedal)}
-              <div className="text-center">
-                <div className="text-4xl font-black bg-gradient-to-r from-[#FFE082] via-[#81D4FA] to-[#BA68C8] bg-clip-text text-transparent">
-                  {(localScore ?? 0)}점
-                </div>
-                {localMedal && (
-                  <span className="text-xs font-semibold uppercase tracking-widest text-[#0277BD] block mt-1">
-                    {localMedal}
-                  </span>
-                )}
-              </div>
             </div>
 
             {/* 오른쪽: 상세 정보 */}
@@ -439,8 +440,8 @@ function VoiceRecordingBanner({ script, contentsId, language = 'en', userId, onA
                 </div>
               )}
 
-              {/* 세부 점수 */}
-              <div className="grid grid-cols-3 gap-2">
+              {/* 세부 점수 (총점 + 세부 점수들) */}
+              <div className="grid grid-cols-4 gap-2">
                 {breakdownItems.map(({ label, value, color }) => (
                   <div
                     key={label}
