@@ -1,24 +1,25 @@
-import { useState, memo } from 'react';
+// import { useState, memo } from 'react';
+import { memo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { User, LogOut, LogIn } from 'lucide-react';
 import { AppTitle } from './Typography';
-import { LoginPromptModal } from './Modal';
+// import { LoginPromptModal } from './Modal';
 import { useAuthStore } from '../../stores';
 
 // Header component
 export const Header = memo(() => {
   const navigate = useNavigate();
   const { isAuthenticated, logout } = useAuthStore();
-  const [showLoginModal, setShowLoginModal] = useState(false);
+  // const [showLoginModal, setShowLoginModal] = useState(false);
 
   const handleLoginClick = () => {
-    setShowLoginModal(true);
-  };
-
-  const handleLoginConfirm = () => {
-    setShowLoginModal(false);
     navigate('/login');
   };
+
+  // const handleLoginConfirm = () => {
+  //   setShowLoginModal(false);
+  //   navigate('/login');
+  // };
 
   const handleLogout = () => {
     logout();
@@ -26,7 +27,7 @@ export const Header = memo(() => {
   };
 
   const pillBtn =
-    "no-underline font-extrabold text-[#394b69] " +
+    "no-underline font-[DungeonFighterOnlineBeatBeat] text-[#FFFFFF] " +
     "inline-flex items-center justify-center " +
     "w-[130.7px] h-[57.3px] shrink-0 " +
     "rounded-full border-[2.5px] border-[#6C798A] bg-[#B1D2FA] " +
@@ -43,10 +44,10 @@ export const Header = memo(() => {
           
         </Link>
         {/* 오른쪽 버튼 고정 */}
-        <nav className="absolute right-8 top-1/2 -translate-y-1/2 flex gap-3 z-10">
+        <nav className="absolute font-[DungeonFighterOnlineBeatBeat] right-8 top-1/2 -translate-y-1/2 flex gap-3 z-10">
           {!isAuthenticated ? (
             <button onClick={handleLoginClick} className={`${pillBtn} flex items-center gap-2`}>
-              <LogIn className="w-5 h-5" />
+              <LogIn className="w-5 h-5 " />
               로그인
             </button>
 
@@ -77,11 +78,11 @@ export const Header = memo(() => {
       </div>
 
       {/* Login Prompt Modal */}
-      <LoginPromptModal
+      {/* <LoginPromptModal
         isOpen={showLoginModal}
         onClose={() => setShowLoginModal(false)}
         onConfirm={handleLoginConfirm}
-      />
+      /> */}
     </header>
   )
 })

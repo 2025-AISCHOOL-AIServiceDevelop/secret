@@ -6,6 +6,9 @@ import userIcon from "../assets/user-icon.png";
 import level1 from "../assets/level1.png";
 import level2 from "../assets/level2.png";
 import level3 from "../assets/level3.png";
+import continueReading from "../assets/continue-reading.png";
+
+
 
 
 function Mypage() {
@@ -163,7 +166,8 @@ function Mypage() {
           <p className="text-gray-600 mt-1">오늘도 멋지게 우주 여행 중이에요 🚀</p>
         </div>
 
-         {/* 간단 통계 3개 */}
+
+         {/* 간단 통계 3개
           <div className="grid grid-cols-3 gap-4 mb-4">
             <div className="text-center">
               <div className="w-14 h-14 mx-auto rounded-full bg-[#E3F2FF] flex items-center justify-center mb-2">
@@ -192,7 +196,8 @@ function Mypage() {
                 {languageCount}
               </p>
             </div>
-          </div>
+          </div> */}
+          
 
 
 
@@ -307,12 +312,16 @@ function Mypage() {
                       navigate(`/player?contentId=${feedback.contentsId}`)
                     }
                     className="
-                      px-4 py-2 rounded-full bg-[#6B7CFF] text-white text-xs font-semibold
-                      shadow-sm hover:bg-[#5462E8] transition-all duration-300
                       opacity-0 group-hover:opacity-100
+                      transition-all duration-300
+                      hover:scale-105
                     "
                   >
-                    이어서 보기
+                    <img
+                      src={continueReading}
+                      alt="이어서 보기"
+                      className="w-28 h-auto"
+                    />
                   </button>
                 </div>
               </div>
