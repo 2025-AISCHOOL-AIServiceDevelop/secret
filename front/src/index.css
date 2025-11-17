@@ -32,7 +32,31 @@
 @layer utilities {
   .scrollbar-soft {
     scrollbar-width: thin;
-    scrollbar-color: #9EB4FF #CED8EA;
+    scrollbar-color: #9EB4FF #CED8EA; 
+  }
+}
+
+@layer utilities {
+  /* 기존 scrollbar-soft 밑에 추가해도 됨 */
+
+  /* 버튼 글자 외곽선 전용 */
+  .login-outline-text {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .login-outline-text::before {
+    content: attr(data-label);        /* span에 적어둔 data-label을 그대로 복사 */
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: transparent;               /* 안쪽 채우기 없음 */
+    -webkit-text-stroke-width: 4px;   /* 외곽선 두께 */
+    -webkit-text-stroke-color: #6C798A; /* 외곽선 색 */
   }
 }
 
