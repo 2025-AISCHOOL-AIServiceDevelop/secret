@@ -420,7 +420,11 @@ function Mypage() {
                   )}
                   <button
                     onClick={() =>
-                      navigate(`/player?contentId=${feedback.contentsId}`)
+                      navigate(
+                        `/player?contentId=${feedback.contentsId}${
+                          feedback.lang ? `&lang=${encodeURIComponent(feedback.lang)}` : ''
+                        }`
+                      )
                     }
                     className="
                       opacity-0 group-hover:opacity-100

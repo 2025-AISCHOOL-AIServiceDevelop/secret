@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
   Play,
@@ -21,6 +21,7 @@ import { API_BASE_URL } from '../services/api';
 function Player() {
   const [searchParams] = useSearchParams();
   const contentId = searchParams.get('contentId');
+  const initialLangParam = searchParams.get('lang');
 
   const { getContentById, loadContents, contents } = useContentsStore();
   const { scripts, isLoadingScripts, loadScripts, getCurrentScript } = useTranslationStore();
@@ -34,7 +35,11 @@ function Player() {
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
-  const [selectedLanguage, setSelectedLanguage] = useState('ko'); // 기본 한국어
+  const [selectedLanguage, setSelectedLanguage] = useState(() => {
+    if (!initialLangParam) return 'ko';
+    // URL ?lang=en-US 또는 en 형태 모두 지원 → 짧은 코드만 사용
+    return initialLangParam.toLowerCase().split('-')[0];
+  }); // 기본 한국어 (또는 URL 파라미터 기반)
   const [pausedScriptIds, setPausedScriptIds] = useState(new Set()); // 이미 중지된 스크립트 추적
   const [recordingPromptVisible, setRecordingPromptVisible] = useState(false);
   const [analysisResult, setAnalysisResult] = useState(null);
@@ -56,12 +61,36 @@ function Player() {
     }
   }, [contentId, contents.length, loadContents]);
 
-  // Load content and scripts on mount and when language changes
+  // 현재 선택된 콘텐츠(쿼리 파라미터 기준)
+  const baseContent = contentId ? getContentById(parseInt(contentId)) : null;
+
+  // 언어별로 올바른 contentsId를 찾기 위한 헬퍼
+  const effectiveContent = useMemo(() => {
+    if (!baseContent) return null;
+
+    const langCode = (selectedLanguage || '').toLowerCase();
+    const rootId = baseContent.parentId || baseContent.contentsId;
+
+    const relatedContents = contents.filter(
+      (c) =>
+        c &&
+        (c.contentsId === rootId || c.parentId === rootId)
+    );
+
+    const exactMatch = relatedContents.find(
+      (c) => (c.language || '').toLowerCase() === langCode
+    );
+
+    // 정확히 일치하는 언어가 없으면 기본 콘텐츠 사용
+    return exactMatch || baseContent;
+  }, [baseContent, contents, selectedLanguage]);
+
+  // 선택된 언어/콘텐츠 기준으로 스크립트 로딩
   useEffect(() => {
-    if (contentId) {
-      loadScripts(parseInt(contentId), selectedLanguage);
+    if (effectiveContent && selectedLanguage) {
+      loadScripts(effectiveContent.contentsId, selectedLanguage);
     }
-  }, [contentId, selectedLanguage, loadScripts]);
+  }, [effectiveContent, selectedLanguage, loadScripts]);
 
   // Set initial selected script
   useEffect(() => {
@@ -70,7 +99,7 @@ function Player() {
     }
   }, [scripts, selectedScript]);
 
-  const content = contentId ? getContentById(parseInt(contentId)) : null;
+  const content = effectiveContent || baseContent;
   const displayScript = selectedScript || getCurrentScript();
 
   const handleAnalysisComplete = (result, script) => {
@@ -382,7 +411,7 @@ function Player() {
       <div className="h-[220px]">
         <VoiceRecordingBanner
           script={displayScript}
-          contentsId={parseInt(contentId)}
+          contentsId={content?.contentsId || (contentId ? parseInt(contentId) : undefined)}
           language={selectedLanguage}
           userId={user?.id || 1}
           onAnalyzed={handleAnalysisComplete}
