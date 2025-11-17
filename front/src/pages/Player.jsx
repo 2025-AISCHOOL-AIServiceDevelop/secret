@@ -17,6 +17,18 @@ import {
 import { useContentsStore, useTranslationStore, useTutorStore, useAuthStore } from '../stores';
 import VoiceRecordingBanner from '../components/VoiceRecordingBanner';
 import { API_BASE_URL } from '../services/api';
+import level1 from '../assets/level1.png';
+import level2 from '../assets/level2.png';
+import level3 from '../assets/level3.png';
+
+const getStickerByMedal = (medal) => {
+  if (!medal) return null;
+  const upper = String(medal).toUpperCase();
+  if (upper === 'GOLD') return level3;
+  if (upper === 'SILVER') return level2;
+  if (upper === 'BRONZE') return level1;
+  return null;
+};
 
 function Player() {
   const [searchParams] = useSearchParams();
@@ -25,7 +37,7 @@ function Player() {
 
   const { getContentById, loadContents, contents } = useContentsStore();
   const { scripts, isLoadingScripts, loadScripts, getCurrentScript } = useTranslationStore();
-  const { currentFeedback } = useTutorStore();
+  const { currentFeedback, feedbackHistory } = useTutorStore();
   const { user } = useAuthStore();
 
   const videoRef = useRef(null);
@@ -102,9 +114,31 @@ function Player() {
   const content = effectiveContent || baseContent;
   const displayScript = selectedScript || getCurrentScript();
 
+  // 현재 콘텐츠/사용자 기준 스크립트별 최신 피드백 맵 (프론트 로컬 히스토리에서 계산)
+  const scriptFeedbackMap = useMemo(() => {
+    if (!user || !content?.contentsId || scripts.length === 0 || !feedbackHistory) return {};
+
+    const map = {};
+    // feedbackHistory는 최신 순으로 쌓이므로, 처음 들어오는 값이 최신
+    feedbackHistory.forEach((fb) => {
+      if (
+        fb &&
+        fb.userId === user.id &&
+        fb.contentsId === content.contentsId &&
+        fb.scriptId != null &&
+        map[fb.scriptId] == null
+      ) {
+        map[fb.scriptId] = fb;
+      }
+    });
+    return map;
+  }, [user, content, scripts, feedbackHistory]);
+
   const handleAnalysisComplete = (result, script) => {
+    const scriptKey = result?.scriptId ?? script?.scriptId ?? script?.id ?? null;
     setAnalysisResult({
       ...result,
+      scriptId: scriptKey,
       scriptText: result?.scriptText || script?.text || '',
     });
   };
@@ -348,7 +382,7 @@ function Player() {
           </div>
 
           {/* 스크립트 목록 */}
-          <div className="bg-white rounded-[14px] border-2 p-4" style={{ borderColor: '#c8d3f0', maxHeight: '530px', overflowY: 'auto' }}>
+          <div className="bg-white rounded-[14px] border-2 p-4" style={{ borderColor: '#c8d3f0', maxHeight: '700px', overflowY: 'auto' }}>
             <div className="text-sm text-gray-600 font-bold mb-3 flex items-center gap-2">
               <FileText className="w-4 h-4" />
               전체 스크립트
@@ -366,6 +400,12 @@ function Player() {
                       (script.id && selectedScript.id === script.id) ||
                       (selectedScript.orderNo === script.orderNo && selectedScript.contentsId === script.contentsId)
                     );
+                    const scriptKey = script.scriptId ?? script.id;
+                    const feedbackForScript = scriptKey != null ? scriptFeedbackMap[Number(scriptKey)] : null;
+                    const latestMedal =
+                      feedbackForScript?.medal ||
+                      (analysisResult && analysisResult.scriptId === scriptKey ? analysisResult.medal : null);
+                    const stickerSrc = latestMedal ? getStickerByMedal(latestMedal) : null;
                     
                     return (
                       <div
@@ -385,12 +425,21 @@ function Player() {
                           }`}>
                             {index + 1}
                           </div>
-                          <div className={`flex-1 text-sm leading-relaxed transition-all ${
-                            isSelected
-                              ? 'text-[#01579B] font-bold'
-                              : 'text-[#0277BD]'
-                          }`}>
-                            {script.text}
+                          <div className="flex-1 flex items-center justify-between gap-2">
+                            <div className={`text-sm leading-relaxed transition-all ${
+                              isSelected
+                                ? 'text-[#01579B] font-bold'
+                                : 'text-[#0277BD]'
+                            }`}>
+                              {script.text}
+                            </div>
+                            {stickerSrc && (
+                              <img
+                                src={stickerSrc}
+                                alt="발음 스티커"
+                                className="w-10 h-10 object-contain drop-shadow-sm"
+                              />
+                            )}
                           </div>
                         </div>
                       </div>
@@ -408,7 +457,7 @@ function Player() {
       </div>
 
       {/* 하단: 음성 녹음 전용 배너 */}
-      <div className="h-[220px]">
+      <div className="h-[180px]">
         <VoiceRecordingBanner
           script={displayScript}
           contentsId={content?.contentsId || (contentId ? parseInt(contentId) : undefined)}

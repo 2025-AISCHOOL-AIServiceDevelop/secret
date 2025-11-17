@@ -215,12 +215,8 @@ function VoiceRecordingBanner({ script, contentsId, language = 'en', userId, onA
     stopRecording()
   }
 
-  const buildMessage = (score, medal) => {
-    if (medal === 'GOLD' || score >= 90) return { icon: Star, text: '와우! 정말 완벽해요! 천재인가요?' }
-    if (medal === 'SILVER' || score >= 75) return { icon: ThumbsUp, text: '정말 잘했어요! 조금만 더 연습하면 완벽해요!' }
-    if (score >= 60) return { icon: Smile, text: '좋아요! 다시 한번 또박또박 말해볼까요?' }
-    return { icon: Sparkles, text: '괜찮아요! 천천히 따라 해봐요!' }
-  }
+  // 현재는 상단 문구를 사용하지 않도록 비워둔 함수
+  const buildMessage = () => null
 
   const cleanup = () => {
     if (rafRef.current) cancelAnimationFrame(rafRef.current)
@@ -311,7 +307,7 @@ function VoiceRecordingBanner({ script, contentsId, language = 'en', userId, onA
   }
 
   const getMedalIcon = (medal) => {
-    const className = "w-40 h-40 object-contain drop-shadow-lg -mt-14"
+    const className = "w-40 h-40 object-contain drop-shadow-lg -mt-2"
     if (medal === 'GOLD') {
       return <img src={level3} alt="골드 레벨 배지" className={className} />
     }
@@ -416,22 +412,14 @@ function VoiceRecordingBanner({ script, contentsId, language = 'en', userId, onA
       {/* 분석 결과 오버레이 */}
       {localScore !== null && !isAnalyzing && !errorMessage && (
         <div className="absolute inset-0 bg-white/95 backdrop-blur-sm rounded-[16px] flex items-center justify-center z-10 p-4">
-          <div className="w-full h-full grid grid-cols-[auto_1fr] gap-4">
+          <div className="w-full h-full grid grid-cols-[auto_1fr_auto] gap-4 items-stretch">
             {/* 왼쪽: 메달 이미지만 표시 */}
             <div className="flex flex-col items-center justify-center px-4">
               {getMedalIcon(localMedal)}
             </div>
 
-            {/* 오른쪽: 상세 정보 */}
+            {/* 가운데: 상세 정보 */}
             <div className="flex flex-col gap-2.5 justify-center">
-              {/* 메시지 */}
-              {localMessage && (
-                <div className="flex items-center gap-2 text-sm text-[#0277BD] font-bold">
-                  {localMessage.icon && <localMessage.icon className="w-5 h-5 text-[#FFD54F]" />}
-                  <span>{localMessage.text || localMessage}</span>
-                </div>
-              )}
-
               {/* 스크립트 */}
               {localScriptText && (
                 <div className="flex items-start gap-2 p-2 bg-[#E1F5FE] rounded-lg border border-[#B3E5FC] shadow-sm">
@@ -441,16 +429,18 @@ function VoiceRecordingBanner({ script, contentsId, language = 'en', userId, onA
               )}
 
               {/* 세부 점수 (총점 + 세부 점수들) */}
-              <div className="grid grid-cols-4 gap-2">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                 {breakdownItems.map(({ label, value, color }) => (
                   <div
                     key={label}
-                    className="p-2 rounded-lg border-2 shadow-sm bg-white flex flex-col items-center justify-center gap-0.5"
+                    className="p-2 rounded-lg border-2 shadow-sm bg-white flex items-center justify-center"
                     style={{ borderColor: color }}
                   >
-                    <span className="text-xs font-semibold text-[#0277BD]">{label}</span>
-                    <span className="text-xl font-bold text-[#01579B]">
-                      {value !== null ? `${value}` : '-'}
+                    <span className="text-xs md:text-sm font-semibold text-[#0277BD]">
+                      {label} :{' '}
+                      <span className="font-bold text-[#01579B]">
+                        {value !== null ? `${value}` : '-'}
+                      </span>
                     </span>
                   </div>
                 ))}
@@ -464,34 +454,35 @@ function VoiceRecordingBanner({ script, contentsId, language = 'en', userId, onA
                 </div>
               )}
 
-              {/* 버튼 */}
-              <div className="flex justify-between gap-2.5 mt-1">
+            </div>
+
+            {/* 오른쪽: 액션 버튼들 */}
+            <div className="flex flex-col justify-center items-end gap-3 pr-2">
+              <button
+                onClick={start}
+                className="w-44 px-5 py-3 rounded-lg bg-gradient-to-r from-[#81D4FA] to-[#4FC3F7] border-2 border-[#0277BD] text-white font-bold text-base shadow-md hover:shadow-lg transform hover:scale-105 transition-all inline-flex items-center justify-center gap-2"
+              >
+                <RefreshCw className="w-4 h-4" />
+                다시 도전
+              </button>
+              {onContinueVideo && (
                 <button
-                  onClick={start}
-                  className="flex-1 px-4 py-2 rounded-lg bg-gradient-to-r from-[#81D4FA] to-[#4FC3F7] border-2 border-[#0277BD] text-white font-bold text-sm shadow-md hover:shadow-lg transform hover:scale-105 transition-all inline-flex items-center justify-center gap-2"
+                  onClick={() => {
+                    setLocalScore(null)
+                    setLocalMessage('')
+                    setLocalFeedbackText('')
+                    setLocalAccuracy(null)
+                    setLocalFluency(null)
+                    setLocalCompleteness(null)
+                    setLocalMedal(null)
+                    setErrorMessage('')
+                    onContinueVideo()
+                  }}
+                  className="w-44 px-5 py-3 rounded-lg bg-gradient-to-r from-[#FFE082] to-[#FFECB3] border-2 border-[#FFD54F] text-[#F57C00] font-bold text-base shadow-md hover:shadow-lg transform hover:scale-105 transition-all inline-flex items-center justify-center gap-2"
                 >
-                  <RefreshCw className="w-4 h-4" />
-                  다시 도전!
+                  이어서 따라하기
                 </button>
-                {onContinueVideo && (
-                  <button
-                    onClick={() => {
-                      setLocalScore(null)
-                      setLocalMessage('')
-                      setLocalFeedbackText('')
-                      setLocalAccuracy(null)
-                      setLocalFluency(null)
-                      setLocalCompleteness(null)
-                      setLocalMedal(null)
-                      setErrorMessage('')
-                      onContinueVideo()
-                    }}
-                    className="flex-1 px-4 py-2 rounded-lg bg-gradient-to-r from-[#FFE082] to-[#FFECB3] border-2 border-[#FFD54F] text-[#F57C00] font-bold text-sm shadow-md hover:shadow-lg transform hover:scale-105 transition-all inline-flex items-center justify-center gap-2"
-                  >
-                    ▶ 영상 이어보기
-                  </button>
-                )}
-              </div>
+              )}
             </div>
           </div>
         </div>
