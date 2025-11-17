@@ -71,65 +71,46 @@
 }
 
 
-/* Custom Scrollbar Styles */
+/* 숨겨진 기본 스크롤바 (브라우저 기본은 안 보이고, 오른쪽 커스텀만 사용) */
 ::-webkit-scrollbar {
-  width: 16px;
-  height: 16px;
+  width: 0;
+  height: 0;
+  background: transparent;
 }
 
 ::-webkit-scrollbar-track {
-  background: linear-gradient(180deg, #DFE9F6 0%, #F0D98B 100%);
-  border-radius: 8px;
-  margin: 4px;
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: url('./assets/planet.svg') center center / contain no-repeat,
-              linear-gradient(180deg, #6B7CFF 0%, #394b69 100%);
-  border-radius: 8px;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  background: transparent;
+  border: none;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: url('./assets/planet.svg') center center / contain no-repeat,
-              linear-gradient(180deg, #8A99B2 0%, #3A4B63 100%);
-  border-color: rgba(255, 255, 255, 0.5);
+  background: transparent;
 }
 
 ::-webkit-scrollbar-corner {
-  background: #DFE9F6;
+  background: transparent;
 }
 
-/* Firefox scrollbar */
+/* Firefox, Edge(모던)에서 기본 스크롤바 숨기기 */
 * {
-  scrollbar-width: thin;
-  scrollbar-color: #6B7CFF #DFE9F6;
+  scrollbar-width: none;
 }
 
-/* Card-specific Scrollbar Styles */
+/* 카드 내부 스크롤도 기본 스크롤바는 숨기기 */
 .card-scroll {
   overflow-y: auto;
   overflow-x: hidden;
+  scrollbar-width: none;        /* Firefox */
+  -ms-overflow-style: none;     /* IE/Edge 옛 버전 */
 }
 
 .card-scroll::-webkit-scrollbar {
-  width: 8px;
-}
-
-.card-scroll::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 4px;
-}
-
-.card-scroll::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, #6B7CFF 0%, #394b69 100%);
-  border-radius: 4px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-.card-scroll::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, #8A99B2 0%, #3A4B63 100%);
+  width: 0;
+  height: 0;
 }
 
 /* Toast Animation */

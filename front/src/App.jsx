@@ -5,6 +5,7 @@ import { Header, Footer } from './@design-system';
 import { useAuthStore } from './stores';
 import ErrorBoundary from './components/ErrorBoundary';
 import { ToastContainer } from './components/Toast';
+import ScrollSaturn from './components/ScrollSaturn';
 
 function App() {
   const { checkAuthStatus } = useAuthStore();
@@ -28,6 +29,9 @@ function App() {
         </main>
 
         <Footer />
+
+        {/* 스크롤 위치에 따라 오른쪽에서 떠다니는 토성 아이콘 */}
+        <ScrollSaturn />
       </div>
       
       {/* 전역 토스트 컨테이너 */}
