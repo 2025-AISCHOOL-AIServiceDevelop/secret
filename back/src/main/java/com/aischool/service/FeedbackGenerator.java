@@ -1,7 +1,7 @@
-// src/main/java/com/aischool/service/FeedbackGenerator.java
 package com.aischool.service;
 
 import org.springframework.stereotype.Component;
+
 import java.util.List;
 
 @Component
@@ -9,12 +9,15 @@ public class FeedbackGenerator {
 
     private final AzureResultAdapter adapter = new AzureResultAdapter();
     private final RuleEngine ruleEngine = new RuleEngine();
-    private final FeedbackTemplates templates = new FeedbackTemplates();
+
+    // 영어 / 중국어 템플릿
+    private final FeedbackTemplates enTemplates = new FeedbackTemplates();
+    private final FeedbackTemplatesZh zhTemplates = new FeedbackTemplatesZh();
 
     /**
-     * aiResult: Azure 원시 JSON(String) 혹은 이미 CanonicalFeedbackInput
+     * 언어별 세밀 발음 피드백 생성
      */
-    public GeneratedFeedbackResult generate(Object aiResult) {
+    public GeneratedFeedbackResult generate(Object aiResult, String lang) {
 
         CanonicalFeedbackInput input;
         if (aiResult instanceof CanonicalFeedbackInput) {
@@ -22,22 +25,26 @@ public class FeedbackGenerator {
         } else if (aiResult instanceof String) {
             input = adapter.toCanonical((String) aiResult);
         } else {
-            // 타입 예외: 기본값 리턴
             int fs = 80, acc = 80, flu = 80, comp = 80;
-            return new GeneratedFeedbackResult(fs, acc, flu, comp, medalOf(fs),
-                    "입력 형식을 확인해 주세요.");
+            return new GeneratedFeedbackResult(
+                    fs, acc, flu, comp, medalOf(fs),
+                    "입력 형식을 확인해 주세요."
+            );
         }
 
-        // 룰 평가
+        // 룰엔진으로 이슈 목록 생성
         List<RuleIssue> issues = ruleEngine.evaluate(input);
 
-        // 템플릿 합성 (톤은 우선 EMO로 고정; 필요 시 파라미터로 받기)
-        String feedbackText = templates.compose(input, issues, FeedbackTemplates.Tone.EMO);
+        // 언어별 템플릿 선택
+        FeedbackTemplatesBase template = resolveTemplate(lang);
 
-        int finalScore = (int) Math.round(input.finalScore);
-        int accuracy    = (int) Math.round(input.accuracy);
-        int fluency     = (int) Math.round(input.fluency);
-        int completeness= (int) Math.round(input.completeness);
+        // 템플릿에 이슈 목록을 넘겨서 최종 피드백 문장 생성
+        String feedbackText = template.compose(input, issues);
+
+        int finalScore     = (int) Math.round(input.finalScore);
+        int accuracy       = (int) Math.round(input.accuracy);
+        int fluency        = (int) Math.round(input.fluency);
+        int completeness   = (int) Math.round(input.completeness);
 
         return new GeneratedFeedbackResult(
                 finalScore,
@@ -49,33 +56,27 @@ public class FeedbackGenerator {
         );
     }
 
+    // 기존 generate(Object) 호출은 영어 기본
+    public GeneratedFeedbackResult generate(Object aiResult) {
+        return generate(aiResult, "en");
+    }
+
+    private FeedbackTemplatesBase resolveTemplate(String lang) {
+        if (lang == null) return enTemplates;
+
+        switch (lang.toLowerCase()) {
+            case "zh":
+            case "zh-cn":
+                return zhTemplates;
+            case "en":
+            default:
+                return enTemplates;
+        }
+    }
+
     private String medalOf(int finalScore) {
         if (finalScore >= 90) return "GOLD";
         if (finalScore >= 75) return "SILVER";
         return "BRONZE";
-    }
-
-    // ✅ 기존에 쓰던 간단 피드백 로직은 유지
-    public String generateSimpleFeedback(double finalScore, double accuracy, double fluency, double completeness) {
-        StringBuilder feedback = new StringBuilder();
-
-        if (finalScore >= 85) {
-            feedback.append("아주 잘했어요! ");
-        } else if (finalScore >= 70) {
-            feedback.append("좋아요! 조금만 더 연습해볼까요? ");
-        } else {
-            feedback.append("조금 더 또박또박 발음해보면 좋겠어요! ");
-        }
-
-        if (accuracy >= 85) feedback.append("정확도가 높아요! ");
-        else feedback.append("단어 발음을 조금 더 정확히 해봐요. ");
-
-        if (fluency >= 80) feedback.append("발음이 자연스럽네요! ");
-        else feedback.append("조금 더 천천히 말하면 좋아요. ");
-
-        if (completeness >= 80) feedback.append("전체적으로 완성도가 좋아요!");
-        else feedback.append("끝까지 문장을 마무리해보세요!");
-
-        return feedback.toString();
     }
 }
