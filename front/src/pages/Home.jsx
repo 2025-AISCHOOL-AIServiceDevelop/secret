@@ -9,7 +9,7 @@ function Home() {
   const [searchInput, setSearchInput] = useState('');
   const [selectedAge, setSelectedAge] = useState(null);
 
-  // 🔥 추가: 마스코트 표시 여부
+  // 마스코트 표시 여부
   const [showMascot, setShowMascot] = useState(true);
 
   const {
@@ -33,7 +33,7 @@ function Home() {
     }
   }, [searchInput, loadContents]);
 
-  // 🔥 추가: 스크롤 위치 감지해서 마스코트 자동 숨김 처리
+  // 스크롤 위치 감지해서 마스코트 자동 숨김 처리
   useEffect(() => {
     const handleScroll = () => {
       const scrollY = window.scrollY;
@@ -164,8 +164,17 @@ function Home() {
             koreanContents.map((content) => (
               <article
                 key={content.contentsId}
-                className="rounded-[18px] overflow-hidden border-2 border-[#a9b9d3]"
+                className="
+                  rounded-[20px]
+                  overflow-hidden
+                  bg-white/70
+                  shadow-[0_4px_12px_rgba(0,0,0,0.12)]
+                  hover:shadow-[0_8px_20px_rgba(0,0,0,0.18)]
+                  transition-shadow
+                  duration-300
+                "
               >
+
                 <Link to={`/player?contentId=${content.contentsId}`}>
                   <div
                     className="
@@ -226,7 +235,7 @@ function Home() {
             className="sticky top-[90px] grid gap-3 rounded-[22px] p-6 border-2"
             style={{ background: '#e6eefc', borderColor: '#a9b9d3' }}
           >
-            <div className="font-black text-lg text-[#4a5b8c]">나이별 추천동화</div>
+            <div className="font-extrabold text-lg text-[#35446b]">나이별 추천동화</div>
 
             {filtered.length > 0 ? (
               <Link to={`/player?contentId=${filtered[0].contentsId}`}>
@@ -272,7 +281,7 @@ function Home() {
 
             {/* 나이 버튼 */}
             <div className="flex gap-2 flex-nowrap justify-between">
-              {['2-4세', '4-5세', '7-9세', '10세이상'].map((age) => (
+              {['2-4세', '4-6세', '7-9세', '10세이상'].map((age) => (
                 <button
                   key={age}
                   onClick={() => setSelectedAge(age)}
@@ -282,7 +291,7 @@ function Home() {
                     ${
                       selectedAge === age
                         ? 'bg-[#5a6ea0] text-white border-[#5a6ea0]'
-                        : 'bg-white text-[#5a6ea0] border-[#c6ccee] hover:bg-[#dfe7ff]'
+                        : 'bg-white text-[#5a6ea0] border-[#a9b9d3] hover:bg-[#dfe7ff]'
                     }
                   `}
                 >
@@ -290,16 +299,9 @@ function Home() {
                 </button>
               ))}
             </div>
-
-            {/* 점 표시 */}
-            <div className="flex gap-1.5 justify-center">
-              <span className="w-2 h-2 rounded-full bg-[#9fb2e9]" />
-              <span className="w-2 h-2 rounded-full bg-[#9fb2e9] opacity-50" />
-              <span className="w-2 h-2 rounded-full bg-[#9fb2e9] opacity-50" />
-            </div>
           </div>
 
-          {/* 🔥 마스코트 — 조건부 렌더링으로 footer 겹침 제거 */}
+          {/* 마스코트 — 조건부 렌더링으로 footer 겹침 제거 */}
           {showMascot && (
             <div
               className="
