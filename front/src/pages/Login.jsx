@@ -1,84 +1,42 @@
-import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuthStore } from '../stores';
-import kakaoLogo from '../assets/kakao.png';
-import googleLogo from '../assets/google.png';
-import { API_BASE_URL } from '../services/api';
+// import { useEffect, useState } from 'react';
+// import { useNavigate } from 'react-router-dom';
+// import { useAuthStore } from '../stores';
+// import LoginModal from '../components/LoginModal';
 
-function Login() {
-  const navigate = useNavigate();
-  const { isAuthenticated, checkAuthStatus, isLoading } = useAuthStore();
+// function Login() {
+//   const navigate = useNavigate();
+//   const { isAuthenticated, checkAuthStatus, isLoading } = useAuthStore();
+//   const [open, setOpen] = useState(true);
 
-  useEffect(() => {
-    // Check if user is already authenticated
-    checkAuthStatus();
-  }, [checkAuthStatus]);
+//   // 로그인 상태 체크
+//   useEffect(() => {
+//     checkAuthStatus();
+//   }, [checkAuthStatus]);
 
-  useEffect(() => {
-    // Redirect to home if already authenticated
-    if (isAuthenticated) {
-      navigate('/');
-    }
-  }, [isAuthenticated, navigate]);
+//   // 이미 로그인 되어 있으면 홈으로 이동
+//   useEffect(() => {
+//     if (isAuthenticated) {
+//       navigate('/');
+//     }
+//   }, [isAuthenticated, navigate]);
 
-  const handleLogin = (provider) => {
-    // Redirect to backend OAuth endpoint
-    window.location.href = `${API_BASE_URL}/oauth2/authorization/${provider}`;
-  };
+//   // 로딩 표시
+//   if (isLoading) {
+//     return (
+//       <div className="min-h-screen flex items-center justify-center">
+//         <div className="text-center">
+//           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+//           <p>로그인 상태 확인 중...</p>
+//         </div>
+//       </div>
+//     );
+//   }
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-          <p>로그인 상태 확인 중...</p>
-        </div>
-      </div>
-    );
-  }
+//   return (
+//     <div>
+//       {open && <LoginModal onClose={() => navigate('/')} />}
+//     </div>
+//   );
+// }
 
-  return (
-    <div className="grid grid-cols-1 lg:grid-cols-[1fr_420px] gap-6 items-center">
-      {/* 왼쪽 소개 영역 */}
-      <div className="min-h-[380px] rounded-[18px] p-10 grid place-items-center text-center border-2"
-           style={{ background: '#bdd0f2', borderColor: '#9fb2d9' }}>
-        <div className="w-[180px] h-[180px] rounded-full"
-             style={{ background: 'radial-gradient(circle at 30% 30%, #ffffff, #b7c6ea 60%, #9ab0e0)' }} />
-        <div className="mt-5 font-black text-[36px] text-[#e9e3ff]" style={{ textShadow: '0 2px 0 #6f58b1' }}>
-          두근두근 지구말
-        </div>
-        <div className="text-[#586b93]">어린이를 위한 다국어 학습 플랫폼</div>
-      </div>
-
-      {/* 로그인 영역 */}
-      <div className="rounded-[18px] p-6 grid gap-3 border-2"
-           style={{ background: '#e1ecff', borderColor: '#b7c5e9' }}>
-        <button
-          onClick={() => handleLogin('kakao')}
-          className="w-full flex justify-center items-center"
-        >
-          <img
-            src={kakaoLogo}
-            alt="카카오 로그인"
-            className="w-[280px] h-auto hover:scale-105 active:scale-95 transition-transform duration-300"
-          />
-        </button>
-
-        <button
-          onClick={() => handleLogin('google')}
-          className="w-full flex justify-center items-center"
-        >
-          <img
-            src={googleLogo}
-            alt="Google 로그인"
-            className="w-[280px] h-auto hover:scale-105 transition-transform duration-300"
-          />
-        </button>
-
-        <div className="w-[120px] h-[120px] justify-self-center mt-2 rounded-[16px] border-2 border-dashed bg-[#f0f0f0] bg-[url('/vite.svg')] bg-no-repeat bg-center bg-[length:60px_60px]" />
-      </div>
-    </div>
-  )
-}
-
-export default Login
+// export default Login;
