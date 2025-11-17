@@ -24,6 +24,7 @@ function Mypage() {
     }
   }, [isAuthenticated, navigate]);
 
+  //랜덤 100가지 응원메시지
   const praiseMessages = [
       "오늘도 반짝! 너의 시간이 정말 특별해!",
       "조금 느려도 괜찮아, 넌 잘하고 있어!",

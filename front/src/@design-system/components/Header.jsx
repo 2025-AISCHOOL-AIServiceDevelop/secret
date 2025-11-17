@@ -48,7 +48,10 @@ export const Header = memo(() => {
           {!isAuthenticated ? (
             <button onClick={handleLoginClick} className={`${pillBtn} flex items-center gap-2  text-center`}>
               {/* <LogIn className="w-5 h-5 " /> */}
-              <span className="login-outline-text" data-label="로그인">로그인</span>
+              <span className="btn-label-wrap">
+              <span className="btn-label-outline" aria-hidden="true">로그인</span>
+              <span className="btn-label-fill">로그인</span>
+            </span>
             </button>
 
           ) : (
@@ -63,7 +66,10 @@ export const Header = memo(() => {
               hover:bg-[#c9ddff] focus:outline-none focus:ring-2 focus:ring-[#B1D2FA]/50"
               >
                 {/* <User className="w-5 h-5" /> */}
-                <span className="text-center">마이페이지</span>
+                <span className="btn-label-wrap">
+                <span className="btn-label-outline" aria-hidden="true">마이페이지</span>
+                <span className="btn-label-fill">마이페이지</span>
+              </span>
               </Link>
               <button
                 onClick={handleLogout}
@@ -76,7 +82,10 @@ export const Header = memo(() => {
               hover:bg-[#c9ddff] focus:outline-none focus:ring-2 focus:ring-[#B1D2FA]/50"
               >
                 {/* <LogOut className="w-4 h-4" /> */}
-                <span className="text-center">로그아웃</span>
+                <span className="btn-label-wrap">
+                <span className="btn-label-outline" aria-hidden="true">로그아웃</span>
+                <span className="btn-label-fill">로그아웃</span>
+              </span>
               </button>
             </>
           )}

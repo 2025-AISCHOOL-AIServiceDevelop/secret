@@ -36,29 +36,40 @@
   }
 }
 
-@layer utilities {
-  /* 기존 scrollbar-soft 밑에 추가해도 됨 */
-
-  /* 버튼 글자 외곽선 전용 */
-  .login-outline-text {
-    position: relative;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
+@layer components {
+  /* 로그인 / 마이페이지 글자 바깥 외곽선 */
+  .btn-label-wrap {
+    position: relative;         /* 안에 겹치는 span 기준 */
+    display: inline-block;
+    line-height: 1;             /* 위아래 여백 줄이기 */
   }
 
-  .login-outline-text::before {
-    content: attr(data-label);        /* span에 적어둔 data-label을 그대로 복사 */
+  /* 아래층 : 회색 테두리 */
+  .btn-label-outline {
     position: absolute;
     inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: transparent;               /* 안쪽 채우기 없음 */
-    -webkit-text-stroke-width: 4px;   /* 외곽선 두께 */
-    -webkit-text-stroke-color: #6C798A; /* 외곽선 색 */
+    color: #6C798A;  /* 테두리 색 */
+
+    /* 바깥으로 번지는 느낌의 외곽선 */
+    text-shadow:
+      0 0 0 #6C798A,
+      -2px 0 0 #6C798A,
+      2px 0 0 #6C798A,
+      0 -2px 0 #6C798A,
+      0 2px 0 #6C798A,
+      -2px -2px 0 #6C798A,
+      2px -2px 0 #6C798A,
+      -2px 2px 0 #6C798A,
+      2px 2px 0 #6C798A;
+  }
+
+  /* 윗층 : 깨끗한 흰색 글자 */
+  .btn-label-fill {
+    position: relative;
+    color: #ffffff;
   }
 }
+
 
 /* Custom Scrollbar Styles */
 ::-webkit-scrollbar {
