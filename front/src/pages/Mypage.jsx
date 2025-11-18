@@ -277,6 +277,19 @@ const isStudyCompleted = (contentsId) => {
   return watchedSeconds >= Math.max(0, totalSeconds - 10);
 };
 
+// "5분32초" 이런 식으로 보여주기 위한 헬퍼
+const formatRemainTime = (seconds) => {
+  if (!seconds || seconds <= 0) return null;
+  const s = Math.floor(seconds);
+  const mins = Math.floor(s / 60);
+  const secs = s % 60;
+
+  if (mins > 0) {
+    return `${mins}분${secs.toString().padStart(2, '0')}초`;
+  }
+  return `${secs}초`;
+};
+
 
 
 
@@ -391,7 +404,7 @@ const isStudyCompleted = (contentsId) => {
 
 
 
-<div className="p-8">
+<div className="p-8 ">
   {userFeedbackHistory.length === 0 ? (
     // 연습 기록 없을 때 그대로 사용
     <div className="text-center py-12">
@@ -424,7 +437,7 @@ const isStudyCompleted = (contentsId) => {
       </button>
     </div>
   ) : (
-    <div className="space-y-4 relative cursor-pointer font-[DNFBitBitv2]">
+    <div className="space-y-5 relative cursor-pointer font-[DNFBitBitv2]  ">
       {uniqueFeedbackHistory
         .map((feedback, index) => {
           // const title = feedback.contentsTitle || "콩쥐 팥쥐";
@@ -462,7 +475,7 @@ const isStudyCompleted = (contentsId) => {
           const desc =
           content?.description ||
           feedback.targetSentence ||
-          "학습한 동화의 핵심 문장, 발음이 여기에 표시됩니다.";
+          " ";
 
 
 
@@ -472,9 +485,17 @@ const isStudyCompleted = (contentsId) => {
 
 
           // 🔹 시청 진행도 / 마지막 시청 시점
-          const { watchedSeconds } = getWatchMeta(feedback.contentsId);
+          const { watchedSeconds, totalSeconds } = getWatchMeta(feedback.contentsId);
           const watchProgress = getWatchProgress(feedback.contentsId);
           const completed = isStudyCompleted(feedback.contentsId);
+
+          // 남은 시간(초) 계산 – 학습 완료가 아니고 전체 길이가 있을 때만
+          const remainSeconds =
+            !completed && totalSeconds > 0
+              ? Math.max(0, totalSeconds - watchedSeconds)
+              : 0;
+
+          const remainLabel = formatRemainTime(remainSeconds);
 
 
           // 🔹 Player에서 쓰는 것과 같은 영상 URL
@@ -599,16 +620,39 @@ const isStudyCompleted = (contentsId) => {
                     </span>
                   </div>
 
-                  <p className="text-xs text-[#7B88A0] line-clamp-2">{desc}</p>
+                  
+                
+
+                  <p className="flex items-center justify-between gap-2 text-xs text-[#7B88A0] mb-2 px-4">
+                    <span className="truncate">{desc}</span>
+
+                    {/* 학습 완료 X + 남은 시간 있을 때만 표시 */}
+                    {!completed && remainLabel ? (
+                      <span className="inline-flex items-center rounded-full bg-[#E9ECEF] px-3 py-2 text-[11px] text-[#7B88A0] flex-shrink-0 right-0 ml-20">
+                        ♬ {remainLabel} 남음
+                      </span>
+                    ) : (
+                      // 완료인 경우: 공간 동일하게 유지
+                      <span className="inline-flex items-center px-3 py-1 text-[11px] opacity-0">
+                        placeholder
+                      </span>
+                    )}
+                  </p>
 
 
-                  {/* 하단 진행 바 */}
-                  <div className="mt-3 h-7 rounded-full bg-[#E9ECEF] overflow-hidden">{/* #E3EDFF   #E9ECEF */}
+                <div className="mt-6 ">
+                  {/* 진행바 전체 컨테이너 */}
+                  <div className="mt-6 h-7 right-2 bg-[#E9ECEF] rounded-full overflow-hidden relative mx-2">
+
+                    {/* 실제 채워지는 바 */}
                     <div
-                      className="h-full rounded-full bg-[#FEEBB1] transition-all"
-                      style={{ width: `${progress}%` }}
+                      className="absolute inset-y-0 left-0 top-0 bottom-0 rounded-full bg-[#FEEBB1] transition-all"
+                      style={{
+                        width: `calc(${progress}%)`, // 좌우 3px씩 패딩때문에 보정
+                      }}
                     />
                   </div>
+                </div>
 
 
 
@@ -631,33 +675,7 @@ const isStudyCompleted = (contentsId) => {
                   </div>
                 </div>
 
-                {/* 오른쪽 버튼/남은시간 영역 */}
-                <div className="flex flex-col items-end gap-2 flex-shrink-0">
-
-                  
-                  {/* 남은 시간 데이터가 있다면 */}
-                  {feedback.remainingTime && (
-                    <span className="inline-flex items-center rounded-full bg-[#F3F4FF] px-3 py-1 text-[11px] text-[#7B88A0]">
-                      {feedback.remainingTime} 남음
-                    </span>
-                  )}
-                  <button
-                    onClick={() =>
-                      navigate(
-                        `/player?contentId=${feedback.contentsId}${
-                          feedback.lang ? `&lang=${encodeURIComponent(feedback.lang)}` : ''
-                        }`
-                      )
-                    }
-                    className="
-                      opacity-0 group-hover:opacity-100
-                      transition-all duration-300
-                      hover:scale-105
-                    "
-                  >
-                  </button>
-                  
-                </div>
+                
                 
                 
               </div>
