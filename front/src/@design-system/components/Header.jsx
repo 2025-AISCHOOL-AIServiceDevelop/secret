@@ -2,7 +2,7 @@ import { useState, memo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { User, LogOut, LogIn } from 'lucide-react';
 import { AppTitle } from './Typography';
-import LoginModal from '../../components/LoginModal';   // 🔥 정확한 경로
+import LoginModal from './LoginModal';   // 🔥 정확한 경로
 import { useAuthStore } from '../../stores';
 
 export const Header = memo(() => {
@@ -100,10 +100,13 @@ export const Header = memo(() => {
         </nav>
       </div>
 
-      {/* 🔥 로그인 모달 */}
       {showLoginModal && (
-        <LoginModal onClose={() => setShowLoginModal(false)} />
+        <LoginModal 
+          isOpen={showLoginModal}   // ⭐ 추가!
+          onClose={() => setShowLoginModal(false)} 
+        />
       )}
+
     </header>
   );
 });

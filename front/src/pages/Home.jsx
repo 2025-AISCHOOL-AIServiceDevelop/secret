@@ -3,129 +3,85 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Search, Loader2, AlertCircle, X } from 'lucide-react';
 import { useContentsStore } from '../stores';
 import { useAuthStore } from '../stores';
+
 import mascotImg from '../assets/mascot.png';
 import saturn from '../assets/saturn.png';
 
 // 모달들
 import { LoginPromptModal } from '../@design-system/components/Modal';
-
-// ⭐ LoginModal 추가
-import kakaoLogo from '../assets/kakao.png';
-import googleLogo from '../assets/google.png';
-import { API_BASE_URL } from '../services/api';
-
-function LoginModal({ isOpen, onClose }) {
-  if (!isOpen) return null;
-
-  const handleLogin = (provider) => {
-    window.location.href = `${API_BASE_URL}/oauth2/authorization/${provider}`;
-  };
-
-  return (
-    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[60] flex items-center justify-center">
-      <div className="bg-white w-[900px] max-w-[90%] min-h-[560px] rounded-2xl shadow-2xl flex overflow-hidden relative">
-
-        {/* 닫기 버튼 */}
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 bg-black/70 text-white w-8 h-8 rounded-full flex items-center justify-center text-[18px] hover:bg-black/80 transition"
-        >
-          ✕
-        </button>
-
-        {/* LEFT */}
-        <div className="w-[45%] bg-[#e1ecff] grid place-items-center p-8">
-          <div
-            className="w-[240px] h-[240px] rounded-full shadow-md"
-            style={{
-              background: 'radial-gradient(circle at 30% 30%, #ffffff, #b7c6ea 60%, #9ab0e0)',
-            }}
-          />
-        </div>
-
-        {/* RIGHT */}
-        <div className="flex-1 p-12 flex flex-col justify-center">
-          <h2 className="text-[26px] font-extrabold mb-4">간편 로그인 또는 회원가입</h2>
-          <p className="text-gray-600 mb-8">두근두근 지구말을 계속 이용하세요!</p>
-
-          <button onClick={() => handleLogin('kakao')} className="w-full mb-4">
-            <img src={kakaoLogo} className="w-full h-auto rounded-xl hover:scale-105 transition-transform" />
-          </button>
-
-          <button onClick={() => handleLogin('google')} className="w-full mb-4">
-            <img src={googleLogo} className="w-full h-auto rounded-xl hover:scale-105 transition-transform" />
-          </button>
-
-          <p className="text-xs text-gray-500 mt-4 leading-relaxed">
-            로그인 시 이용약관 및 개인정보 처리방침에 동의하는 것으로 간주됩니다.
-          </p>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-
+import LoginModal from '../@design-system/components/LoginModal';
 
 function Home() {
   const [searchInput, setSearchInput] = useState('');
-  const [selectedAge, setSelectedAge] = useState(null);
+  const [selectedAge, setSelectedAge] = useState('2-4세');
   const [showMascot, setShowMascot] = useState(true);
 
-  const [isLoginPromptOpen, setIsLoginPromptOpen] = useState(false); // 로그인 필요 모달
-  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);   // 카카오/구글 로그인 모달
+  const [isLoginPromptOpen, setIsLoginPromptOpen] = useState(false);
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
 
   const navigate = useNavigate();
   const { isAuthenticated } = useAuthStore();
-
-  const {
-    contents,
-    isLoading,
-    error,
-    searchContents,
-    clearError,
-    loadContents,
-  } = useContentsStore();
+  const { contents, isLoading, error, searchContents, clearError, loadContents } =
+    useContentsStore();
 
   const koreanContents = contents.filter((content) => content.language === 'ko');
 
+  // 연령 옵션 배열
+  const ageOptions = ['2-4세', '4-6세', '7-9세', '10세이상'];
+  const indicatorIndex = ageOptions.indexOf(selectedAge);
+
+  /** 초기 로딩 */
   useEffect(() => {
     loadContents();
   }, [loadContents]);
 
+  /** 검색 비우면 전체 목록 로딩 */
   useEffect(() => {
     if (!searchInput.trim()) {
       loadContents();
     }
   }, [searchInput, loadContents]);
 
-  // 스크롤 시 마스코트 제어
+  /** 스크롤 시 마스코트 제어 */
   useEffect(() => {
     const handleScroll = () => {
       const scrollY = window.scrollY;
       const documentHeight = document.body.scrollHeight;
       const screenHeight = window.innerHeight;
 
-      if (scrollY + screenHeight >= documentHeight - 150) {
-        setShowMascot(false);
-      } else {
-        setShowMascot(true);
-      }
+      setShowMascot(!(scrollY + screenHeight >= documentHeight - 150));
     };
 
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // 검색
+  // 🔵 자동 슬라이드 (3초마다 다음 나이대로 이동)
+  useEffect(() => {
+    const ageOrder = ['2-4세', '4-6세', '7-9세', '10세이상'];
+
+    const interval = setInterval(() => {
+      setSelectedAge((prev) => {
+        const currentIndex = ageOrder.indexOf(prev);
+        const nextIndex = (currentIndex + 1) % ageOrder.length;
+        return ageOrder[nextIndex];
+      });
+    }, 3000); // 3초마다 자동 변경
+
+    return () => clearInterval(interval);
+  }, []);
+
+
+  /** 검색 기능 */
   const handleSearch = (e) => {
     e.preventDefault();
     if (searchInput.trim()) searchContents(searchInput.trim());
   };
 
-  // 연령 필터링
+  /** 연령 필터링 */
   const getAgeFilteredContents = () => {
     if (!selectedAge) return contents;
+
     switch (selectedAge) {
       case '2-4세':
         return contents.filter((c) => c.durationSec <= 130);
@@ -142,12 +98,10 @@ function Home() {
 
   const filtered = getAgeFilteredContents();
 
-
-
   return (
     <div className="container mx-auto">
 
-      {/* 헤더 타이틀 */}
+      {/* 헤더 */}
       <div className="relative mb-8 pt-7 text-center">
         <img
           src={saturn}
@@ -173,10 +127,7 @@ function Home() {
           <button
             type="submit"
             disabled={isLoading}
-            className="absolute right-2 top-1/2 -translate-y-1/2 bg-[#e7efff] text-gray-600 w-20 h-10 rounded-full border border-[#b9c7e5] flex items-center justify-center gap-1   /* ⭐ 아이콘 + 텍스트 한 줄 정렬 */
-                        hover:shadow-md hover:scale-105
-                        active:scale-95 transition-all
-                      "
+            className="absolute right-2 top-1/2 -translate-y-1/2 bg-[#e7efff] text-gray-600 w-20 h-10 rounded-full border border-[#b9c7e5] flex items-center justify-center gap-1 hover:shadow-md hover:scale-105 active:scale-95 transition-all"
           >
             {isLoading ? (
               <Loader2 className="w-[14px] h-[14px] animate-spin" />
@@ -201,14 +152,18 @@ function Home() {
         </div>
       )}
 
-      {/* 본문 */}
+      {/* 콘텐츠 + 추천 */}
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-4">
 
         {/* 콘텐츠 목록 */}
         <section className="grid grid-cols-1 md:grid-cols-2 gap-3">
+
           {isLoading ? (
             Array.from({ length: 4 }).map((_, i) => (
-              <article key={i} className="rounded-[18px] overflow-hidden border-2 border-[#d7c6c6] animate-pulse">
+              <article
+                key={i}
+                className="rounded-[18px] overflow-hidden border-2 border-[#d7c6c6] animate-pulse"
+              >
                 <div className="h-[180px] bg-gray-200" />
                 <div className="px-3 py-3 bg-[#f1f6ff]">
                   <div className="h-4 bg-gray-200 rounded mb-2"></div>
@@ -224,16 +179,12 @@ function Home() {
               >
                 <div
                   onClick={() => {
-                    if (!isAuthenticated) {
-                      setIsLoginPromptOpen(true);
-                    } else {
-                      navigate(`/player?contentId=${content.contentsId}`);
-                    }
+                    if (!isAuthenticated) setIsLoginPromptOpen(true);
+                    else navigate(`/player?contentId=${content.contentsId}`);
                   }}
                   className="relative aspect-[16/9] bg-cover bg-center rounded-xl cursor-pointer group"
                   style={{ backgroundImage: `url(${content.thumbUrl})` }}
                 >
-                  {/* Hover Play */}
                   <div className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity">
                     <div className="w-16 h-16 bg-black/40 rounded-full flex items-center justify-center">
                       <svg fill="white" viewBox="0 0 24 24" className="w-8 h-8 ml-1">
@@ -242,7 +193,6 @@ function Home() {
                     </div>
                   </div>
 
-                  {/* length */}
                   {content.durationSec && (
                     <span className="absolute bottom-3 right-3 bg-black/40 text-white text-sm px-3 py-1.5 rounded-md">
                       {Math.floor(content.durationSec / 60)}:
@@ -263,53 +213,97 @@ function Home() {
           )}
         </section>
 
-        {/* 오른쪽 추천 + 마스코트 */}
+        {/* 오른쪽 사이드바 */}
         <aside>
-          <div className="sticky top-[90px] grid gap-3 rounded-[22px] p-6 border-2">
-            <div className="font-extrabold text-lg text-[#35446b]">나이별 추천동화</div>
+          <div className="sticky top-[90px] grid gap-4 rounded-[22px] p-6 border-2 border-[#a9b9d3]">
 
+            {/* 제목 */}
+            <div className="text-2xl font-[DungeonFighterOnlineBeatBeat] text-[#8C85A5] text-center">
+              나이별 추천동화
+            </div>
+
+            {/* 추천 썸네일 */}
             {filtered.length > 0 ? (
               <div
+                key={filtered[0].contentsId} 
                 onClick={() => {
                   if (!isAuthenticated) setIsLoginPromptOpen(true);
                   else navigate(`/player?contentId=${filtered[0].contentsId}`);
                 }}
-                className="relative h-[190px] rounded-[18px] border-2 bg-white cursor-pointer group overflow-hidden"
+                className="relative aspect-[16/9] rounded-xl cursor-pointer group overflow-hidden border border-[#8C85A5]"
               >
-                <div className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity"></div>
 
-                <div className="w-full h-full bg-cover bg-center opacity-70" style={{ backgroundImage: `url(${filtered[0].thumbUrl})` }} />
-
-                <div className="p-2 bg-white bg-opacity-90">
-                  <div className="font-bold text-xs text-[#5a6ea0] truncate">
-                    {filtered[0].title}
+                {/* Hover 오버레이 */}
+                <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                  <div className="w-16 h-16 bg-black/40 rounded-full flex items-center justify-center">
+                    <svg fill="white" viewBox="0 0 24 24" className="w-8 h-8 ml-1">
+                      <path d="M5 3l14 9-14 9V3z" />
+                    </svg>
                   </div>
                 </div>
+
+                {/* ✨ 페이드 효과 추가된 썸네일 */}
+                <div
+                  className="
+                    absolute inset-0 bg-cover bg-center 
+                    transition-all duration-700 
+                    opacity-100 group-hover:scale-[1.02]
+                  "
+                  style={{ backgroundImage: `url(${filtered[0].thumbUrl})` }}
+                />
               </div>
             ) : (
-              <div className="text-xs text-gray-500 text-center">해당 나이대 추천 영상이 없어요.</div>
+              <div className="text-sm text-[#8C85A5] text-center font-[DungeonFighterOnlineBeatBeat]">
+                해당 나이대 추천 영상이 없어요.
+              </div>
             )}
 
-            {/* Age buttons */}
-            <div className="flex gap-2 justify-between">
-              {['2-4세', '4-6세', '7-9세', '10세이상'].map((age) => (
+            {/* 나이 버튼 */}
+            <div className="flex gap-2 justify-between mt-2">
+              {ageOptions.map((age, idx) => (
                 <button
                   key={age}
                   onClick={() => setSelectedAge(age)}
-                  className={`px-4 py-1 rounded-full text-xs border-2 ${
-                    selectedAge === age
-                      ? 'bg-[#5a6ea0] text-white border-[#5a6ea0]'
-                      : 'bg-white text-[#5a6ea0] border-[#a9b9d3] hover:bg-[#dfe7ff]'
-                  }`}
+                  className={`
+                    px-4 py-1 rounded-full text-xs border-2 font-[DungeonFighterOnlineBeatBeat]
+                    transition-all duration-200
+                    ${
+                      selectedAge === age
+                        ? 'bg-[#8C85A5] text-white border-[#8C85A5]'
+                        : 'bg-white text-[#8C85A5] border-[#a9b9d3] hover:bg-[#f1f4ff]'
+                    }
+                  `}
                 >
                   {age}
                 </button>
               ))}
             </div>
+
+            {/* 인디케이터 - 버튼과 연동 */}
+            <div className="flex justify-center items-center gap-2 mt-3 mb-1">
+              {ageOptions.map((_, idx) => {
+                const isActive = idx === indicatorIndex;
+
+                return (
+                  <div
+                    key={idx}
+                    className={`
+                      transition-all duration-200 border
+                      ${
+                        isActive
+                          ? 'w-6 h-3 rounded-full bg-[#8C85A5] border-[#8C85A5]'
+                          : 'w-3 h-3 rounded-full bg-[#d0d9ea] border-[#a9b9d3]'
+                      }
+                    `}
+                  />
+                );
+              })}
+            </div>
           </div>
 
+          {/* 마스코트 */}
           {showMascot && (
-            <div className="sticky top-[480px] mt-10 flex flex-col items-center space-y-3">
+            <div className="sticky top-[480px] mt-16 flex flex-col items-center space-y-3">
               <div className="relative bg-white rounded-2xl px-4 py-3 shadow-md text-sm w-[240px] text-gray-700">
                 전래동화를 다양한 언어로 배워보세요!
                 <span className="absolute -bottom-2 left-6 w-0 h-0 border-l-8 border-r-8 border-t-8 border-transparent border-t-white"></span>
@@ -317,33 +311,35 @@ function Home() {
               <img src={mascotImg} className="w-52 drop-shadow-lg" />
             </div>
           )}
+
         </aside>
       </div>
 
       {/* Top 버튼 */}
       <button
         onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-        className="fixed bottom-6 right-6 w-16 h-16 bg-white rounded-full shadow-lg border border-gray-200 flex items-center justify-center"
+        className="
+          fixed bottom-6 right-6 w-14 h-14 bg-white rounded-full shadow-lg
+          border border-gray-300 flex items-center justify-center
+          hover:shadow-xl hover:scale-105 active:scale-95 transition-all
+        "
       >
-        ↑
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
+          <path d="M6 14 L12 8 L18 14" />
+        </svg>
       </button>
 
-      {/* 로그인 필요 모달 */}
+      {/* 로그인 모달 */}
       <LoginPromptModal
         isOpen={isLoginPromptOpen}
         onClose={() => setIsLoginPromptOpen(false)}
         onConfirm={() => {
           setIsLoginPromptOpen(false);
-          setIsLoginModalOpen(true); // ⭐ 여기서 실제 로그인모달 열림
+          setIsLoginModalOpen(true);
         }}
       />
 
-      {/* 실제 로그인 모달 */}
-      <LoginModal
-        isOpen={isLoginModalOpen}
-        onClose={() => setIsLoginModalOpen(false)}
-      />
-
+      <LoginModal isOpen={isLoginModalOpen} onClose={() => setIsLoginModalOpen(false)} />
     </div>
   );
 }
