@@ -48,7 +48,7 @@ public class FeedbackTemplates implements FeedbackTemplatesBase {
             sb.append("- ").append(tip).append("\n");
         }
 
-        sb.append("우리 한 번만 더 연습해볼까?");
+       
         return sb.toString().trim();
     }
 

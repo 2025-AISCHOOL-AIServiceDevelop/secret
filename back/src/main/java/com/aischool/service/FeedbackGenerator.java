@@ -1,7 +1,6 @@
 package com.aischool.service;
 
 import org.springframework.stereotype.Component;
-
 import java.util.List;
 
 @Component
@@ -10,13 +9,9 @@ public class FeedbackGenerator {
     private final AzureResultAdapter adapter = new AzureResultAdapter();
     private final RuleEngine ruleEngine = new RuleEngine();
 
-    // 영어 / 중국어 템플릿
-    private final FeedbackTemplates enTemplates = new FeedbackTemplates();
-    private final FeedbackTemplatesZh zhTemplates = new FeedbackTemplatesZh();
+    private final FeedbackTemplatesBase enTemplates = new FeedbackTemplates();
+    private final FeedbackTemplatesBase zhTemplates = new FeedbackTemplatesZh();
 
-    /**
-     * 언어별 세밀 발음 피드백 생성
-     */
     public GeneratedFeedbackResult generate(Object aiResult, String lang) {
 
         CanonicalFeedbackInput input;
@@ -25,58 +20,69 @@ public class FeedbackGenerator {
         } else if (aiResult instanceof String) {
             input = adapter.toCanonical((String) aiResult);
         } else {
-            int fs = 80, acc = 80, flu = 80, comp = 80;
             return new GeneratedFeedbackResult(
-                    fs, acc, flu, comp, medalOf(fs),
+                    0, 0, 0, 0, "BRONZE",
                     "입력 형식을 확인해 주세요."
             );
         }
 
-        // 룰엔진으로 이슈 목록 생성
         List<RuleIssue> issues = ruleEngine.evaluate(input);
-
-        // 언어별 템플릿 선택
         FeedbackTemplatesBase template = resolveTemplate(lang);
 
-        // 템플릿에 이슈 목록을 넘겨서 최종 피드백 문장 생성
-        String feedbackText = template.compose(input, issues);
+        String detailText = template.compose(input, issues);
 
-        int finalScore     = (int) Math.round(input.finalScore);
-        int accuracy       = (int) Math.round(input.accuracy);
-        int fluency        = (int) Math.round(input.fluency);
-        int completeness   = (int) Math.round(input.completeness);
+        int finalScore = (int) Math.round(input.finalScore);
+
+        String finalFeedback = buildFinalFeedback(finalScore, detailText);
 
         return new GeneratedFeedbackResult(
                 finalScore,
-                accuracy,
-                fluency,
-                completeness,
+                (int) input.accuracy,
+                (int) input.fluency,
+                (int) input.completeness,
                 medalOf(finalScore),
-                feedbackText
+                finalFeedback
         );
-    }
-
-    // 기존 generate(Object) 호출은 영어 기본
-    public GeneratedFeedbackResult generate(Object aiResult) {
-        return generate(aiResult, "en");
     }
 
     private FeedbackTemplatesBase resolveTemplate(String lang) {
         if (lang == null) return enTemplates;
 
-        switch (lang.toLowerCase()) {
-            case "zh":
-            case "zh-cn":
-                return zhTemplates;
-            case "en":
-            default:
-                return enTemplates;
-        }
+        return switch (lang.toLowerCase()) {
+            case "zh", "zh-cn" -> zhTemplates;
+            default -> enTemplates;
+        };
     }
 
-    private String medalOf(int finalScore) {
-        if (finalScore >= 90) return "GOLD";
-        if (finalScore >= 75) return "SILVER";
+    private String medalOf(int score) {
+        if (score >= 90) return "GOLD";
+        if (score >= 75) return "SILVER";
         return "BRONZE";
+    }
+
+    /** 점수 기반 피드백 톤 조절 */
+    private String buildFinalFeedback(int finalScore, String detailText) {
+
+        boolean hasDetail = detailText != null && !detailText.trim().isEmpty();
+
+        if (finalScore < 75) {
+            if (!hasDetail) {
+                return "괜찮아! 천천히 다시 연습해보자. 조금만 더 또박또박 읽으면 좋아질 거야!";
+            }
+            return detailText + "\n우리 같이 조금 더 연습해볼까?";
+        }
+
+        if (finalScore < 90) {
+            if (!hasDetail) {
+                return "좋아요! 이제 거의 다 왔어요! 조금만 더 연습하면 정말 좋아져요!";
+            }
+            return detailText + "\n조금만 더 연습하면 훨씬 자연스러워질 거예요!";
+        }
+
+        if (hasDetail) {
+            return detailText + "\n아주 잘했어요! 거의 완벽해요!";
+        }
+
+        return "와! 발음이 정말 완벽해요! 지금처럼만 하면 돼요!";
     }
 }
