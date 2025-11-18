@@ -1,13 +1,16 @@
 import { useMemo } from "react";
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuthStore, useTutorStore } from '../stores';
+import { useAuthStore, useTutorStore, useContentsStore } from '../stores';
 import saturn from '../assets/saturn.png';
 import userIcon from "../assets/user-icon.png";
 import level1 from "../assets/level1.png";
 import level2 from "../assets/level2.png";
 import level3 from "../assets/level3.png";
 import continueReading from "../assets/continue-reading.png";
+import { API_BASE_URL } from '../services/api';
+import studyCompletedImg from "../assets/study-completed.png";
+
 
 
 
@@ -16,6 +19,7 @@ function Mypage() {
   const navigate = useNavigate();
   const { user, isAuthenticated, logout } = useAuthStore();
   const { getUserFeedbackHistory } = useTutorStore();
+  const { getContentById } = useContentsStore();
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -168,6 +172,35 @@ function Mypage() {
   
 
 
+const uniqueFeedbackHistory = useMemo(() => {
+  if (!userFeedbackHistory || userFeedbackHistory.length === 0) return [];
+
+  const byContent = new Map();
+
+  userFeedbackHistory.forEach((fb) => {
+    if (!fb.contentsId) return;
+
+    const key = fb.contentsId;
+    const prev = byContent.get(key);
+
+    // 이전 기록이 없으면 넣기
+    if (!prev) {
+      byContent.set(key, fb);
+      return;
+    }
+
+    // 있으면 createdAt 비교해서 더 최신 것만 남기기
+    const prevTime = new Date(prev.createdAt || 0).getTime();
+    const curTime = new Date(fb.createdAt || 0).getTime();
+    if (curTime > prevTime) {
+      byContent.set(key, fb);
+    }
+  });
+
+  return Array.from(byContent.values());
+}, [userFeedbackHistory]);
+
+
 
 
 
@@ -200,7 +233,52 @@ function Mypage() {
     userFeedbackHistory.map((fb) => fb.lang).filter(Boolean)
   ).size;
 
+
+  const goToPlayer = (contentsId) => {
+  if (!contentsId) return;
+  navigate(`/player?contentId=${contentsId}`);
+};
+
   
+
+// 시청 정보 헬퍼 함수 정리
+
+const getWatchMeta = (contentsId) => {
+  if (!user || !contentsId) return { watchedSeconds: 0, totalSeconds: 0 };
+
+  const storageKey = `watch_${user.id}_${contentsId}`;
+  const saved = localStorage.getItem(storageKey);
+  if (!saved) return { watchedSeconds: 0, totalSeconds: 0 };
+
+  try {
+    const { watchedSeconds = 0, totalSeconds = 0 } = JSON.parse(saved) || {};
+    return { watchedSeconds, totalSeconds };
+  } catch (e) {
+    console.error('watch meta parse error', e);
+    return { watchedSeconds: 0, totalSeconds: 0 };
+  }
+};
+
+const getWatchProgress = (contentsId) => {
+  const { watchedSeconds, totalSeconds } = getWatchMeta(contentsId);
+  if (!totalSeconds || totalSeconds <= 0) return 0;
+
+  const ratio = (watchedSeconds / totalSeconds) * 100;
+  return Math.min(100, Math.round(ratio)); // 0~100%
+};
+
+
+const isStudyCompleted = (contentsId) => {
+  const { watchedSeconds, totalSeconds } = getWatchMeta(contentsId);
+
+  if (!totalSeconds || totalSeconds <= 0) return false;
+
+  // 끝나기 10초 전까지 봤으면 완료로 처리
+  return watchedSeconds >= Math.max(0, totalSeconds - 10);
+};
+
+
+
 
   return (
     <div className="container mx-auto max-w-6xl">
@@ -215,7 +293,7 @@ function Mypage() {
         {/* 사용자 정보 */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-5 ">
         {/* 1번: 프로필 카드 */}
-        <div className="bg-white/60 rounded-[20px] shadow-md border border-transparent px-8 py-12 flex items-center gap-6
+        <div className="bg-white/60 rounded-[16px] shadow-md border border-transparent px-8 py-12 flex items-center gap-6
           hover:shadow-[0_8px_16px_0_rgba(0,0,0,0.16)] transition-shadow duration-300">
           <div className="flex-shrink-0">
             <div className="w-35 h-35 rounded-full bg-white flex items-center justify-center shadow-[0_4px_8px_rgba(0,0,0,0.12)] border border-transparent">
@@ -230,16 +308,16 @@ function Mypage() {
               {user.name || user.userName || '사용자'} 님
             </h2>
             {/* <p className="text-sm text-gray-600 mt-1">{user.email}</p> */}
-            <p className="mt-3 font-[DungeonFighterOnlineBeatBeat] text-xl text-[#8C85A5] mt-8">
+            <p className="mt-3 font-[DungeonFighterOnlineBeatBeat] text-xl text-[#6C798A] mt-8">
               “{randomPraise}”
             </p>
           </div>
         </div>
           
-         {/* 2번: 학습 요약 / 스티커 카드 */}
-        <div className="bg-white/60 rounded-[20px] shadow-md border border-transparent px-8 py-4
+         {/* 2번: 학습 스티커 */}
+        <div className="bg-white/60 rounded-[16px] shadow-md border border-transparent px-8 py-4
          hover:shadow-[0_8px_16px_0_rgba(0,0,0,0.16)] transition-shadow duration-300">
-          <h3 className="text-xl font-[DungeonFighterOnlineBeatBeat] text-[#8C85A5] mt-3">
+          <h3 className="text-xl font-[DungeonFighterOnlineBeatBeat] text-[#6C798A] mt-3">
             나의 학습 레벨 스티커
           </h3>
 
@@ -248,17 +326,17 @@ function Mypage() {
 
             <div className="p-4 rounded-lg border border-transparent text-center">
             <img src={level1} alt="레벨1아이콘" className="w-36 h-36 object-contain -mb-5" />
-              <p className="text-2xl font-[DungeonFighterOnlineBeatBeat] text-[#8C85A5]">x {totalPractice}</p>
+              <p className="text-2xl font-[DungeonFighterOnlineBeatBeat] text-[#6C798A]">x {totalPractice}</p>
             </div>
 
             <div className="p-4 rounded-lg border border-transparent text-center">
               <img src={level2} alt="레벨2아이콘" className="w-36 h-36 object-contain -mb-5" />
-              <p className="text-2xl font-[DungeonFighterOnlineBeatBeat] text-[#8C85A5]">x {avgScore}</p>
+              <p className="text-2xl font-[DungeonFighterOnlineBeatBeat] text-[#6C798A]">x {avgScore}</p>
             </div>
 
             <div className="p-4 rounded-lg border border-transparent text-center">
               <img src={level3} alt="레벨3아이콘" className="w-36 h-36 object-contain -mb-5" />
-              <p className="text-2xl font-[DungeonFighterOnlineBeatBeat] text-[#8C85A5]">x {languageCount}</p>
+              <p className="text-2xl font-[DungeonFighterOnlineBeatBeat] text-[#6C798A]">x {languageCount}</p>
             </div>
           </div>
         </div>
@@ -270,11 +348,11 @@ function Mypage() {
       
 
       {/* Feedback History Section */}
-      <div className="bg-white rounded-[20px] shadow-md border-transparent
+      <div className="bg-white/60 rounded-[16px] shadow-md border-transparent
        hover:shadow-[0_-6px_16px_0_rgba(0,0,0,0.16)] transition-shadow duration-300">
         <div className="p-6 border-b border-gray-200">
-          <h2 className="text-xl font-semibold text-gray-800">최근 학습한 동화</h2>
-          <p className="text-gray-600 mt-1">오늘도 멋지게 우주 여행 중이에요 🚀</p>
+          <h2 className="text-xl font-[DungeonFighterOnlineBeatBeat] text-[#6C798A] px-[6px] ">최근 학습한 동화</h2>
+          {/* <p className="text-gray-600 mt-1">오늘도 멋지게 우주 여행 중이에요 🚀</p> */}
         </div>
 
 
@@ -346,51 +424,194 @@ function Mypage() {
       </button>
     </div>
   ) : (
-    <div className="space-y-4 relative cursor-pointer">
-      {userFeedbackHistory
-        // .slice(0, 5) // 최근 5개만 보여주고 싶으면 유지, 전부 보여줄 거면 제거
+    <div className="space-y-4 relative cursor-pointer font-[DNFBitBitv2]">
+      {uniqueFeedbackHistory
         .map((feedback, index) => {
-          const title = feedback.contentsTitle || "콩쥐 팥쥐";
+          // const title = feedback.contentsTitle || "콩쥐 팥쥐";
+
+
+          // 1) contentsId 로 원래 동화 정보 가져오기
+          const content = feedback.contentsId
+          ? getContentById(feedback.contentsId)
+          : null;
+
+          // 2) 썸네일 URL (있는 필드에 맞게 조정)
+          const thumbnailUrl =
+          content?.thumbUrl ||                      // 🔹 Home에서 쓰는 필드 추가
+          content?.thumbnailUrl ||
+          content?.thumbnail ||
+          (content?.thumbnailPath
+            ? `${API_BASE_URL}${content.thumbnailPath}`
+            : null);
+
+              
+          // 2) 제목은 콘텐츠에서 우선 가져오고, 없으면 백업 텍스트 사용
+          const title =
+          content?.title ||            // 예: contentsStore 안의 title
+          content?.name ||             // 혹시 name 으로 되어 있을 수도 있음
+          feedback.contentsTitle ||    // 피드백에 제목이 있으면 사용
+          `동화 #${feedback.contentsId}`; // 그래도 없으면 아이디로 표시
+                    
+
+          // const desc =
+          //   feedback.targetSentence ||
+          //   "학습한 동화의 핵심 문장, 발음이 여기에 표시됩니다.";
+
+
+          // 3) 설명도 콘텐츠에 있으면 그걸 먼저 사용
           const desc =
-            feedback.targetSentence ||
-            "학습한 동화의 핵심 문장, 발음이 여기에 표시됩니다.";
+          content?.description ||
+          feedback.targetSentence ||
+          "학습한 동화의 핵심 문장, 발음이 여기에 표시됩니다.";
+
+
+
           const dateText = feedback.createdAt
             ? new Date(feedback.createdAt).toLocaleDateString()
             : "";
+
+
+          // 🔹 시청 진행도 / 마지막 시청 시점
+          const { watchedSeconds } = getWatchMeta(feedback.contentsId);
+          const watchProgress = getWatchProgress(feedback.contentsId);
+          const completed = isStudyCompleted(feedback.contentsId);
+
+
+          // 🔹 Player에서 쓰는 것과 같은 영상 URL
+          const videoUrl = content?.contentsId
+            ? `${API_BASE_URL}/api/media/${content.contentsId}`
+            : null;
+
           const progress =
-            typeof feedback.score === "number"
-              ? Math.min(100, feedback.score)
-              : 60; // 점수 없으면 임시 60%
+            completed
+              ? 100
+              : typeof watchProgress === "number" && watchProgress > 0
+                ? watchProgress
+                : typeof feedback.score === "number"
+                  ? Math.min(100, feedback.score)
+                  : 0;                            // 둘 다 없으면 0
+        
+
+                  
+
+
 
           return (
             <div
               key={feedback.id || index}
-              className="bg-[#F4F7FF] rounded-[20px] px-6 py-4 shadow-sm border border-white
-                         hover:shadow-[0_8px_16px_0_rgba(0,0,0,0.12)] transition-shadow duration-300 group"
+              onClick={() => goToPlayer(feedback.contentsId)}
+              className="relative bg-[#F4F7FF] rounded-[16px] shadow-sm border border-white
+                         hover:shadow-[0_8px_16px_0_rgba(0,0,0,0.12)] transition-shadow duration-300 group cursor-pointer"
+              role="button"
             >
+
+              
               <div className="flex items-center gap-4">
-                {/* 왼쪽 썸네일 영역 */}
-                <div
-                  className="w-30 h-30 rounded-[18px]
-                             bg-gradient-to-br from-[#FFE0CF] via-[#F9E5FF] to-[#E0EEFF]
-                             flex items-center justify-center shadow-md flex-shrink-0"
-                >
-                  <span className="text-3xl">📖</span>
-                </div>
+
+                
+
+                
+                {/* 🔹 왼쪽: 유튜브처럼 영상 미리보기 영역 */}
+          <div
+            className="relative w-[260px] aspect-[16/9] rounded-[16px] flex-shrink-0 overflow-hidden shadow-md"
+            onMouseEnter={(e) => {
+              const video = e.currentTarget.querySelector('video');
+              if (!video) return;
+
+              // hover 할 때는 내가 보던 지점으로 점프 후 재생
+              if (watchedSeconds > 0 && video.readyState >= 1) {
+                video.currentTime = watchedSeconds;
+              }
+
+              // 재생은 무조건 시도
+              video.play().catch(() => {
+                // 자동재생 막혀도 에러만 무시
+              });
+            }}
+            onMouseLeave={(e) => {
+              const video = e.currentTarget.querySelector('video');
+              if (!video) return;
+
+              // hover 끝나면 멈추고, 썸네일처럼 정지 화면 유지
+                video.pause();
+              // 다시 보던 지점으로 프레임 유지하고 싶으면 주석 해제
+              // if (watchedSeconds > 0 && video.readyState >= 1) {
+              //   video.currentTime = watchedSeconds;
+              // }
+            }}
+          >
+            {thumbnailUrl && (
+              <img
+                src={thumbnailUrl}
+                alt={title}
+                className="w-full h-full object-cover"
+              />
+            )}
+
+            {videoUrl && (
+              <video
+                src={videoUrl}
+                className="absolute inset-0 w-full h-full object-cover opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                muted
+                playsInline
+                preload="metadata"
+              />
+            )}
+
+            {/* 어두운 오버레이 + '이어서 보기' 버튼 (기존 유지) */}
+          {!completed && (
+            <div
+              className="absolute inset-0 bg-black/35
+                         opacity-0 group-hover:opacity-100
+                         transition-opacity duration-300"
+            />
+          )}
+
+          {!completed && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                navigate(`/player?contentId=${feedback.contentsId}`);
+              }}
+              className="absolute inset-0 flex items-center justify-center
+                         opacity-0 group-hover:opacity-100
+                         transition-opacity duration-300 hover:scale-105"
+            >
+              <img
+                src={continueReading}
+                alt="이어서 보기"
+                className="w-55 h-auto"
+              />
+            </button>
+          )}
+          </div>
+
+                
 
                 {/* 가운데 텍스트 영역 */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between mb-1">
-                    <h3 className="text-2xl font-[DungeonFighterOnlineBeatBeat] text-[#333333] truncate">
+                    <h3 className="text-xl font-[DNFBitBitv2] text-[#333333] truncate">
                       {title}
                     </h3>
-                    <span className="text-xs text-[#8A99B2] ml-2 flex-shrink-0">
+                    <span className="text-xs  text-[#8A99B2] ml-2 flex-shrink-0">
                       {dateText}
                     </span>
                   </div>
-                  <p className="text-xs text-[#7B88A0] line-clamp-2">
-                    {desc}
-                  </p>
+
+                  <p className="text-xs text-[#7B88A0] line-clamp-2">{desc}</p>
+
+
+                  {/* 하단 진행 바 */}
+                  <div className="mt-3 h-7 rounded-full bg-[#E9ECEF] overflow-hidden">{/* #E3EDFF   #E9ECEF */}
+                    <div
+                      className="h-full rounded-full bg-[#FEEBB1] transition-all"
+                      style={{ width: `${progress}%` }}
+                    />
+                  </div>
+
+
+
 
                   {/* 태그들 (언어, 점수) */}
                   <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px]">
@@ -412,6 +633,8 @@ function Mypage() {
 
                 {/* 오른쪽 버튼/남은시간 영역 */}
                 <div className="flex flex-col items-end gap-2 flex-shrink-0">
+
+                  
                   {/* 남은 시간 데이터가 있다면 */}
                   {feedback.remainingTime && (
                     <span className="inline-flex items-center rounded-full bg-[#F3F4FF] px-3 py-1 text-[11px] text-[#7B88A0]">
@@ -432,22 +655,32 @@ function Mypage() {
                       hover:scale-105
                     "
                   >
-                    <img
-                      src={continueReading}
-                      alt="이어서 보기"
-                      className="w-28 h-auto"
-                    />
                   </button>
+                  
                 </div>
+                
+                
               </div>
+              {/* 🔹 학습 완료 오버레이 – 이 부분이 새로 추가되는 부분! */}
+                  {completed && (
+                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center rounded-[16px] z-10">
+                      <img
+                        src={studyCompletedImg}
+                        alt="학습 완료"
+                        className="w-48 h-auto md:w-56"
+                      />
+                    </div>
+                  )}
+                    
 
-              {/* 하단 진행 바 */}
-              <div className="mt-4 h-2 rounded-full bg-[#E3EDFF] overflow-hidden">
-                <div
-                  className="h-full rounded-full bg-[#6B7CFF] transition-all"
-                  style={{ width: `${progress}%` }}
-                />
-              </div>
+
+
+
+
+
+              
+
+              
             </div>
           );
         })}
@@ -461,8 +694,12 @@ function Mypage() {
 
 
       </div>
+      
     </div>
+    
   );
+  
 }
+
 
 export default Mypage;
