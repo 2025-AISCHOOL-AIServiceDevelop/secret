@@ -50,10 +50,14 @@ import org.springframework.web.bind.annotation.GetMapping;
         return tutorService.getLatestFeedback(userId, contentsId, scriptId);
     }
 
-    @PostMapping("/feedback-test")
-    public GeneratedFeedbackResult testFeedback(@RequestBody String azureJson) {
-        return feedbackGenerator.generate(azureJson);
-    }
+  @PostMapping("/feedback-test")
+public GeneratedFeedbackResult testFeedback(
+        @RequestParam("lang") String lang,
+        @RequestBody String azureJson
+) {
+    return feedbackGenerator.generate(azureJson, lang);
+}
+
     
     
 }
