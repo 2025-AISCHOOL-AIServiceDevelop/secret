@@ -294,7 +294,7 @@ const formatRemainTime = (seconds) => {
 
 
   return (
-    <div className="container mx-auto max-w-6xl">
+    <div className="container mx-auto max-w-6xl font-[DungeonFighterOnlineBeatBeat]">
       
       <div className="mb-8">
         <div className="relative mb-8 pt-7 text-center">
@@ -437,7 +437,7 @@ const formatRemainTime = (seconds) => {
       </button>
     </div>
   ) : (
-    <div className="space-y-5 relative cursor-pointer font-[DNFBitBitv2]  ">
+    <div className="space-y-5 relative cursor-pointer font-[DungeonFighterOnlineBeatBeat]  ">
       {uniqueFeedbackHistory
         .map((feedback, index) => {
           // const title = feedback.contentsTitle || "콩쥐 팥쥐";
@@ -612,7 +612,7 @@ const formatRemainTime = (seconds) => {
                 {/* 가운데 텍스트 영역 */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between mb-1">
-                    <h3 className="text-xl font-[DNFBitBitv2] text-[#333333] truncate">
+                    <h3 className="text-xl font-[DungeonFighterOnlineBeatBeat] text-[#333333] truncate">
                       {title}
                     </h3>
                     <span className="text-xs  text-[#8A99B2] ml-2 flex-shrink-0">

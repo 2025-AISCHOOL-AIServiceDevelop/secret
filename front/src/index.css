@@ -47,6 +47,36 @@
     font-family: 'DungeonFighterOnlineBeatBeat', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     font-size: 1.0625rem; /* 기본보다 약간 크게 */
   }
+
+  /* 스크립트 카드 앞뒤 뒤집기 효과 (제자리에서 뒤집히도록 고정 높이 + 겹쳐진 레이어) */
+  .flip-card {
+    position: relative;
+    perspective: 1200px;
+    min-height: 180px; /* 앞/뒷면이 뒤집혀도 카드 높이는 유지 (기존 대비 약 1.5배) */
+  }
+
+  .flip-card-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    transform-style: preserve-3d;
+    transition: transform 0.6s;
+  }
+
+  .flip-card-inner.is-flipped {
+    transform: rotateY(180deg);
+  }
+
+  .flip-card-front,
+  .flip-card-back {
+    position: absolute;
+    inset: 0;
+    backface-visibility: hidden;
+  }
+
+  .flip-card-back {
+    transform: rotateY(180deg);
+  }
   /* 로그인 / 마이페이지 글자 바깥 외곽선 */
   .btn-label-wrap {
     position: relative;         /* 안에 겹치는 span 기준 */

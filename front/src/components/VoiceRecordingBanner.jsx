@@ -322,65 +322,64 @@ function VoiceRecordingBanner({ script, contentsId, language = 'en', userId, onA
   }
 
   return (
-    <div className="h-full rounded-[16px] p-3 border-2 shadow-md transition-all flex overflow-hidden gap-3 relative" 
-         style={{ 
-           background: 'linear-gradient(135deg, #E3F2FD 0%, #F3E5F5 25%, #FFF9E6 50%, #E1F5FE 75%, #FCE4EC 100%)',
-           borderColor: recordingState === 'recording' ? '#FFE082' : '#81D4FA'
-         }}>
-      
-      {/* 왼쪽: 스크립트 + 녹음 버튼 */}
-      <div className="flex-1 flex flex-col gap-2">
-        {/* 스크립트 표시 */}
-        {script ? (
-          <div className="flex-1 p-3 bg-white/95 rounded-lg border-2 border-[#81D4FA] overflow-y-auto shadow-sm">
-            <div className="text-base font-bold text-[#01579B] leading-relaxed">
-              {script.text}
+    <div
+      className="h-full rounded-[16px] p-3 border-2 shadow-md transition-all flex flex-col gap-3 relative"
+      style={{
+        background:
+          'linear-gradient(135deg, #E3F2FD 0%, #F3E5F5 25%, #FFF9E6 50%, #E1F5FE 75%, #FCE4EC 100%)',
+        borderColor: recordingState === 'recording' ? '#FFE082' : '#81D4FA',
+      }}
+    >
+      {/* 상단: 음성 시각화 + 스크립트 표시 (하나의 박스로 보이도록 테두리 제거) */}
+      <div className="flex-1 rounded-lg overflow-hidden bg-white flex flex-col">
+        {/* 상단: 파형 그래프 */}
+        <div className="relative h-[180px] overflow-hidden">
+          <canvas ref={canvasRef} width={1000} height={180} className="w-full h-full" />
+
+          {/* 상단 오른쪽 안내 문구 (그래프 위에 겹쳐서 표시) */}
+          <div className="absolute top-2 left-3 bg-white/85 rounded-full px-3 py-1 border border-[#E1F5FE] text-[24px] text-[#0277BD] shadow-sm">
+            버튼을 누르고 따라서 말해봐요
+          </div>
+
+          {/* 그래프 위에 겹쳐지는 중앙 하단 녹음 버튼 + 타이머 */}
+          <div className="absolute inset-x-0 bottom-3 flex items-center justify-center pointer-events-none">
+            <div className="flex items-center gap-3 pointer-events-auto">
+              {recordingState === 'recording' ? (
+                <button
+                  onClick={stop}
+                  className="px-6 py-2.5 rounded-lg bg-gradient-to-r from-[#FFE082] to-[#FFECB3] border-2 border-[#FFD54F] text-[#F57C00] font-bold text-base shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2"
+                >
+                  <StopCircle className="w-5 h-5" />
+                  녹음 멈추기
+                </button>
+              ) : (
+                <button
+                  onClick={start}
+                  disabled={!script || isAnalyzing}
+                  className="px-6 py-2.5 rounded-lg bg-gradient-to-r from-[#FFE082] to-[#FFECB3] border-2 border-[#FFD54F] text-[#F57C00] font-bold text-lg shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  <Mic className="w-6 h-6" />
+                  녹음 시작!
+                </button>
+              )}
+
+              {recordingState === 'recording' && (
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#FFF9E6] rounded-lg border-2 border-[#FFE082]">
+                  <div className="w-2 h-2 bg-[#FFD54F] rounded-full animate-pulse"></div>
+                  <span className="text-sm font-bold text-[#F57C00]">{recordingTime}초</span>
+                </div>
+              )}
             </div>
           </div>
-        ) : (
-          <div className="flex-1 p-3 bg-[#E1F5FE] rounded-lg border-2 border-[#B3E5FC] flex items-center justify-center">
-            <div className="text-sm text-[#0277BD]">스크립트를 선택해주세요</div>
-          </div>
-        )}
-        
-        {/* 녹음 버튼 */}
-        {recordingState === 'recording' ? (
-          <button 
-            onClick={stop} 
-            className="py-3 rounded-lg bg-gradient-to-r from-[#FFE082] to-[#FFECB3] border-2 border-[#FFD54F] text-[#F57C00] font-bold text-base shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2"
-          >
-            <StopCircle className="w-5 h-5" />
-            녹음 멈추기
-          </button>
-        ) : (
-          <button 
-            onClick={start} 
-            disabled={!script || isAnalyzing} 
-            className="py-3 rounded-lg bg-gradient-to-r from-[#FFE082] to-[#FFECB3] border-2 border-[#FFD54F] text-[#F57C00] font-bold text-lg shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-          >
-            <Mic className="w-6 h-6" />
-            녹음 시작!
-          </button>
-        )}
-        
-        {/* 녹음 시간 표시 */}
-        {recordingState === 'recording' && (
-          <div className="flex items-center justify-center gap-1.5 px-3 py-1 bg-[#FFF9E6] rounded-lg border-2 border-[#FFE082]">
-            <div className="w-2 h-2 bg-[#FFD54F] rounded-full animate-pulse"></div>
-            <span className="text-sm font-bold text-[#F57C00]">{recordingTime}초</span>
-          </div>
-        )}
-      </div>
+        </div>
 
-      {/* 오른쪽: 음성 시각화 */}
-      <div className="flex-[2] relative rounded-lg overflow-hidden bg-white border-2 border-[#81D4FA]">
-        <canvas ref={canvasRef} width={1000} height={180} className="w-full h-full" />
-        {!recordingState || recordingState === 'idle' ? (
-          <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-[#E1F5FE] via-[#F3E5F5] to-[#FFF9E6] gap-2">
-            <Mic className="w-16 h-16 text-[#81D4FA] animate-pulse" />
-            <div className="text-sm font-medium text-[#0277BD]">왼쪽 녹음 버튼을 눌러주세요</div>
+        {/* 하단: 현재 스크립트 텍스트 (녹음 중에만 그래프 아래에 표시) */}
+        {recordingState === 'recording' && localScriptText && (
+          <div className="px-3 py-2 bg-[#F5F8FF] flex items-start gap-2">
+            <FileText className="w-4 h-4 text-[#0277BD] flex-shrink-0 mt-0.5" />
+            <p className="text-xs text-[#01579B] leading-relaxed">{localScriptText}</p>
           </div>
-        ) : null}
+        )}
       </div>
 
       {/* 분석 중 오버레이 */}

@@ -55,6 +55,7 @@ function Player() {
   const [pausedScriptIds, setPausedScriptIds] = useState(new Set()); // 이미 중지된 스크립트 추적
   const [recordingPromptVisible, setRecordingPromptVisible] = useState(false);
   const [analysisResult, setAnalysisResult] = useState(null);
+  const [flippedScriptId, setFlippedScriptId] = useState(null); // 뒤집힌 스크립트 카드 추적
 
   const languages = [
     { code: 'ko', name: '한국어', flag: '🇰🇷' },
@@ -394,7 +395,7 @@ function Player() {
           </div>
 
           {/* 스크립트 목록 */}
-          <div className="bg-white rounded-[14px] border-2 p-4" style={{ borderColor: '#c8d3f0', maxHeight: '500px', overflowY: 'auto' }}>
+          <div className="bg-white rounded-[14px] border-2 p-5" style={{ borderColor: '#c8d3f0', maxHeight: '450px', overflowY: 'auto' }}>
             <div className="text-base text-gray-600 font-bold mb-3 flex items-center gap-2">
               <FileText className="w-4 h-4" />
               전체 스크립트
@@ -418,27 +419,49 @@ function Player() {
                       feedbackForScript?.medal ||
                       (analysisResult && analysisResult.scriptId === scriptKey ? analysisResult.medal : null);
                     const stickerSrc = latestMedal ? getStickerByMedal(latestMedal) : null;
+                    const displayFeedback = feedbackForScript || (analysisResult && analysisResult.scriptId === scriptKey ? analysisResult : null);
+                    const totalScore = displayFeedback?.finalScore ?? displayFeedback?.score ?? null;
+                    const accuracy = displayFeedback?.accuracy ?? null;
+                    const fluency = displayFeedback?.fluency ?? null;
+                    const completeness = displayFeedback?.completeness ?? null;
+                    const feedbackText = displayFeedback?.feedbackText || displayFeedback?.overallComment || '';
+                    const cardId = scriptKey ?? `${script.contentsId}-${script.orderNo}`;
+                    const isFlipped = flippedScriptId === cardId;
                     
                     return (
                       <div
                         key={script.scriptId || script.id || `${script.contentsId}-${script.orderNo}`}
-                        onClick={() => setSelectedScript(script)}
-                        className={`rounded-[12px] p-3 border-2 cursor-pointer transition-all flex-shrink-0 ${
+                        onClick={() => {
+                          setSelectedScript(script);
+                          setFlippedScriptId(prev => (prev === cardId ? null : cardId));
+                        }}
+                        className="flip-card cursor-pointer flex-shrink-0 group"
+                      >
+                        <div className={`flip-card-inner ${isFlipped ? 'is-flipped' : ''}`}>
+                          {/* 앞면: 스크립트 + 스티커 */}
+                          <div
+                            className={`flip-card-front rounded-[14px] min-h-[170px] border-2 p-4 relative flex items-start gap-3 transition-all ${
                           isSelected
                             ? 'bg-white border-[#01579B] shadow-xl'
                             : 'bg-[#E1F5FE] border-[#B3E5FC]'
                         }`}
                       >
-                        <div className="flex items-start gap-3">
-                          <div className={`flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-base font-bold transition-all ${
+                            {/* 말풍선 - 점수를 봐볼까? (카드 중앙에 자연스럽게 표시) */}
+                            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                              <div className="px-3 py-1 rounded-full bg-white/95 border border-[#B3E5FC] text-[11px] text-[#01579B] shadow-sm">
+                                점수를 봐볼까?
+                              </div>
+                            </div>
+
+                            <div className={`flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-base font-bold ${
                             isSelected
                               ? 'bg-[#01579B] text-white'
                               : 'bg-[#B3E5FC] text-[#01579B]'
                           }`}>
                             {index + 1}
                           </div>
-                          <div className="flex-1 flex items-center justify-between gap-2">
-                            <div className={`text-base leading-relaxed transition-all script-text-default-font ${
+                            <div className="flex-1 flex items-start justify-between gap-3">
+                              <div className={`text-base leading-relaxed script-text-default-font ${
                               isSelected
                                 ? 'text-[#01579B] font-bold'
                                 : 'text-[#0277BD]'
@@ -449,8 +472,47 @@ function Player() {
                               <img
                                 src={stickerSrc}
                                 alt="발음 스티커"
-                                className="w-10 h-10 object-contain drop-shadow-sm"
-                              />
+                                  className="w-38 h-38 object-contain drop-shadow-sm"
+                                />
+                              )}
+                            </div>
+                          </div>
+
+                          {/* 뒷면: 점수 & 평가 */}
+                          <div className="flip-card-back rounded-[14px] min-h-[140px] border-2 p-4 bg-white flex flex-col justify-center gap-2 border-[#01579B] shadow-lg">
+                            {totalScore != null ? (
+                              <>
+                                <div className="flex items-center justify-between gap-3">
+                                  <div className="text-sm font-bold text-[#01579B]">
+                                    나의 점수
+                                  </div>
+                                  <div className="text-2xl font-extrabold text-[#F57C00]">
+                                    {totalScore}
+                                  </div>
+                                </div>
+                                <div className="grid grid-cols-3 gap-2 text-[11px] text-[#0277BD]">
+                                  <div className="px-2 py-1 rounded-lg bg-[#E1F5FE]">
+                                    정확도 {accuracy ?? '-'}
+                                  </div>
+                                  <div className="px-2 py-1 rounded-lg bg-[#F3E5F5]">
+                                    유창성 {fluency ?? '-'}
+                                  </div>
+                                  <div className="px-2 py-1 rounded-lg bg-[#FFF9E6]">
+                                    완성도 {completeness ?? '-'}
+                                  </div>
+                                </div>
+                                {feedbackText && (
+                                  <div className="mt-1 px-2.5 py-1.5 rounded-lg bg-[#FFFDE7] border border-[#FFD54F] text-[11px] text-[#F57C00] leading-relaxed line-clamp-2">
+                                    {feedbackText}
+                                  </div>
+                                )}
+                              </>
+                            ) : (
+                              <div className="text-sm text-center text-[#0277BD] leading-relaxed">
+                                아직 점수가 없어요.
+                                <br />
+                                아래에서 먼저 녹음해 볼까요?
+                              </div>
                             )}
                           </div>
                         </div>
