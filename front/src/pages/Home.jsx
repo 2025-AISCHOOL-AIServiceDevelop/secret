@@ -282,7 +282,7 @@ function Home() {
         {/* 추천 패널 — 검색 결과 있을 때만 표시 */}
         {koreanContents.length > 0 && (
           <aside>
-            <div className="sticky top-[90px] grid gap-4 rounded-[22px] p-6 border-2 border-[#a9b9d3]">
+              <div className="sticky top-[60px] grid gap-4 rounded-[22px] p-6 bg-white/30 backdrop-blur-sm shadow-xl">
 
               <div className="text-2xl font-[DungeonFighterOnlineBeatBeat] text-[#8C85A5] text-center">
                 나이별 추천동화
@@ -296,7 +296,7 @@ function Home() {
                     if (!isAuthenticated) setIsLoginPromptOpen(true);
                     else navigate(`/player?contentId=${filtered[0].contentsId}`);
                   }}
-                  className="relative aspect-[16/9] rounded-xl cursor-pointer group overflow-hidden border border-[#8C85A5]"
+                  className="relative aspect-[16/9] rounded-xl cursor-pointer group overflow-hidden"
                 >
                   <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity z-10">
                     <div className="w-16 h-16 bg-black/40 rounded-full flex items-center justify-center">
@@ -328,14 +328,16 @@ function Home() {
                     key={age}
                     onClick={() => setSelectedAge(age)}
                     className={`
-                      px-4 py-1 rounded-full text-xs border-2 font-[DungeonFighterOnlineBeatBeat]
+                      px-4 py-1 rounded-full text-xs border font-[DungeonFighterOnlineBeatBeat]
                       transition-all duration-200
                       ${
                         selectedAge === age
                           ? 'bg-[#8C85A5] text-white border-[#8C85A5]'
-                          : 'bg-white text-[#8C85A5] border-[#a9b9d3] hover:bg-[#f1f4ff]'
+                          : 'bg-white/60 text-[#8C85A5] border-[#8C85A580] hover:bg-white/80'
                       }
                     `}
+
+
                   >
                     {age}
                   </button>
@@ -352,21 +354,21 @@ function Home() {
                       key={idx}
                       className={`
                         transition-all duration-200 border
-                        ${
-                          isActive
-                            ? 'w-6 h-3 rounded-full bg-[#8C85A5] border-[#8C85A5]'
-                            : 'w-3 h-3 rounded-full bg-[#d0d9ea] border-[#a9b9d3]'
+                        ${isActive 
+                          ? 'w-6 h-3 rounded-full bg-[#8C85A5] border-[#8C85A5]'
+                          : 'w-3 h-3 rounded-full bg-[#8C85A5]/20 border-[#8C85A5]'
                         }
                       `}
                     />
                   );
                 })}
               </div>
+
             </div>
 
             {/* 마스코트 — 검색 결과 있을 때만 표시 */}
             {showMascot && (
-              <div className="sticky top-[500px] mt-10 flex flex-col items-center space-y-3">
+              <div className="sticky top-[480px] mt-10 flex flex-col items-center space-y-3">
                 <div className="relative bg-white rounded-2xl px-4 py-3 shadow-md text-sm w-[240px] text-gray-700">
                   전래동화를 다양한 언어로 배워보세요!
                   <span className="absolute -bottom-2 left-6 w-0 h-0 border-l-8 border-r-8 border-t-8 border-transparent border-t-white"></span>
