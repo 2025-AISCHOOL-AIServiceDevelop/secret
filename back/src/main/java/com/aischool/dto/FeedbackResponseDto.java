@@ -18,18 +18,18 @@ public class FeedbackResponseDto {
     private Long feedbackId;
     private Long userId;
     private Long contentsId;
-    private Long scriptId;       
+    private Long scriptId;
     private String scriptText;
     private String lang;
 
-    private Integer finalScore; 
+    private Integer finalScore;
     private Integer accuracy;
     private Integer fluency;
     private Integer completeness;
 
-    private String medal; // 메달 등급 (GOLD, SILVER, BRONZE)
-    private String feedbackText; // AI 피드백 문장
-    private LocalDateTime feedbackDate; // 피드백 생성 시각
+    private String medal;          // GOLD, SILVER, BRONZE
+    private String feedbackText;   // AI 최종 피드백 문장 (세밀 + 톤 포함)
+    private LocalDateTime feedbackDate;
 
     // 엔티티에서 DTO로 변환할 때 사용
     public static FeedbackResponseDto fromEntity(Feedback feedback) {

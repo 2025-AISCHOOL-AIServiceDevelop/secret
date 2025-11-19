@@ -20,7 +20,7 @@ public class RuleEngine {
         List<RuleIssue> issues = new ArrayList<>();
 
         /* =============================
-         * 1) 완전성(Completeness) 체크
+         * 1) 완전성(Completeness)
          * ============================= */
         if (in.completeness < COMPLETENESS_WARN) {
             double impact = 100 + (COMPLETENESS_WARN - in.completeness);
@@ -33,7 +33,7 @@ public class RuleEngine {
         }
 
         /* =============================
-         * 2) 유창성(Fluency) 체크
+         * 2) 유창성(Fluency)
          * ============================= */
         if (in.fluency < FLUENCY_WARN) {
             double impact = 60 + (FLUENCY_WARN - in.fluency);
@@ -46,19 +46,19 @@ public class RuleEngine {
         }
 
         /* =============================
-         * 3) 음소별(Phoneme) 문제 탐지
+         * 3) 음소별 문제 탐지
          * ============================= */
         Map<String, List<Double>> byPhoneme = new HashMap<>();
         Map<String, Integer> endOfWordCount = new HashMap<>();
 
         for (CanonicalFeedbackInput.WordFeedback w : in.words) {
             for (CanonicalFeedbackInput.PhonemeFeedback p : w.phonemes) {
+
                 if (p.symbol == null || p.symbol.isEmpty()) continue;
 
-                // phoneme accuracy 추가
-                byPhoneme.computeIfAbsent(p.symbol, k -> new ArrayList<>()).add(p.accuracy);
+                byPhoneme.computeIfAbsent(p.symbol, k -> new ArrayList<>())
+                        .add(p.accuracy);
 
-                // 단어 마지막 음절 여부 count
                 if (p.wordFinal) {
                     endOfWordCount.put(
                             p.symbol,
@@ -68,31 +68,30 @@ public class RuleEngine {
             }
         }
 
-        for (Map.Entry<String, List<Double>> entry : byPhoneme.entrySet()) {
-            String symbol = entry.getKey();
-            List<Double> scores = entry.getValue();
+        for (String symbol : byPhoneme.keySet()) {
+            List<Double> scores = byPhoneme.get(symbol);
 
             double avg = scores.stream()
                     .mapToDouble(d -> d)
                     .average()
                     .orElse(100.0);
 
-            /* ============================================================
-             * 🔥 핵심 수정 포인트: Azure가 phoneme accuracy 를 제공하지 않아
-             * score = 0 인 경우가 있음 → 이런 경우는 문제로 취급하지 않음.
-             * ============================================================ */
+            // accuracy=0 이면 errorType 기반으로 판단
             if (avg == 0) {
-                continue; // accuracy 정보 없음 → skip
+                boolean hasError = in.words.stream().anyMatch(w ->
+                        w.phonemes.stream().anyMatch(p ->
+                                p.symbol.equals(symbol) &&
+                                !"Correct".equalsIgnoreCase(p.errorType)
+                        )
+                );
+                if (!hasError) continue;
+                avg = 50;
             }
 
-            /* ============================================================
-             * 음소 정확도가 임계값 이하인 경우만 문제로 간주
-             * ============================================================ */
             if (avg < PHONEME_WARN) {
                 boolean isCore = CORE_PHONEMES.contains(symbol);
                 int finals = endOfWordCount.getOrDefault(symbol, 0);
 
-                // impact 계산: 코어음소 가산 + 낮은 점수 가산 + 등장 빈도 + 말음 빈도
                 double impact =
                         (isCore ? 40 : 20)
                                 + Math.max(0, PHONEME_WARN - avg)
@@ -112,12 +111,10 @@ public class RuleEngine {
         }
 
         /* =============================
-         * 4) impact 순으로 정렬 후 상위 2개만 선택
+         * 4) 상위 2개 이슈만 선택
          * ============================= */
         return issues.stream()
-                .sorted(Comparator
-                        .comparingDouble((RuleIssue r) -> r.impact)
-                        .reversed())
+                .sorted(Comparator.comparingDouble((RuleIssue r) -> r.impact).reversed())
                 .limit(2)
                 .collect(Collectors.toList());
     }

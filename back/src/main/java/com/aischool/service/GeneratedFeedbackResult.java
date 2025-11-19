@@ -13,7 +13,5 @@ public class GeneratedFeedbackResult {
     private int fluency;
     private int completeness;
     private String medal;
-    private String feedbackText;
-
-    
+    private String feedbackText;   // 세밀 + 응원 문장까지 합쳐진 최종 피드백
 }

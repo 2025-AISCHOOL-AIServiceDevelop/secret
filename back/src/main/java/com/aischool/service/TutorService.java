@@ -37,7 +37,6 @@ public class TutorService {
 
         lang = lang.toLowerCase(Locale.ROOT);
 
-        // en-US → en
         if (lang.contains("-")) {
             lang = lang.split("-")[0];
         }
@@ -49,8 +48,7 @@ public class TutorService {
     }
 
     /**
-     * Azure Speech API가 요구하는 locale 변환
-     * (내부 규격 → Azure 규격)
+     * Azure Speech API locale 매핑
      */
     private String mapToAzureLocale(String lang) {
         return switch (lang.toLowerCase()) {
@@ -70,7 +68,6 @@ public class TutorService {
      */
     public FeedbackResponseDto createFeedback(FeedbackRequestDto requestDto) {
 
-        // 프론트 언어 → 내부표준
         String normLang = normalizeLang(requestDto.getLang());
         String azureLocale = mapToAzureLocale(normLang);
 
@@ -79,7 +76,6 @@ public class TutorService {
                 azureLocale
         );
 
-        // 언어를 feedbackGenerator에 전달하도록 변경
         GeneratedFeedbackResult generated = feedbackGenerator.generate(aiResult, normLang);
 
         Feedback savedFeedback = feedbackService.saveFeedback(
@@ -99,7 +95,7 @@ public class TutorService {
     }
 
     /**
-     * 📌 파일 업로드 기반 발음 분석 (POST /analyze)
+     * 📌 파일 업로드 기반 분석 (POST /analyze)
      */
     public FeedbackResponseDto processPronunciationFeedback(
             MultipartFile audioFile,
@@ -111,13 +107,12 @@ public class TutorService {
         File tempFile = null;
 
         try {
-            // 언어 정규화
             String normLang = normalizeLang(lang);
             String azureLocale = mapToAzureLocale(normLang);
 
-            // script 조회
+            // 스크립트 조회
             Script script = scriptRepository.findById(scriptId.intValue())
-                    .orElseThrow(() -> new RuntimeException("해당 scriptId의 문장을 찾을 수 없습니다."));
+                    .orElseThrow(() -> new RuntimeException("스크립트 정보를 찾을 수 없습니다."));
             String targetSentence = script.getText();
 
             // 업로드 파일 임시 저장
@@ -131,7 +126,9 @@ public class TutorService {
                     azureLocale
             );
 
-            // 언어별 피드백 생성
+            System.out.println("🔵 Azure RAW JSON = " + azureJson);
+
+            // 피드백 생성
             GeneratedFeedbackResult generated = feedbackGenerator.generate(azureJson, normLang);
 
             // DB 저장
@@ -178,10 +175,14 @@ public class TutorService {
         }
     }
 
+    /**
+     * 최근 피드백 조회
+     */
     public FeedbackResponseDto getLatestFeedback(Long userId, Long contentsId, Long scriptId) {
 
         Feedback latest = feedbackRepository
-                .findTopByUserIdAndContentsIdAndScriptIdOrderByFeedbackDateDesc(userId, contentsId, scriptId)
+                .findTopByUserIdAndContentsIdAndScriptIdOrderByFeedbackDateDesc(
+                        userId, contentsId, scriptId)
                 .orElseThrow(() -> new RuntimeException("해당 피드백이 존재하지 않습니다."));
 
         Script script = scriptRepository.findById(scriptId.intValue())

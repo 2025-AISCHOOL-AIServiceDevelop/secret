@@ -207,6 +207,10 @@ public class AzureSpeechService {
                 throw new RuntimeException("Azure JSON 결과를 가져오지 못했습니다.");
             }
 
+            System.out.println("\n\n================= Azure RAW JSON =================");
+            System.out.println(json);
+            System.out.println("=================================================\n\n");
+
             return json;
         }
     }
