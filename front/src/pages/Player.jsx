@@ -42,6 +42,8 @@ function Player() {
 
   const videoRef = useRef(null);
   const videoSectionRef = useRef(null);
+  const scriptListRef = useRef(null);          // 스크립트 리스트 컨테이너
+  const scriptItemRefs = useRef({});           // 각 스크립트 카드 DOM 참조
   const [selectedScript, setSelectedScript] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -194,18 +196,31 @@ function Player() {
         // 스크립트가 변경되었을 때만 업데이트
         if (!selectedScript || (selectedScript.scriptId || selectedScript.id) !== scriptId) {
           setSelectedScript(activeScript);
-          
-          // 타임스탬프 시점에서 영상 중지 및 녹음 유도 (각 스크립트당 한 번만)
+
+          // 영상은 멈추지 않고 계속 재생되도록 유지하되,
+          // 필요하면 프롬프트만 띄우고 스크롤을 통해 현재 스크립트를 보여줌
           if (!pausedScriptIds.has(scriptId)) {
-            videoRef.current.pause();
-            setIsPlaying(false);
             setRecordingPromptVisible(true);
             setPausedScriptIds(prev => new Set([...prev, scriptId]));
-            
+
             // 10초 후 자동으로 프롬프트 숨기기
             setTimeout(() => {
               setRecordingPromptVisible(false);
             }, 10000);
+          }
+
+          // 스크립트 리스트가 자동으로 스크롤되면서 현재 스크립트가 계속 보이도록 처리
+          const container = scriptListRef.current;
+          const target = scriptItemRefs.current[scriptId];
+          if (container && target) {
+            const containerRect = container.getBoundingClientRect();
+            const targetRect = target.getBoundingClientRect();
+            const offset =
+              targetRect.top -
+              containerRect.top -
+              containerRect.height / 2 +
+              targetRect.height / 2;
+            container.scrollTop += offset;
           }
         }
       }
@@ -395,7 +410,11 @@ function Player() {
           </div>
 
           {/* 스크립트 목록 */}
-          <div className="bg-white rounded-[14px] border-2 p-5" style={{ borderColor: '#c8d3f0', maxHeight: '450px', overflowY: 'auto' }}>
+          <div
+            ref={scriptListRef}
+            className="bg-white rounded-[14px] border-2 p-5"
+            style={{ borderColor: '#c8d3f0', maxHeight: '450px', overflowY: 'auto' }}
+          >
             <div className="text-base text-gray-600 font-bold mb-3 flex items-center gap-2">
               <FileText className="w-4 h-4" />
               전체 스크립트
@@ -431,6 +450,11 @@ function Player() {
                     return (
                       <div
                         key={script.scriptId || script.id || `${script.contentsId}-${script.orderNo}`}
+                        ref={el => {
+                          if (el && scriptKey != null) {
+                            scriptItemRefs.current[scriptKey] = el;
+                          }
+                        }}
                         onClick={() => {
                           setSelectedScript(script);
                           setFlippedScriptId(prev => (prev === cardId ? null : cardId));
