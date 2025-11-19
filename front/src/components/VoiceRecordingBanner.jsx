@@ -3,16 +3,9 @@ import { useTutorStore } from '../stores'
 import {
   Mic,
   StopCircle,
-  Award,
   RefreshCw,
   Frown,
   Loader2,
-  FileText,
-  MessageCircle,
-  Star,
-  ThumbsUp,
-  Smile,
-  Sparkles
 } from 'lucide-react'
 import level1 from '../assets/level1.png'
 import level2 from '../assets/level2.png'
@@ -57,19 +50,18 @@ function VoiceRecordingBanner({ script, contentsId, language = 'en', userId, onA
   const [localFluency, setLocalFluency] = useState(null)
   const [localCompleteness, setLocalCompleteness] = useState(null)
   const [localMedal, setLocalMedal] = useState(null)
-  const [localMessage, setLocalMessage] = useState('')
+  const [localMessage, setLocalMessage] = useState(null)
   const [localFeedbackText, setLocalFeedbackText] = useState('')
   const [localScriptText, setLocalScriptText] = useState('')
   const [errorMessage, setErrorMessage] = useState('')
   const [recordingTime, setRecordingTime] = useState(0)
   const recordingTimerRef = useRef(null)
+  const waveformHistoryRef = useRef([])
 
-  const breakdownItems = [
-    { label: '총점', value: localScore, color: '#FFE082' },
-    { label: '정확도', value: localAccuracy, color: '#81D4FA' },
-    { label: '유창성', value: localFluency, color: '#BA68C8' },
-    { label: '완성도', value: localCompleteness, color: '#FFD54F' }
-  ]
+  const displayedScript = (localScriptText || script?.text || '').trim()
+  const scriptWords = displayedScript ? displayedScript.split(/\s+/) : []
+  const wordGapClass =
+    scriptWords.length <= 3 ? 'gap-10' : scriptWords.length <= 6 ? 'gap-6' : 'gap-4'
 
   useEffect(() => {
     return () => {
@@ -110,11 +102,12 @@ function VoiceRecordingBanner({ script, contentsId, language = 'en', userId, onA
       setLocalFluency(null)
       setLocalCompleteness(null)
       setLocalMedal(null)
-      setLocalMessage('')
+      setLocalMessage(null)
       setLocalFeedbackText('')
       setLocalScriptText(script?.text ?? '')
       setErrorMessage('')
       setRecordingTime(0)
+      waveformHistoryRef.current = []
       
       // 녹음 시간 타이머 시작
       recordingTimerRef.current = setInterval(() => {
@@ -183,14 +176,17 @@ function VoiceRecordingBanner({ script, contentsId, language = 'en', userId, onA
 
         const res = await analyzePronunciation(file, userId, contentsId, scriptId, azureLanguage)
         const score = normalizeScore(res?.finalScore ?? res?.score) ?? 0
+        const accuracyScore = normalizeScore(res?.accuracy)
+        const fluencyScore = normalizeScore(res?.fluency)
+        const completenessScore = normalizeScore(res?.completeness)
 
         setLocalScore(score)
-        setLocalAccuracy(normalizeScore(res?.accuracy))
-        setLocalFluency(normalizeScore(res?.fluency))
-        setLocalCompleteness(normalizeScore(res?.completeness))
+        setLocalAccuracy(accuracyScore)
+        setLocalFluency(fluencyScore)
+        setLocalCompleteness(completenessScore)
         const medal = res?.medal ? String(res.medal).toUpperCase() : null
         setLocalMedal(medal)
-        const messageObj = buildMessage(score, medal)
+        const messageObj = buildMessage(accuracyScore, fluencyScore, completenessScore)
         setLocalMessage(messageObj)
         setLocalFeedbackText(res?.feedbackText ?? '')
         setLocalScriptText(res?.scriptText ?? script?.text ?? '')
@@ -215,8 +211,59 @@ function VoiceRecordingBanner({ script, contentsId, language = 'en', userId, onA
     stopRecording()
   }
 
-  // 현재는 상단 문구를 사용하지 않도록 비워둔 함수
-  const buildMessage = () => null
+  // 각 점수(정확도/유창성/완성도)에 대한 한 줄 평가 문구 생성
+  const buildMessage = (accuracy, fluency, completeness) => {
+    const getMetricFeedback = (type, score) => {
+      if (score === null || score === undefined) return null
+
+      let level
+      if (score >= 75) {
+        level = 'high'
+      } else if (score >= 40) {
+        level = 'mid'
+      } else {
+        level = 'low'
+      }
+
+      if (type === 'accuracy') {
+        if (level === 'high') {
+          return { type, level, text: '정확도는 아주 정확해요!', color: '#43A047' }
+        }
+        if (level === 'mid') {
+          return { type, level, text: '정확도는 정확해요!', color: '#FBC02D' }
+        }
+        return { type, level, text: '정확도는 좀 더 정확하게 말해봐요!', color: '#F57C00' }
+      }
+
+      if (type === 'fluency') {
+        if (level === 'high') {
+          return { type, level, text: '유창성은 아주 유창해요!', color: '#43A047' }
+        }
+        if (level === 'mid') {
+          return { type, level, text: '유창성은 유창하군요!', color: '#FBC02D' }
+        }
+        return { type, level, text: '유창성은 자연스럽게 해볼까요?', color: '#F57C00' }
+      }
+
+      if (type === 'completeness') {
+        if (level === 'high') {
+          return { type, level, text: '완성도는 아주 완벽해요!', color: '#43A047' }
+        }
+        if (level === 'mid') {
+          return { type, level, text: '완성도는 잘 했어요!', color: '#FBC02D' }
+        }
+        return { type, level, text: '완성도는 다시 한 번 해볼까요?', color: '#F57C00' }
+      }
+
+      return null
+    }
+
+    return {
+      accuracy: getMetricFeedback('accuracy', accuracy),
+      fluency: getMetricFeedback('fluency', fluency),
+      completeness: getMetricFeedback('completeness', completeness),
+    }
+  }
 
   const cleanup = () => {
     if (rafRef.current) cancelAnimationFrame(rafRef.current)
@@ -234,6 +281,7 @@ function VoiceRecordingBanner({ script, contentsId, language = 'en', userId, onA
     }
     analyserRef.current = null
     mediaRecorderRef.current = null
+    waveformHistoryRef.current = []
   }
 
   const drawWaveform = () => {
@@ -241,67 +289,60 @@ function VoiceRecordingBanner({ script, contentsId, language = 'en', userId, onA
     const analyser = analyserRef.current
     if (!canvas || !analyser) return
     const ctx = canvas.getContext('2d')
-    const bufferLength = analyser.frequencyBinCount
+    const bufferLength = analyser.fftSize
     const dataArray = new Uint8Array(bufferLength)
 
     const draw = () => {
       rafRef.current = requestAnimationFrame(draw)
-      analyser.getByteFrequencyData(dataArray)
+      analyser.getByteTimeDomainData(dataArray)
 
+      // 현재 프레임의 평균 볼륨 계산 (0 ~ 1)
+      let sum = 0
+      for (let i = 0; i < bufferLength; i++) {
+        const v = (dataArray[i] - 128) / 128 // -1 ~ 1 근처
+        sum += Math.abs(v)
+      }
+      const avgVolume = sum / bufferLength
+
+      // 누적 히스토리에 추가 (최대 canvas.width 포인트 유지)
+      const history = waveformHistoryRef.current
+      history.push(avgVolume)
+      const maxPoints = canvas.width
+      if (history.length > maxPoints) {
+        history.shift()
+      }
+
+      // 배경
       ctx.clearRect(0, 0, canvas.width, canvas.height)
-      
-      // 귀여운 배경 그라디언트
-      const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height)
-      gradient.addColorStop(0, '#fff5f5')
-      gradient.addColorStop(0.5, '#ffe8f0')
-      gradient.addColorStop(1, '#fff0e8')
-      ctx.fillStyle = gradient
+      ctx.fillStyle = '#c8dafc'
       ctx.fillRect(0, 0, canvas.width, canvas.height)
 
-      // 중앙선
-      const centerY = canvas.height / 2
-      ctx.strokeStyle = '#ffc0cb'
-      ctx.lineWidth = 2
-      ctx.setLineDash([5, 5])
+      if (history.length === 0) return
+
+      // 누적 라인 그래프 그리기 (변동을 크게 보기 위해 스케일 업)
+      const midY = canvas.height / 2
+      const amplitude = canvas.height * 0.45
+      const stepX = history.length > 1 ? canvas.width / (history.length - 1) : canvas.width
+
+      ctx.lineWidth = 4
+      ctx.strokeStyle = '#b54cff'
+      ctx.lineJoin = 'round'
+      ctx.lineCap = 'round'
       ctx.beginPath()
-      ctx.moveTo(0, centerY)
-      ctx.lineTo(canvas.width, centerY)
-      ctx.stroke()
-      ctx.setLineDash([])
 
-      // 귀여운 파도 모양 막대 그래프
-      const barCount = 40
-      const barWidth = canvas.width / barCount
-      const barSpacing = 4
-      
-      for (let i = 0; i < barCount; i++) {
-        const dataIndex = Math.floor((i / barCount) * bufferLength)
-        const value = dataArray[dataIndex]
-        const normalizedValue = value / 255
-        const barHeight = normalizedValue * (canvas.height * 0.7)
-        
-        const x = i * barWidth
-        const y = centerY - barHeight / 2
-        
-        // 무지개 색상 (유아 친화적)
-        const hue = (i / barCount) * 360
-        const saturation = 70 + normalizedValue * 30
-        const lightness = 60 + normalizedValue * 20
-        ctx.fillStyle = `hsl(${hue}, ${saturation}%, ${lightness}%)`
-        
-        // 둥근 모서리 막대
-        ctx.beginPath()
-        ctx.roundRect(x + barSpacing / 2, y, barWidth - barSpacing, barHeight, [8, 8, 8, 8])
-        ctx.fill()
-
-        // 반짝이는 효과
-        if (normalizedValue > 0.5) {
-          ctx.fillStyle = 'rgba(255, 255, 255, 0.5)'
-          ctx.beginPath()
-          ctx.roundRect(x + barSpacing / 2, y, barWidth - barSpacing, barHeight * 0.3, [8, 8, 0, 0])
-          ctx.fill()
+      history.forEach((value, idx) => {
+        // 변화가 더 크게 보이도록 비선형 스케일 적용
+        const boosted = Math.min(1, Math.pow(value, 0.5) * 1.8)
+        const x = idx * stepX
+        const y = midY - boosted * amplitude
+        if (idx === 0) {
+          ctx.moveTo(x, y)
+        } else {
+          ctx.lineTo(x, y)
         }
-      }
+      })
+
+      ctx.stroke()
     }
     draw()
   }
@@ -323,64 +364,74 @@ function VoiceRecordingBanner({ script, contentsId, language = 'en', userId, onA
 
   return (
     <div
-      className="h-full rounded-[16px] p-3 border-2 shadow-md transition-all flex flex-col gap-3 relative"
+      className="h-full rounded-[24px] border-2 shadow-md transition-all flex flex-col justify-between px-6 py-4 relative"
       style={{
-        background:
-          'linear-gradient(135deg, #E3F2FD 0%, #F3E5F5 25%, #FFF9E6 50%, #E1F5FE 75%, #FCE4EC 100%)',
-        borderColor: recordingState === 'recording' ? '#FFE082' : '#81D4FA',
+        backgroundColor: '#c8dafc',
+        borderColor: recordingState === 'recording' ? '#ffe9a9' : '#e0e7ff',
       }}
     >
-      {/* 상단: 음성 시각화 + 스크립트 표시 (하나의 박스로 보이도록 테두리 제거) */}
-      <div className="flex-1 rounded-lg overflow-hidden bg-white flex flex-col">
-        {/* 상단: 파형 그래프 */}
-        <div className="relative h-[180px] overflow-hidden">
-          <canvas ref={canvasRef} width={1000} height={180} className="w-full h-full" />
+      {/* 상단: 노란색 안내 문구 */}
+      <div className="mb-2">
+        <span className="text-[24px] font-extrabold text-[#FFF59D] drop-shadow-sm">
+          따라 해봐요!
+        </span>
+      </div>
 
-          {/* 상단 오른쪽 안내 문구 (그래프 위에 겹쳐서 표시) */}
-          <div className="absolute top-2 left-3 bg-white/85 rounded-full px-3 py-1 border border-[#E1F5FE] text-[24px] text-[#0277BD] shadow-sm">
-            버튼을 누르고 따라서 말해봐요
-          </div>
+      {/* 중단: 라인 그래프 + 녹음 버튼/타이머 */}
+      <div className="relative h-[80px] flex items-center">
+        {/* 전체 폭 라인 그래프 */}
+        <canvas
+          ref={canvasRef}
+          width={1000}
+          height={80}
+          className="absolute inset-0 w-full h-full"
+        />
 
-          {/* 그래프 위에 겹쳐지는 중앙 하단 녹음 버튼 + 타이머 */}
-          <div className="absolute inset-x-0 bottom-3 flex items-center justify-center pointer-events-none">
-            <div className="flex items-center gap-3 pointer-events-auto">
-              {recordingState === 'recording' ? (
-                <button
-                  onClick={stop}
-                  className="px-6 py-2.5 rounded-lg bg-gradient-to-r from-[#FFE082] to-[#FFECB3] border-2 border-[#FFD54F] text-[#F57C00] font-bold text-base shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2"
-                >
-                  <StopCircle className="w-5 h-5" />
-                  녹음 멈추기
-                </button>
-              ) : (
-                <button
-                  onClick={start}
-                  disabled={!script || isAnalyzing}
-                  className="px-6 py-2.5 rounded-lg bg-gradient-to-r from-[#FFE082] to-[#FFECB3] border-2 border-[#FFD54F] text-[#F57C00] font-bold text-lg shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                >
-                  <Mic className="w-6 h-6" />
-                  녹음 시작!
-                </button>
-              )}
+        {/* 중앙: 녹음 버튼 + 타이머 */}
+        <div className="relative w-full flex items-center justify-center pointer-events-none">
+          <div className="flex items-center gap-4 pointer-events-auto">
+            {recordingState === 'recording' ? (
+              <button
+                onClick={stop}
+                className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-[#FFE082] to-[#FFECB3] border-2 border-[#FFD54F] text-[#F57C00] font-bold text-base shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2"
+              >
+                <StopCircle className="w-5 h-5" />
+                녹음 멈추기
+              </button>
+            ) : (
+              <button
+                onClick={start}
+                disabled={!script || isAnalyzing}
+                className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-[#FFE082] to-[#FFECB3] border-2 border-[#FFD54F] text-[#F57C00] font-bold text-lg shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                <Mic className="w-6 h-6" />
+                녹음 시작!
+              </button>
+            )}
 
-              {recordingState === 'recording' && (
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#FFF9E6] rounded-lg border-2 border-[#FFE082]">
-                  <div className="w-2 h-2 bg-[#FFD54F] rounded-full animate-pulse"></div>
-                  <span className="text-sm font-bold text-[#F57C00]">{recordingTime}초</span>
-                </div>
-              )}
-            </div>
+            {recordingState === 'recording' && (
+              <div className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#FFF9E6] rounded-xl border-2 border-[#FFE082] shadow-sm">
+                <div className="w-2 h-2 bg-[#FFD54F] rounded-full animate-pulse"></div>
+                <span className="text-sm font-bold text-[#F57C00]">{recordingTime}초</span>
+              </div>
+            )}
           </div>
         </div>
-
-        {/* 하단: 현재 스크립트 텍스트 (녹음 중에만 그래프 아래에 표시) */}
-        {recordingState === 'recording' && localScriptText && (
-          <div className="px-3 py-2 bg-[#F5F8FF] flex items-start gap-2">
-            <FileText className="w-4 h-4 text-[#0277BD] flex-shrink-0 mt-0.5" />
-            <p className="text-xs text-[#01579B] leading-relaxed">{localScriptText}</p>
-          </div>
-        )}
       </div>
+
+      {/* 하단: 현재 스크립트 텍스트 (녹음 중에만, 큼직한 단어만 표시) */}
+      {recordingState === 'recording' && scriptWords.length > 0 && (
+        <div className={`mt-6 flex items-center justify-center px-2 ${wordGapClass}`}>
+          {scriptWords.map((word, idx) => (
+            <span
+              key={`${word}-${idx}`}
+              className="text-[32px] font-bold text-[#2E1E9A]"
+            >
+              {word}
+            </span>
+          ))}
+        </div>
+      )}
 
       {/* 분석 중 오버레이 */}
       {isAnalyzing && (
@@ -419,37 +470,32 @@ function VoiceRecordingBanner({ script, contentsId, language = 'en', userId, onA
 
             {/* 가운데: 상세 정보 */}
             <div className="flex flex-col gap-2.5 justify-center">
-              {/* 스크립트 */}
-              {localScriptText && (
-                <div className="flex items-start gap-2 p-2 bg-[#E1F5FE] rounded-lg border border-[#B3E5FC] shadow-sm">
-                  <FileText className="w-4 h-4 text-[#0277BD] flex-shrink-0 mt-0.5" />
-                  <p className="text-xs text-[#01579B] leading-relaxed">{localScriptText}</p>
-                </div>
-              )}
-
-              {/* 세부 점수 (총점 + 세부 점수들) */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                {breakdownItems.map(({ label, value, color }) => (
-                  <div
-                    key={label}
-                    className="p-2 rounded-lg border-2 shadow-sm bg-white flex items-center justify-center"
-                    style={{ borderColor: color }}
-                  >
-                    <span className="text-xs md:text-sm font-semibold text-[#0277BD]">
-                      {label} :{' '}
-                      <span className="font-bold text-[#01579B]">
-                        {value !== null ? `${value}` : '-'}
-                      </span>
-                    </span>
-                  </div>
-                ))}
+              {/* 총점만 숫자로 표시 */}
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-[32px] font-bold text-[#0277BD]">나의 점수는</span>
+                <span className="text-[32px] font-extrabold text-[#F57C00]">
+                  {localScore}
+                </span>
               </div>
 
-              {/* 피드백 텍스트 */}
-              {localFeedbackText && (
-                <div className="flex items-start gap-2 p-2.5 rounded-lg border-2 border-[#FFD54F] bg-gradient-to-r from-[#FFFDE7] to-[#FFECB3] shadow-sm">
-                  <MessageCircle className="w-4 h-4 text-[#F57C00] flex-shrink-0 mt-0.5" />
-                  <p className="text-xs text-[#F57C00] leading-relaxed line-clamp-2">{localFeedbackText}</p>
+              {/* 한 줄 평가 문장 (정확도/유창성/완성도) */}
+              {localMessage && (localMessage.accuracy || localMessage.fluency || localMessage.completeness) && (
+                <div className="mt-1 text-[32px] md:text-[32px] font-bold leading-relaxed">
+                  {localMessage.accuracy && (
+                    <span style={{ color: localMessage.accuracy.color }}>
+                      {localMessage.accuracy.text}{' '}
+                    </span>
+                  )}
+                  {localMessage.fluency && (
+                    <span style={{ color: localMessage.fluency.color }}>
+                      {localMessage.fluency.text}{' '}
+                    </span>
+                  )}
+                  {localMessage.completeness && (
+                    <span style={{ color: localMessage.completeness.color }}>
+                      {localMessage.completeness.text}
+                    </span>
+                  )}
                 </div>
               )}
 
@@ -468,7 +514,7 @@ function VoiceRecordingBanner({ script, contentsId, language = 'en', userId, onA
                 <button
                   onClick={() => {
                     setLocalScore(null)
-                    setLocalMessage('')
+                    setLocalMessage(null)
                     setLocalFeedbackText('')
                     setLocalAccuracy(null)
                     setLocalFluency(null)

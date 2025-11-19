@@ -1,10 +1,8 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
 import { tutorAPI } from '../services/api';
 
 const useTutorStore = create(
-  persist(
-    (set, get) => ({
+  (set, get) => ({
       // State
       currentFeedback: null,
       feedbackHistory: [],
@@ -120,20 +118,12 @@ const useTutorStore = create(
     }
   },
 
-  // Get latest feedback from local state
+  // Get latest feedback from local state (in-memory only)
   getLatestFeedback: () => {
     const { feedbackHistory } = get();
     return feedbackHistory.length > 0 ? feedbackHistory[0] : null;
   },
-    }),
-    {
-      name: 'tutor-storage', // localStorage key
-      partialize: (state) => ({
-        feedbackHistory: state.feedbackHistory,
-        currentFeedback: state.currentFeedback,
-      }),
-    }
-  )
+  })
 );
 
 export default useTutorStore;

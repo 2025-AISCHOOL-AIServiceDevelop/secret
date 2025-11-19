@@ -37,7 +37,7 @@ function Player() {
 
   const { getContentById, loadContents, contents } = useContentsStore();
   const { scripts, isLoadingScripts, loadScripts, getCurrentScript } = useTranslationStore();
-  const { currentFeedback, feedbackHistory } = useTutorStore();
+  const { currentFeedback, feedbackHistory, fetchLatestFeedback } = useTutorStore();
   const { user } = useAuthStore();
 
   const videoRef = useRef(null);
@@ -58,6 +58,7 @@ function Player() {
   const [recordingPromptVisible, setRecordingPromptVisible] = useState(false);
   const [analysisResult, setAnalysisResult] = useState(null);
   const [flippedScriptId, setFlippedScriptId] = useState(null); // 뒤집힌 스크립트 카드 추적
+  const [loadedFeedbackScripts, setLoadedFeedbackScripts] = useState(new Set()); // 백엔드에서 점수를 불러온 스크립트 ID
 
   const languages = [
     { code: 'ko', name: '한국어', flag: '🇰🇷' },
@@ -143,6 +144,36 @@ function Player() {
     });
     return map;
   }, [user, content, scripts, feedbackHistory]);
+
+  // 페이지 진입 시 / 스크립트 로딩 후, 백엔드에 저장된 최신 점수를 불러오기
+  useEffect(() => {
+    if (!user || !content?.contentsId || scripts.length === 0 || !fetchLatestFeedback) return;
+
+    scripts.forEach((script) => {
+      const scriptId = script?.scriptId ?? script?.id;
+      if (!scriptId) return;
+      if (loadedFeedbackScripts.has(scriptId)) return;
+
+      fetchLatestFeedback(user.id, content.contentsId, scriptId).catch((err) => {
+        console.error('Failed to fetch latest feedback for script', scriptId, err);
+      });
+
+      setLoadedFeedbackScripts((prev) => {
+        const next = new Set(prev);
+        next.add(scriptId);
+        return next;
+      });
+    });
+  }, [user, content, scripts, fetchLatestFeedback, loadedFeedbackScripts]);
+
+  const handleScriptCardClick = (script) => {
+    setSelectedScript(script);
+
+    const startMs = script?.startMs ?? script?.startTimeMs ?? null;
+    if (videoRef.current && startMs != null) {
+      videoRef.current.currentTime = startMs / 1000;
+    }
+  };
 
   const handleAnalysisComplete = (result, script) => {
     const scriptKey = result?.scriptId ?? script?.scriptId ?? script?.id ?? null;
@@ -312,22 +343,6 @@ function Player() {
                   crossOrigin="anonymous"
                 />
                 
-                {/* 녹음 유도 배너 */}
-                {recordingPromptVisible && (
-                  <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-[#FFE082] to-[#FFECB3] border-3 border-[#FFD54F] text-[#F57C00] px-7 py-3.5 rounded-full shadow-2xl animate-bounce flex items-center gap-3 z-10">
-                    <Mic className="w-6 h-6" />
-                    <div>
-                      <div className="font-bold text-base">이 문장을 따라 말해보세요!</div>
-                      <div className="text-sm opacity-80">아래 녹음 버튼을 클릭하세요</div>
-                    </div>
-                    <button 
-                      onClick={() => setRecordingPromptVisible(false)}
-                      className="ml-2 hover:opacity-70 transition-opacity"
-                    >
-                      <X className="w-5 h-5" />
-                    </button>
-                  </div>
-                )}
               </>
             ) : (
               <div className="w-full h-full grid place-items-center" style={{ background: 'linear-gradient(135deg, #6657c7, #6aa0ff)' }}>
@@ -387,7 +402,7 @@ function Player() {
         {/* 오른쪽: 스크립트 목록 */}
         <aside className="flex flex-col gap-3 h-full">
           {/* 영상 제목 */}
-          <div className="text-[22px] font-bold text-[#01579B]">
+          <div className="text-4xl font-[DungeonFighterOnlineBeatBeat] text-[#8C85A5]">
             {content?.title || content?.name || '영상 제목'}
           </div>
 
@@ -415,8 +430,8 @@ function Player() {
             className="bg-white rounded-[14px] border-2 p-5"
             style={{ borderColor: '#c8d3f0', maxHeight: '450px', overflowY: 'auto' }}
           >
-            <div className="text-base text-gray-600 font-bold mb-3 flex items-center gap-2">
-              <FileText className="w-4 h-4" />
+            <div className="text-2xl text-gray-600 font-bold mb-3 flex items-center gap-2">
+              <FileText className="w-8 h-8" />
               전체 스크립트
             </div>
             <div className="space-y-2.5">
@@ -455,10 +470,7 @@ function Player() {
                             scriptItemRefs.current[scriptKey] = el;
                           }
                         }}
-                        onClick={() => {
-                          setSelectedScript(script);
-                          setFlippedScriptId(prev => (prev === cardId ? null : cardId));
-                        }}
+                        onClick={() => handleScriptCardClick(script)}
                         className="flip-card cursor-pointer flex-shrink-0 group"
                       >
                         <div className={`flip-card-inner ${isFlipped ? 'is-flipped' : ''}`}>
@@ -470,11 +482,18 @@ function Player() {
                             : 'bg-[#E1F5FE] border-[#B3E5FC]'
                         }`}
                       >
-                            {/* 말풍선 - 점수를 봐볼까? (카드 중앙에 자연스럽게 표시) */}
-                            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                              <div className="px-3 py-1 rounded-full bg-white/95 border border-[#B3E5FC] text-[11px] text-[#01579B] shadow-sm">
+                            {/* 말풍선 - 점수를 봐볼까? (카드 오른쪽에서 점수 보기 유도) */}
+                            <div className="absolute inset-y-0 right-3 flex items-center justify-end opacity-0 group-hover:opacity-100 transition-opacity z-20">
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setFlippedScriptId(prev => (prev === cardId ? null : cardId));
+                                }}
+                                className="px-3 py-1 rounded-full bg-white/95 border border-[#B3E5FC] text-[18px] text-[#01579B] shadow-sm hover:bg-[#E3F2FD] transition-colors"
+                              >
                                 점수를 봐볼까?
-                              </div>
+                              </button>
                             </div>
 
                             <div className={`flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-base font-bold ${
