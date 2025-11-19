@@ -113,21 +113,31 @@ function Home() {
   /** 추천 패널 필터링 */
   const getAgeFilteredContents = () => {
     const base = koreanAllContents;
+
     switch (selectedAge) {
       case '2-4세':
-        return base.filter((c) => c.durationSec <= 130);
+        return base.filter((c) => c.durationSec <= 130);  
+
       case '4-6세':
-        return base.filter((c) => c.durationSec > 130 && c.durationSec <= 150);
+        return base.filter((c) => c.durationSec > 130 && c.durationSec <= 200);
+
       case '7-9세':
-        return base.filter((c) => c.durationSec > 150 && c.durationSec <= 200);
+        return base.filter((c) => c.durationSec > 200 && c.durationSec <= 260);
+
       case '10세이상':
-        return base.filter((c) => c.durationSec > 240);
+        return base.filter((c) => c.durationSec > 260);
+
       default:
         return base;
     }
   };
 
-  const filtered = getAgeFilteredContents();
+
+  const filteredList = getAgeFilteredContents();
+  const filtered =
+  filteredList.length > 0
+    ? [filteredList[Math.floor(Math.random() * filteredList.length)]]
+    : [];
 
   return (
     <div className="container mx-auto">
