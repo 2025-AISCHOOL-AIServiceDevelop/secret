@@ -24,17 +24,9 @@
     font-display: swap;
 }
 
-@font-face{
-   font-family:'DNFBitBitv2';
-   font-style:normal;font-weight:400;src:url('//cdn.df.nexon.com/img/common/font/DNFBitBitv2.otf')format('opentype')
-}
-
 @layer base {
   html, body, #root { height: 100%; }
-  body { 
-    @apply m-0 bg-bg text-textMain; 
-    font-family: 'DungeonFighterOnlineBeatBeat', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  }
+  body { @apply m-0 bg-bg text-textMain; }
 }
 
 @layer utilities {
@@ -48,6 +40,12 @@
   /* 스크립트 목록 텍스트에서만 기본 시스템 폰트 사용 */
   .script-text-default-font {
     font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+
+  /* 플레이어 페이지 전용 던전 폰트 + 살짝 큰 기본 폰트 크기 */
+  .player-page {
+    font-family: 'DungeonFighterOnlineBeatBeat', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 1.0625rem; /* 기본보다 약간 크게 */
   }
   /* 로그인 / 마이페이지 글자 바깥 외곽선 */
   .btn-label-wrap {
