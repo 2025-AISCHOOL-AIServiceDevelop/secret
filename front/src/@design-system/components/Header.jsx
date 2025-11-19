@@ -1,15 +1,15 @@
 import { useState, memo } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { User, LogOut, LogIn } from 'lucide-react';
 import { AppTitle } from './Typography';
-import LoginModal from './LoginModal';   // 🔥 정확한 경로
+import LoginModal from './LoginModal';   // 정확한 경로
 import { useAuthStore } from '../../stores';
 
 export const Header = memo(() => {
   const navigate = useNavigate();
   const { isAuthenticated, logout } = useAuthStore();
 
-  // 🔥 로그인 모달 상태
+  // 로그인 모달 상태
   const [showLoginModal, setShowLoginModal] = useState(false);
 
   const handleLoginClick = () => {
@@ -20,6 +20,17 @@ export const Header = memo(() => {
     logout();
     navigate('/');
   };
+
+  const location = useLocation();
+
+  const handleLogoClick = () => {
+    if (location.pathname === "/") {
+      window.location.reload();   
+    } else {
+      navigate("/");              
+    }
+  };
+
 
   const pillBtn =
     "text-2xl text-stroke-2 font-[DungeonFighterOnlineBeatBeat] text-[#FFFFFF] " +
@@ -34,7 +45,10 @@ export const Header = memo(() => {
       <div className="relative w-full max-w-screen-2xl mx-auto px-1 py-1 flex items-center justify-center">
 
         {/* 중앙 로고 */}
-        <Link to="/" className="flex justify-center items-center">
+        <button 
+          onClick={handleLogoClick}
+          className="flex justify-center items-center"
+        >
           <AppTitle>
             <img
               src="/rogo2.png"
@@ -42,7 +56,8 @@ export const Header = memo(() => {
               className="h-40 object-contain mx-auto pointer-events-none"
             />
           </AppTitle>
-        </Link>
+        </button>
+
 
         {/* 오른쪽 버튼들 */}
         <nav className="absolute font-[DungeonFighterOnlineBeatBeat] right-8 top-1/2 -translate-y-1/2 flex gap-3 z-10">
@@ -102,7 +117,7 @@ export const Header = memo(() => {
 
       {showLoginModal && (
         <LoginModal 
-          isOpen={showLoginModal}   // ⭐ 추가!
+          isOpen={showLoginModal}  
           onClose={() => setShowLoginModal(false)} 
         />
       )}
