@@ -82,6 +82,13 @@ function Player() {
     }
   }, [contentId, contents.length, loadContents]);
 
+  // 플레이어 페이지 진입 시 헤더가 보이지 않도록 영상 섹션이 화면 상단에 오도록 스크롤
+  useEffect(() => {
+    if (videoSectionRef.current) {
+      videoSectionRef.current.scrollIntoView({ behavior: 'auto', block: 'start' });
+    }
+  }, []);
+
   // 현재 선택된 콘텐츠(쿼리 파라미터 기준)
   const baseContent = contentId
     ? getContentById(parseInt(contentId, 10))
@@ -348,7 +355,7 @@ function Player() {
   return (
     <div className="flex flex-col gap-4 p-4">
       {/* 상단 영상 + 스크립트 목록 */}
-      <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
         {/* 왼쪽: 비디오 플레이어 */}
         <section
           ref={videoSectionRef}
@@ -468,7 +475,13 @@ function Player() {
         </section>
 
         {/* 오른쪽: 스크립트 목록 */}
-        <aside className="flex flex-col gap-3">
+        <aside className="flex flex-col gap-3 h-full">
+          {/* 영상 제목 */}
+          <div className="text-lg font-bold text-[#01579B] mb-1">
+            {content?.title || content?.name || '영상 제목'}
+          </div>
+
+          {/* 언어 선택 버튼 */}
           <div className="grid grid-cols-7 gap-1.5">
             {languages.map((lang) => (
               <button
@@ -489,14 +502,7 @@ function Player() {
           </div>
 
           {/* 스크립트 목록 */}
-          <div
-            className="bg-white rounded-[14px] border-2 p-4"
-            style={{
-              borderColor: '#c8d3f0',
-              maxHeight: '700px',
-              overflowY: 'auto',
-            }}
-          >
+          <div className="bg-white rounded-[14px] border-2 p-4" style={{ borderColor: '#c8d3f0', maxHeight: '500px', overflowY: 'auto' }}>
             <div className="text-sm text-gray-600 font-bold mb-3 flex items-center gap-2">
               <FileText className="w-4 h-4" />
               전체 스크립트
@@ -562,8 +568,7 @@ function Player() {
                           {index + 1}
                         </div>
                         <div className="flex-1 flex items-center justify-between gap-2">
-                          <div
-                            className={`text-sm leading-relaxed transition-all ${
+                          <div className={`text-sm leading-relaxed transition-all script-text-default-font ${
                               isSelected
                                 ? 'text-[#01579B] font-bold'
                                 : 'text-[#0277BD]'
