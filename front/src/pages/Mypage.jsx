@@ -628,7 +628,7 @@ const formatRemainTime = (seconds) => {
 
                     {/* 학습 완료 X + 남은 시간 있을 때만 표시 */}
                     {!completed && remainLabel ? (
-                      <span className="inline-flex items-center rounded-full bg-[#E9ECEF] px-3 py-2 text-[11px] text-[#7B88A0] flex-shrink-0 right-0 ml-20">
+                      <span className="inline-flex items-center rounded-full bg-[#E9ECEF] px-4 py-3 text-[14ㅁpx] text-[#7B88A0] flex-shrink-0 right-0 ml-20">
                         ♬ {remainLabel} 남음
                       </span>
                     ) : (
@@ -640,9 +640,9 @@ const formatRemainTime = (seconds) => {
                   </p>
 
 
-                <div className="mt-6 ">
+                <div className="mt-1 ">
                   {/* 진행바 전체 컨테이너 */}
-                  <div className="mt-6 h-7 right-2 bg-[#E9ECEF] rounded-full overflow-hidden relative mx-2">
+                  <div className="mt-1 h-7 right-2 bg-[#E9ECEF] rounded-full overflow-hidden relative mx-2">
 
                     {/* 실제 채워지는 바 */}
                     <div
