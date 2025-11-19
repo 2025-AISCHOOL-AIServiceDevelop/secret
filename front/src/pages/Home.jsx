@@ -4,7 +4,6 @@ import { Search, Loader2, AlertCircle, X } from 'lucide-react';
 import { useContentsStore } from '../stores';
 import { useAuthStore } from '../stores';
 import earth from '../assets/earth.png';
-
 import mascotImg from '../assets/mascot.png';
 import saturn from '../assets/saturn.png';
 
@@ -219,9 +218,19 @@ function Home() {
                     if (!isAuthenticated) setIsLoginPromptOpen(true);
                     else navigate(`/player?contentId=${content.contentsId}`);
                   }}
-                  className="relative aspect-[16/9] bg-cover bg-center rounded-xl cursor-pointer group"
-                  style={{ backgroundImage: `url(${content.thumbUrl})` }}
+                  className="relative aspect-[16/9] rounded-xl cursor-pointer group overflow-hidden"
                 >
+                  {/* 확대되는 배경 이미지 */}
+                  <div
+                    className="
+                      absolute inset-0 bg-cover bg-center 
+                      transition-all duration-700 
+                      group-hover:scale-[1.02]
+                    "
+                    style={{ backgroundImage: `url(${content.thumbUrl})` }}
+                  />
+
+                  {/* Hover 시 어두워지는 오버레이 + 재생 아이콘 */}
                   <div className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity">
                     <div className="w-16 h-16 bg-black/40 rounded-full flex items-center justify-center">
                       <svg fill="white" viewBox="0 0 24 24" className="w-8 h-8 ml-1">
@@ -230,13 +239,15 @@ function Home() {
                     </div>
                   </div>
 
+                  {/* 영상길이 */}
                   {content.durationSec && (
-                    <span className="absolute bottom-3 right-3 bg-black/40 text-white text-sm px-3 py-1.5 rounded-md">
+                    <span className="absolute bottom-3 right-3 bg-black/40 text-white text-sm px-3 py-1.5 rounded-md z-10">
                       {Math.floor(content.durationSec / 60)}:
                       {String(content.durationSec % 60).padStart(2, '0')}
                     </span>
                   )}
                 </div>
+
 
                 <div className="px-3 py-3 bg-[#f1f6ff]">
                   <h3 className="font-black text-lg">{content.title}</h3>
