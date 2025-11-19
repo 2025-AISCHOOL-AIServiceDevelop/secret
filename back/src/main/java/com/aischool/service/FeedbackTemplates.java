@@ -23,37 +23,38 @@ public class FeedbackTemplates implements FeedbackTemplatesBase {
     }
 
     @Override
-    public String compose(CanonicalFeedbackInput in, List<RuleIssue> issues) {
+public String compose(CanonicalFeedbackInput in, List<RuleIssue> issues) {
 
-        // 1) PHONEME 이슈만 모아서 최대 2개만 사용
-        List<RuleIssue> phonemeIssues = issues.stream()
-                .filter(i -> i.category == RuleIssue.Category.PHONEME)
-                .limit(2)
-                .collect(Collectors.toList());
+    // 1) PHONEME 이슈만 가져오기
+    List<RuleIssue> phonemeIssues = issues.stream()
+            .filter(i -> i.category == RuleIssue.Category.PHONEME)
+            .limit(2)
+            .collect(Collectors.toList());
 
-        // 2) PHONEME 이슈가 하나도 없으면 → 완벽한 발음이라고 판단
-        if (phonemeIssues.isEmpty()) {
-            return perfectPraise();
-        }
-
-        StringBuilder sb = new StringBuilder();
-        sb.append("아주 잘했어요! 여기만 조금 더 고쳐보자!\n");
-
-        for (RuleIssue issue : phonemeIssues) {
-            String key = issue.detail;  // ex) "r", "s", "θ" 등
-            String tip = PHONEME_TIPS.getOrDefault(
-                    key,
-                    "조금만 더 또박또박 말해보면 더 좋아질 거야!"
-            );
-            sb.append("- ").append(tip).append("\n");
-        }
-
-       
-        return sb.toString().trim();
+    // 2) 음소 문제 없음 → 세밀 피드백 없음 (점수 기반 빌더가 처리)
+    if (phonemeIssues.isEmpty()) {
+        return "";
     }
 
-    @Override
-    public String perfectPraise() {
-        return "와! 발음이 정말 완벽해요! 지금처럼만 하면 돼!";
+    // 3) 피드백 생성
+    StringBuilder sb = new StringBuilder("아주 잘했어요! 여기만 조금 더 고쳐보자!\n");
+
+    for (RuleIssue issue : phonemeIssues) {
+        String key = issue.detail;
+        String tip = PHONEME_TIPS.getOrDefault(
+                key,
+                "조금만 더 또박또박 말해보면 더 좋아질 거야!"
+        );
+        sb.append("- ").append(tip).append("\n");
     }
+
+    return sb.toString().trim();
+}
+
+@Override
+public String perfectPraise() {
+    // 이 함수는 이제 점수 90 이상인 경우 buildFinalFeedback()에서만 사용됨
+    return "와! 발음이 정말 완벽해요! 지금처럼만 하면 돼!";
+}
+
 }

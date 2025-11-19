@@ -35,7 +35,8 @@ public class AzureResultAdapter {
                 out.fluency = getDouble(pa, "FluencyScore", 0);
                 out.completeness = getDouble(pa, "CompletenessScore", 0);
                 // Azure에 FinalScore가 따로 없을 수 있으니 평균/가중합으로 근사
-                out.finalScore = weighted(out.accuracy, out.fluency, out.completeness);
+                out.finalScore = out.accuracy; 
+
 
                 // Words
                 JsonNode words = nbest0.get("Words");
