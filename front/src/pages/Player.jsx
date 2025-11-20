@@ -59,6 +59,7 @@ function Player() {
   const [analysisResult, setAnalysisResult] = useState(null);
   const [flippedScriptId, setFlippedScriptId] = useState(null); // 뒤집힌 스크립트 카드 추적
   const [loadedFeedbackScripts, setLoadedFeedbackScripts] = useState(new Set()); // 백엔드에서 점수를 불러온 스크립트 ID
+  const [recentScoredScriptId, setRecentScoredScriptId] = useState(null); // 방금 점수가 나온 스크립트 ID (짜잔 효과용)
 
   const languages = [
     { code: 'ko', name: '한국어', flag: '🇰🇷' },
@@ -250,6 +251,14 @@ function Player() {
       scriptId: scriptKey,
       scriptText: result?.scriptText || script?.text || '',
     });
+
+    if (scriptKey != null) {
+      // 방금 점수가 나온 스크립트에만 짜잔 등장 애니메이션 적용
+      setRecentScoredScriptId(scriptKey);
+      setTimeout(() => {
+        setRecentScoredScriptId((prev) => (prev === scriptKey ? null : prev));
+      }, 1200);
+    }
   };
 
   useEffect(() => {
@@ -531,6 +540,7 @@ function Player() {
                     const feedbackText = displayFeedback?.feedbackText || displayFeedback?.overallComment || '';
                     const cardId = scriptKey ?? `${script.contentsId}-${script.orderNo}`;
                     const isFlipped = flippedScriptId === cardId;
+                    const isRecentlyScored = scriptKey != null && recentScoredScriptId === scriptKey;
                     
                     return (
                       <div
@@ -550,7 +560,7 @@ function Player() {
                           isSelected
                             ? 'bg-white border-[#01579B] shadow-xl'
                             : 'bg-[#E1F5FE] border-[#B3E5FC]'
-                        }`}
+                        } ${isRecentlyScored ? 'sticker-pop-enter' : ''}`}
                       >
                             <div className={`flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-base font-bold ${
                             isSelected
@@ -568,22 +578,32 @@ function Player() {
                               {script.text}
                             </div>
                             {stickerSrc && (
-                              <img
-                                src={stickerSrc}
-                                alt="발음 스티커"
-                                className="w-38 h-38 object-contain drop-shadow-sm cursor-pointer"
+                              <div
+                                className="w-38 h-38 sticker-orbit-wrapper"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   setFlippedScriptId(prev => (prev === cardId ? null : cardId));
                                 }}
-                              />
+                              >
+                                <div className="sticker-orbit-glow" />
+                                <img
+                                  src={stickerSrc}
+                                  alt="발음 스티커"
+                                  className="planet-sticker"
+                                />
+                                <div className="sticker-star sticker-star-1" />
+                                <div className="sticker-star sticker-star-2" />
+                                <div className="sticker-star sticker-star-3" />
+                              </div>
                             )}
                             </div>
                           </div>
 
                           {/* 뒷면: 점수 & 평가 */}
                           <div
-                            className="flip-card-back rounded-[14px] min-h-[140px] border-2 p-4 bg-white flex flex-col justify-center gap-2 border-[#01579B] shadow-lg"
+                            className={`flip-card-back rounded-[14px] min-h-[140px] border-2 p-4 bg-white flex flex-col justify-center gap-2 border-[#01579B] shadow-lg ${
+                              isRecentlyScored ? 'score-pop-enter' : ''
+                            }`}
                             onClick={(e) => {
                               e.stopPropagation();
                               setFlippedScriptId((prev) => (prev === cardId ? null : prev));
