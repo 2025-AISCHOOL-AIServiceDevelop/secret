@@ -2,6 +2,7 @@ package com.aischool.controller;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.Authentication;
@@ -10,6 +11,7 @@ import org.springframework.security.web.authentication.logout.SecurityContextLog
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.HashMap;
 import java.util.Map;
 
 @RestController
@@ -17,10 +19,18 @@ public class AuthController {
 
     // ✅ 로그인된 사용자 정보 확인
     @GetMapping("/api/me")
-    public ResponseEntity<Map<String, Object>> me(@AuthenticationPrincipal OAuth2User principal) {
-        Map<String, Object> body = (principal == null)
-                ? Map.of("authenticated", false)
-                : Map.of("authenticated", true, "attributes", principal.getAttributes());
+    public ResponseEntity<Map<String, Object>> me(@AuthenticationPrincipal OAuth2User principal,
+                                                  HttpSession session) {
+        Map<String, Object> body = new HashMap<>();
+
+        if (principal == null) {
+            body.put("authenticated", false);
+        } else {
+            body.put("authenticated", true);
+            body.put("attributes", principal.getAttributes());
+            Object userId = session != null ? session.getAttribute("loginUserId") : null;
+            body.put("userId", userId);
+        }
 
         return ResponseEntity.ok()
                 .header("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate")
