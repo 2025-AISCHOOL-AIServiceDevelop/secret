@@ -1,18 +1,34 @@
 import { useEffect, useState } from 'react'
 import saturn from '../assets/saturn.png'
 
-/**
- * 윈도우 스크롤 위치에 따라 "스크롤바 바로 위"에서 떠다니는 토성 아이콘 + 노란색 채워지는 진행바
- * - 기본 스크롤바는 그대로 두고, 오른쪽에 커스텀 스크롤 진행 표시를 따로 그려줌
- */
 function ScrollSaturn() {
   const [visible, setVisible] = useState(false)
   const [topPx, setTopPx] = useState(0)
   const [progress, setProgress] = useState(0) // 0 ~ 1
+  const [isDragging, setIsDragging] = useState(false)
+
+  // 토성이 움직일 수 있는 세로 범위용 상수
+  const ICON_SIZE = 28;       // 토성 아이콘 높이(대략) - h-7 → 28px
+  const PADDING_TOP = 35;     // 화면 위에서 35px 떨어진 곳부터
+  const PADDING_BOTTOM = 20;  // 화면 아래에서 20px 위까지만
+
+  // 마우스 Y 위치를 → 스크롤 위치로 바꿔주는 헬퍼
+  const scrollFromClientY = (clientY) => {
+    const doc = document.documentElement
+    const scrollable = doc.scrollHeight - doc.clientHeight
+    if (scrollable <= 0) return
+
+    const minY = PADDING_TOP + ICON_SIZE / 2
+    const maxY = window.innerHeight - PADDING_BOTTOM - ICON_SIZE / 2
+
+    const clampedY = Math.max(minY, Math.min(maxY, clientY))
+    const ratio = (clampedY - minY) / (maxY - minY) // 0 ~ 1
+
+    const newScrollTop = ratio * scrollable
+    window.scrollTo({ top: newScrollTop, behavior: 'auto' })
+  }
 
   useEffect(() => {
-    const ICON_SIZE = 32 // w-8 h-8
-
     const handleScroll = () => {
       const doc = document.documentElement
       const scrollTop = window.scrollY || doc.scrollTop || 0
@@ -27,10 +43,8 @@ function ScrollSaturn() {
       const rawProgress = scrollTop / scrollable
       const clamped = Math.max(0, Math.min(1, rawProgress))
 
-      // 아이콘 중심이 화면 위/아래에 딱 붙지 않도록, 아이콘 높이 절반 만큼만 여유
-      const margin = ICON_SIZE / 1
-      const maxY = window.innerHeight - margin
-      const minY = margin
+      const minY = PADDING_TOP + ICON_SIZE / 2
+      const maxY = window.innerHeight - PADDING_BOTTOM - ICON_SIZE / 2
       const y = minY + (maxY - minY) * clamped
 
       setVisible(true)
@@ -38,30 +52,55 @@ function ScrollSaturn() {
       setProgress(clamped)
     }
 
+    const handleMouseMove = (e) => {
+      if (!isDragging) return
+      scrollFromClientY(e.clientY)
+    }
+
+    const handleMouseUp = () => {
+      if (isDragging) setIsDragging(false)
+    }
+
     handleScroll()
     window.addEventListener('scroll', handleScroll)
-    return () => window.removeEventListener('scroll', handleScroll)
-  }, [])
+    window.addEventListener('mousemove', handleMouseMove)
+    window.addEventListener('mouseup', handleMouseUp)
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll)
+      window.removeEventListener('mousemove', handleMouseMove)
+      window.removeEventListener('mouseup', handleMouseUp)
+    }
+  }, [isDragging])
 
   if (!visible) return null
 
-  const trackRight = 18 // 실제 스크롤바 바로 왼쪽에 얇은 진행바를 붙임
+  const trackRight = 18
+
+  // 막대/토성을 눌렀을 때 드래그 시작
+  const startDrag = (e) => {
+    e.preventDefault()
+    setIsDragging(true)
+    scrollFromClientY(e.clientY)
+  }
 
   return (
     <>
-      {/* 스크롤 진행도에 따라 위에서부터 노란색으로 채워지는 커스텀 스크롤바 배경 */}
+      {/* 노란 진행바 트랙 */}
       <div
+        onMouseDown={startDrag}
         style={{
           position: 'fixed',
           right: `${trackRight}px`,
-          top: '35px',
-          bottom: '20px',
+          top: `${PADDING_TOP}px`,        // 🔴 고정된 시작 위치
+          bottom: `${PADDING_BOTTOM}px`,  // 🔴 고정된 끝 위치
           width: '10px',
           borderRadius: '999px',
           background: 'rgba(255,255,255,0.4)',
-          boxShadow: '0 0 0 1px rgba(0,0,0,0.01)',
+          // boxShadow: '0 0 0 1px rgba(0,0,0,0.01)',
           zIndex: 9998,
-          pointerEvents: 'none'
+          pointerEvents: 'auto',
+          cursor: 'pointer'
         }}
       >
         <div
@@ -73,19 +112,20 @@ function ScrollSaturn() {
             height: `${progress * 100}%`,
             borderRadius: '999px',
             background: 'linear-gradient(180deg, #FEEBB1 0%, #B1D2FA 100%)',
-            boxShadow: '0 0 6px rgba(255, 193, 7, 0.01)'
           }}
         />
       </div>
 
-      {/* 스크롤바 바로 위에 올라탄 것처럼 보이는 토성 아이콘 */}
+      {/* 토성 아이콘 */}
       <div
+        onMouseDown={startDrag}
         style={{
           position: 'fixed',
-          right: '3px', // 조금 더 오른쪽(화면 바깥 방향)으로 밀어서 스크롤바 쪽에 더 가까이
-          top: `${topPx}px`,
+          right: '3px',
+          top: `${topPx - ICON_SIZE / 2}px`, // 중심 y값 기준 → 실제 top 보정
           zIndex: 9999,
-          pointerEvents: 'none'
+          pointerEvents: 'auto',
+          cursor: 'grab'
         }}
       >
         <img
@@ -99,7 +139,3 @@ function ScrollSaturn() {
 }
 
 export default ScrollSaturn
-
-
-
-
