@@ -406,7 +406,7 @@ function Player() {
   };
 
   return (
-    <div className="player-page flex flex-col gap-4 p-4">
+    <div className="player-page flex flex-col gap-4">
 
        {/* 🔥 학습 페이지 헤더(토성 + 제목) */}
     <div className="relative mb-8 pt-7 text-center">
