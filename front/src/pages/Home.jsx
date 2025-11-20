@@ -19,6 +19,24 @@ function Home() {
   // 검색 실행 여부
   const [isSearchExecuted, setIsSearchExecuted] = useState(false);
 
+  // 랜덤 말풍선 문구 목록
+  const bubbleMessages = [
+    "전래동화를 다양한 언어로 배워보세요!",
+    "오늘도 재미있는 동화 모험을 떠나볼까요?",
+    "새로운 동화를 매일 만나보세요!",
+    "듣고 따라하면서 언어 실력을 키워봐요!",
+    "즐겁게 보고 배우는 다국어 동화 학습!",
+    "오늘은 어떤 동화를 읽어볼까요?",
+    "듣고 말하고 따라하며 실력이 UP!",
+    "짧은 이야기로 집중력도 길러봐요!",
+    "읽고 싶은 동화를 검색해보세요!",
+    "다양한 언어를 전래동화를 통해 배워봐요!"
+  ];
+
+  // 선택된 말풍선 문구 상태
+  const [bubbleText, setBubbleText] = useState("");
+
+
   // 추천 패널용 전체 데이터
   const [allContents, setAllContents] = useState([]);
 
@@ -50,6 +68,13 @@ function Home() {
   useEffect(() => {
     loadContents();
   }, [loadContents]);
+
+  // 말풍선 랜덤 문구 선택
+  useEffect(() => {
+    const randomMsg = bubbleMessages[Math.floor(Math.random() * bubbleMessages.length)];
+    setBubbleText(randomMsg);
+  }, []);
+
 
   /** 전체 콘텐츠 저장 */
   useEffect(() => {
@@ -370,7 +395,7 @@ function Home() {
             {showMascot && (
               <div className="sticky top-[480px] mt-10 flex flex-col items-center space-y-3">
                 <div className="relative bg-white rounded-2xl px-4 py-3 shadow-md text-sm w-[240px] text-gray-700">
-                  전래동화를 다양한 언어로 배워보세요!
+                  {bubbleText}
                   <span className="absolute -bottom-2 left-6 w-0 h-0 border-l-8 border-r-8 border-t-8 border-transparent border-t-white"></span>
                 </div>
                 <img src={mascotImg} className="w-52 drop-shadow-lg" />
