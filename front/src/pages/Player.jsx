@@ -127,14 +127,14 @@ function Player() {
 
   // 현재 콘텐츠/사용자 기준 스크립트별 최신 피드백 맵 (프론트 로컬 히스토리에서 계산)
   const scriptFeedbackMap = useMemo(() => {
-    if (!user || !content?.contentsId || scripts.length === 0 || !feedbackHistory) return {};
+    if (!user?.userId || !content?.contentsId || scripts.length === 0 || !feedbackHistory) return {};
 
     const map = {};
     // feedbackHistory는 최신 순으로 쌓이므로, 처음 들어오는 값이 최신
     feedbackHistory.forEach((fb) => {
       if (
         fb &&
-        fb.userId === user.id &&
+        fb.userId === user.userId &&
         fb.contentsId === content.contentsId &&
         fb.scriptId != null &&
         map[fb.scriptId] == null
@@ -147,14 +147,14 @@ function Player() {
 
   // 페이지 진입 시 / 스크립트 로딩 후, 백엔드에 저장된 최신 점수를 불러오기
   useEffect(() => {
-    if (!user || !content?.contentsId || scripts.length === 0 || !fetchLatestFeedback) return;
+    if (!user?.userId || !content?.contentsId || scripts.length === 0 || !fetchLatestFeedback) return;
 
     scripts.forEach((script) => {
       const scriptId = script?.scriptId ?? script?.id;
       if (!scriptId) return;
       if (loadedFeedbackScripts.has(scriptId)) return;
 
-      fetchLatestFeedback(user.id, content.contentsId, scriptId).catch((err) => {
+      fetchLatestFeedback(user.userId, content.contentsId, scriptId).catch((err) => {
         console.error('Failed to fetch latest feedback for script', scriptId, err);
       });
 
@@ -335,7 +335,8 @@ function Player() {
                 <video
                   ref={videoRef}
                   src={videoUrl}
-                  className="w-full h-full object-contain"
+                  className="w-full h-full object-contain cursor-pointer"
+                  onClick={togglePlayPause}
                   onTimeUpdate={handleTimeUpdate}
                   onLoadedMetadata={handleLoadedMetadata}
                   onPlay={handleVideoPlay}
@@ -455,9 +456,6 @@ function Player() {
                     const stickerSrc = latestMedal ? getStickerByMedal(latestMedal) : null;
                     const displayFeedback = feedbackForScript || (analysisResult && analysisResult.scriptId === scriptKey ? analysisResult : null);
                     const totalScore = displayFeedback?.finalScore ?? displayFeedback?.score ?? null;
-                    const accuracy = displayFeedback?.accuracy ?? null;
-                    const fluency = displayFeedback?.fluency ?? null;
-                    const completeness = displayFeedback?.completeness ?? null;
                     const feedbackText = displayFeedback?.feedbackText || displayFeedback?.overallComment || '';
                     const cardId = scriptKey ?? `${script.contentsId}-${script.orderNo}`;
                     const isFlipped = flippedScriptId === cardId;
@@ -482,20 +480,6 @@ function Player() {
                             : 'bg-[#E1F5FE] border-[#B3E5FC]'
                         }`}
                       >
-                            {/* 말풍선 - 점수를 봐볼까? (카드 오른쪽에서 점수 보기 유도) */}
-                            <div className="absolute inset-y-0 right-3 flex items-center justify-end opacity-0 group-hover:opacity-100 transition-opacity z-20">
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setFlippedScriptId(prev => (prev === cardId ? null : cardId));
-                                }}
-                                className="px-3 py-1 rounded-full bg-white/95 border border-[#B3E5FC] text-[18px] text-[#01579B] shadow-sm hover:bg-[#E3F2FD] transition-colors"
-                              >
-                                점수를 봐볼까?
-                              </button>
-                            </div>
-
                             <div className={`flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-base font-bold ${
                             isSelected
                               ? 'bg-[#01579B] text-white'
@@ -504,7 +488,7 @@ function Player() {
                             {index + 1}
                           </div>
                             <div className="flex-1 flex items-start justify-between gap-3">
-                              <div className={`text-base leading-relaxed script-text-default-font ${
+                              <div className={`text-lg md:text-xl leading-relaxed script-text-default-font ${
                               isSelected
                                 ? 'text-[#01579B] font-bold'
                                 : 'text-[#0277BD]'
@@ -515,43 +499,43 @@ function Player() {
                               <img
                                 src={stickerSrc}
                                 alt="발음 스티커"
-                                  className="w-38 h-38 object-contain drop-shadow-sm"
-                                />
-                              )}
+                                className="w-38 h-38 object-contain drop-shadow-sm cursor-pointer"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setFlippedScriptId(prev => (prev === cardId ? null : cardId));
+                                }}
+                              />
+                            )}
                             </div>
                           </div>
 
                           {/* 뒷면: 점수 & 평가 */}
-                          <div className="flip-card-back rounded-[14px] min-h-[140px] border-2 p-4 bg-white flex flex-col justify-center gap-2 border-[#01579B] shadow-lg">
+                          <div
+                            className="flip-card-back rounded-[14px] min-h-[140px] border-2 p-4 bg-white flex flex-col justify-center gap-2 border-[#01579B] shadow-lg"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setFlippedScriptId((prev) => (prev === cardId ? null : prev));
+                            }}
+                          >
                             {totalScore != null ? (
                               <>
                                 <div className="flex items-center justify-between gap-3">
-                                  <div className="text-sm font-bold text-[#01579B]">
+                                  <div className="text-2xl font-bold text-[#01579B]">
                                     나의 점수
                                   </div>
                                   <div className="text-2xl font-extrabold text-[#F57C00]">
                                     {totalScore}
                                   </div>
                                 </div>
-                                <div className="grid grid-cols-3 gap-2 text-[11px] text-[#0277BD]">
-                                  <div className="px-2 py-1 rounded-lg bg-[#E1F5FE]">
-                                    정확도 {accuracy ?? '-'}
-                                  </div>
-                                  <div className="px-2 py-1 rounded-lg bg-[#F3E5F5]">
-                                    유창성 {fluency ?? '-'}
-                                  </div>
-                                  <div className="px-2 py-1 rounded-lg bg-[#FFF9E6]">
-                                    완성도 {completeness ?? '-'}
-                                  </div>
-                                </div>
+                                {/* 총 점수와 평가 문장만 표시 */}
                                 {feedbackText && (
-                                  <div className="mt-1 px-2.5 py-1.5 rounded-lg bg-[#FFFDE7] border border-[#FFD54F] text-[11px] text-[#F57C00] leading-relaxed line-clamp-2">
+                                  <div className="mt-3 px-3 py-2 rounded-lg bg-[#FFFDE7] border border-[#FFD54F] text-[16px] text-[#F57C00] leading-relaxed line-clamp-3">
                                     {feedbackText}
                                   </div>
                                 )}
                               </>
                             ) : (
-                              <div className="text-sm text-center text-[#0277BD] leading-relaxed">
+                              <div className="text-2xl text-center text-[#0277BD] leading-relaxed">
                                 아직 점수가 없어요.
                                 <br />
                                 아래에서 먼저 녹음해 볼까요?
@@ -579,7 +563,7 @@ function Player() {
           script={displayScript}
           contentsId={content?.contentsId || (contentId ? parseInt(contentId) : undefined)}
           language={selectedLanguage}
-          userId={user?.id || 1}
+          userId={user?.userId ?? null}
           onAnalyzed={handleAnalysisComplete}
           onRecordingStart={handleRecordingStart}
           onContinueVideo={handleContinueVideo}

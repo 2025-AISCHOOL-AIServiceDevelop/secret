@@ -50,7 +50,6 @@ function VoiceRecordingBanner({ script, contentsId, language = 'en', userId, onA
   const [localFluency, setLocalFluency] = useState(null)
   const [localCompleteness, setLocalCompleteness] = useState(null)
   const [localMedal, setLocalMedal] = useState(null)
-  const [localMessage, setLocalMessage] = useState(null)
   const [localFeedbackText, setLocalFeedbackText] = useState('')
   const [localScriptText, setLocalScriptText] = useState('')
   const [errorMessage, setErrorMessage] = useState('')
@@ -102,7 +101,6 @@ function VoiceRecordingBanner({ script, contentsId, language = 'en', userId, onA
       setLocalFluency(null)
       setLocalCompleteness(null)
       setLocalMedal(null)
-      setLocalMessage(null)
       setLocalFeedbackText('')
       setLocalScriptText(script?.text ?? '')
       setErrorMessage('')
@@ -165,6 +163,14 @@ function VoiceRecordingBanner({ script, contentsId, language = 'en', userId, onA
           return
         }
 
+        if (!userId) {
+          console.error('User ID is missing')
+          setErrorMessage('사용자 정보를 불러올 수 없어요. 다시 로그인해주세요.')
+          cleanup()
+          resetRecording()
+          return
+        }
+
         const preferredLanguage = script?.language || language
         const languageKey = typeof preferredLanguage === 'string' ? preferredLanguage.toLowerCase() : ''
         const fallbackLanguageKey = typeof language === 'string' ? language.toLowerCase() : ''
@@ -186,9 +192,8 @@ function VoiceRecordingBanner({ script, contentsId, language = 'en', userId, onA
         setLocalCompleteness(completenessScore)
         const medal = res?.medal ? String(res.medal).toUpperCase() : null
         setLocalMedal(medal)
-        const messageObj = buildMessage(accuracyScore, fluencyScore, completenessScore)
-        setLocalMessage(messageObj)
-        setLocalFeedbackText(res?.feedbackText ?? '')
+        // 백엔드에서 내려준 평가 문구를 그대로 사용
+        setLocalFeedbackText(res?.feedbackText ?? res?.overallComment ?? '')
         setLocalScriptText(res?.scriptText ?? script?.text ?? '')
         setErrorMessage('')
         if (onAnalyzed) onAnalyzed(res, script)
@@ -196,7 +201,6 @@ function VoiceRecordingBanner({ script, contentsId, language = 'en', userId, onA
         console.error('Analyze failed', e)
         setErrorMessage(e.message || '발음 분석 중 오류가 발생했습니다. 다시 시도해주세요!')
         setLocalScore(null)
-        setLocalMessage(null)
         setLocalFeedbackText('')
         setLocalAccuracy(null)
         setLocalFluency(null)
@@ -209,60 +213,6 @@ function VoiceRecordingBanner({ script, contentsId, language = 'en', userId, onA
     }
     recorder.stop()
     stopRecording()
-  }
-
-  // 각 점수(정확도/유창성/완성도)에 대한 한 줄 평가 문구 생성
-  const buildMessage = (accuracy, fluency, completeness) => {
-    const getMetricFeedback = (type, score) => {
-      if (score === null || score === undefined) return null
-
-      let level
-      if (score >= 75) {
-        level = 'high'
-      } else if (score >= 40) {
-        level = 'mid'
-      } else {
-        level = 'low'
-      }
-
-      if (type === 'accuracy') {
-        if (level === 'high') {
-          return { type, level, text: '정확도는 아주 정확해요!', color: '#43A047' }
-        }
-        if (level === 'mid') {
-          return { type, level, text: '정확도는 정확해요!', color: '#FBC02D' }
-        }
-        return { type, level, text: '정확도는 좀 더 정확하게 말해봐요!', color: '#F57C00' }
-      }
-
-      if (type === 'fluency') {
-        if (level === 'high') {
-          return { type, level, text: '유창성은 아주 유창해요!', color: '#43A047' }
-        }
-        if (level === 'mid') {
-          return { type, level, text: '유창성은 유창하군요!', color: '#FBC02D' }
-        }
-        return { type, level, text: '유창성은 자연스럽게 해볼까요?', color: '#F57C00' }
-      }
-
-      if (type === 'completeness') {
-        if (level === 'high') {
-          return { type, level, text: '완성도는 아주 완벽해요!', color: '#43A047' }
-        }
-        if (level === 'mid') {
-          return { type, level, text: '완성도는 잘 했어요!', color: '#FBC02D' }
-        }
-        return { type, level, text: '완성도는 다시 한 번 해볼까요?', color: '#F57C00' }
-      }
-
-      return null
-    }
-
-    return {
-      accuracy: getMetricFeedback('accuracy', accuracy),
-      fluency: getMetricFeedback('fluency', fluency),
-      completeness: getMetricFeedback('completeness', completeness),
-    }
   }
 
   const cleanup = () => {
@@ -478,24 +428,10 @@ function VoiceRecordingBanner({ script, contentsId, language = 'en', userId, onA
                 </span>
               </div>
 
-              {/* 한 줄 평가 문장 (정확도/유창성/완성도) */}
-              {localMessage && (localMessage.accuracy || localMessage.fluency || localMessage.completeness) && (
-                <div className="mt-1 text-[32px] md:text-[32px] font-bold leading-relaxed">
-                  {localMessage.accuracy && (
-                    <span style={{ color: localMessage.accuracy.color }}>
-                      {localMessage.accuracy.text}{' '}
-                    </span>
-                  )}
-                  {localMessage.fluency && (
-                    <span style={{ color: localMessage.fluency.color }}>
-                      {localMessage.fluency.text}{' '}
-                    </span>
-                  )}
-                  {localMessage.completeness && (
-                    <span style={{ color: localMessage.completeness.color }}>
-                      {localMessage.completeness.text}
-                    </span>
-                  )}
+              {/* 백엔드에서 내려준 평가 문장 그대로 표시 */}
+              {localFeedbackText && (
+                <div className="mt-3 text-[32px] md:text-[32px] leading-relaxed text-[#F57C00]">
+                  {localFeedbackText}
                 </div>
               )}
 
@@ -514,7 +450,6 @@ function VoiceRecordingBanner({ script, contentsId, language = 'en', userId, onA
                 <button
                   onClick={() => {
                     setLocalScore(null)
-                    setLocalMessage(null)
                     setLocalFeedbackText('')
                     setLocalAccuracy(null)
                     setLocalFluency(null)

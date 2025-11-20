@@ -2,6 +2,15 @@ import { create } from 'zustand';
 import { authAPI, API_BASE_URL } from '../services/api';
 import axios from 'axios';
 
+const deriveUserId = (explicitId, attributes = {}) => {
+  if (explicitId != null) return explicitId;
+  if (attributes.userId != null) return attributes.userId;
+  if (attributes.id != null) return attributes.id;
+  if (attributes.sub != null) return attributes.sub;
+  if (attributes.providerId != null) return attributes.providerId;
+  return null;
+};
+
 const useAuthStore = create((set) => ({
   user: null,
   isAuthenticated: false,
@@ -14,10 +23,11 @@ const useAuthStore = create((set) => ({
     try {
       const response = await authAPI.getCurrentUser();
       const { authenticated, attributes } = response.data;
+      const normalizedUserId = deriveUserId(response.data.userId, attributes);
 
       if (authenticated) {
         set({
-          user: attributes,
+          user: attributes ? { ...attributes, userId: normalizedUserId } : { userId: normalizedUserId },
           isAuthenticated: true,
           isLoading: false,
         });

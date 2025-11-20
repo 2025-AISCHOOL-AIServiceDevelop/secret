@@ -144,12 +144,13 @@ function Mypage() {
 
 
   // Get user feedback history🌱🌱이부분은 밑에 지운다음에 다시 살리면 됨!  🌱🌱2번!!
-  const userFeedbackHistory = user ? getUserFeedbackHistory(user.id || 1) : [];
+  const currentUserId = user?.userId ?? null;
+  const userFeedbackHistory = currentUserId ? getUserFeedbackHistory(currentUserId) : [];
 
 
   ///🌱🌱🌱🌱🌱🌱🌱🌱🌱🌱🌱🌱이부분 나중에 지워야함 임시로 넣어둔것  🌱1번!!
   // 1) 실제 기록 불러오기
-// const realHistory = user ? getUserFeedbackHistory(user.id || 1) : [];
+// const realHistory = user ? getUserFeedbackHistory(user.userId || 1) : [];
 
 // // 2) UI 미리보기용 더미 데이터 (원하는 내용으로 바꿔도 됨)
 // const mockHistory = [
@@ -246,7 +247,7 @@ const uniqueFeedbackHistory = useMemo(() => {
 const getWatchMeta = (contentsId) => {
   if (!user || !contentsId) return { watchedSeconds: 0, totalSeconds: 0 };
 
-  const storageKey = `watch_${user.id}_${contentsId}`;
+  const storageKey = `watch_${user?.userId ?? 'guest'}_${contentsId}`;
   const saved = localStorage.getItem(storageKey);
   if (!saved) return { watchedSeconds: 0, totalSeconds: 0 };
 

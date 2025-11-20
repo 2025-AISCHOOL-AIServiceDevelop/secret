@@ -1,11 +1,14 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 import { tutorAPI } from '../services/api';
 
 const useTutorStore = create(
-  (set, get) => ({
+  persist(
+    (set, get) => ({
       // State
       currentFeedback: null,
-      feedbackHistory: [],
+      feedbackHistory: [],        // 플레이어 등에서 사용하는 런타임 히스토리 (비캐시)
+      mypageFeedbackHistory: [],  // 마이페이지 전용 캐시 히스토리
       isAnalyzing: false,
       isCreatingFeedback: false,
       error: null,
@@ -23,6 +26,7 @@ const useTutorStore = create(
       set((state) => ({
         currentFeedback: newFeedback,
         feedbackHistory: [newFeedback, ...state.feedbackHistory],
+        mypageFeedbackHistory: [newFeedback, ...(state.mypageFeedbackHistory || [])],
         isCreatingFeedback: false,
       }));
 
@@ -48,6 +52,7 @@ const useTutorStore = create(
       set((state) => ({
         currentFeedback: feedback,
         feedbackHistory: [feedback, ...state.feedbackHistory],
+        mypageFeedbackHistory: [feedback, ...(state.mypageFeedbackHistory || [])],
         isAnalyzing: false,
       }));
 
@@ -85,8 +90,8 @@ const useTutorStore = create(
 
   // Get feedback history for user
   getUserFeedbackHistory: (userId) => {
-    const { feedbackHistory } = get();
-    return feedbackHistory.filter(feedback => feedback.userId === userId);
+    const { mypageFeedbackHistory = [] } = get();
+    return mypageFeedbackHistory.filter(feedback => feedback.userId === userId);
   },
 
   // Get feedback history for content
@@ -107,7 +112,8 @@ const useTutorStore = create(
         currentFeedback: latestFeedback,
         feedbackHistory: [latestFeedback, ...state.feedbackHistory.filter(f =>
           !(f.userId === userId && f.contentsId === contentsId && f.scriptId === scriptId)
-        )]
+        )],
+        mypageFeedbackHistory: [latestFeedback, ...(state.mypageFeedbackHistory || [])],
       }));
 
       return latestFeedback;
@@ -118,12 +124,19 @@ const useTutorStore = create(
     }
   },
 
-  // Get latest feedback from local state (in-memory only)
+  // Get latest feedback from local state
   getLatestFeedback: () => {
     const { feedbackHistory } = get();
     return feedbackHistory.length > 0 ? feedbackHistory[0] : null;
   },
-  })
+    }),
+    {
+      name: 'tutor-storage', // localStorage key (마이페이지 전용 캐시)
+      partialize: (state) => ({
+        mypageFeedbackHistory: state.mypageFeedbackHistory,
+      }),
+    }
+  )
 );
 
 export default useTutorStore;
