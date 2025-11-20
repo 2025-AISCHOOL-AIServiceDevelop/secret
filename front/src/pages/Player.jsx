@@ -20,6 +20,7 @@ import { API_BASE_URL } from '../services/api';
 import level1 from '../assets/level1.png';
 import level2 from '../assets/level2.png';
 import level3 from '../assets/level3.png';
+import saturn from '../assets/saturn.png';
 
 const getStickerByMedal = (medal) => {
   if (!medal) return null;
@@ -406,10 +407,27 @@ function Player() {
 
   return (
     <div className="player-page flex flex-col gap-4 p-4">
+
+       {/* 🔥 학습 페이지 헤더(토성 + 제목) */}
+    <div className="relative mb-8 pt-7 text-center">
+      <img
+        src={saturn}
+        alt="토성 아이콘"
+        className="absolute left-1/2 -translate-x-1/2 -top-[0.5px] max-w-[34px]"
+      />
+      <h3 className="text-4xl font-[DungeonFighterOnlineBeatBeat] text-[#8C85A5] mb-2">
+        학습 페이지
+      </h3>
+    </div>
+    
       {/* 상단 영상 + 스크립트 목록 */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
         {/* 왼쪽: 비디오 플레이어 */}
         <section ref={videoSectionRef} className="flex flex-col gap-3 rounded-[18px] p-4 border-2" style={{ background: '#e1e8ff', borderColor: '#b9c5ef' }}>
+           <div className="text-center text-3xl font-[DungeonFighterOnlineBeatBeat] text-[#8C85A5] mb-2">
+              {content?.title || content?.name || '영상 제목'}
+            </div>
+          
           <div className="rounded-[14px] overflow-hidden bg-black relative w-full" style={{ aspectRatio: '16/9' }}>
             {videoUrl ? (
               <>
@@ -483,10 +501,6 @@ function Player() {
 
         {/* 오른쪽: 스크립트 목록 */}
         <aside className="flex flex-col gap-3 h-full">
-          {/* 영상 제목 */}
-          <div className="text-4xl font-[DungeonFighterOnlineBeatBeat] text-[#8C85A5]">
-            {content?.title || content?.name || '영상 제목'}
-          </div>
 
           {/* 언어 선택 버튼 */}
           <div className="grid grid-cols-7 gap-1">
