@@ -24,6 +24,13 @@
     font-display: swap;
 }
 
+@font-face {
+    font-family: 'DnfBitbeatV2';
+    src: url('//cdn.df.nexon.com/img/common/font/DNFBitBitv2.otf')format('opentype');
+    font-weight: 400;
+    font-display: swap;
+}
+
 @layer base {
   html, body, #root { height: 100%; }
   body { @apply m-0 bg-bg text-textMain; }

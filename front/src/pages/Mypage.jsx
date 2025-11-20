@@ -10,7 +10,7 @@ import level3 from "../assets/level3.png";
 import continueReading from "../assets/continue-reading.png";
 import { API_BASE_URL } from '../services/api';
 import studyCompletedImg from "../assets/study-completed.png";
-
+import earth from "../assets/earth.png";
 
 
 
@@ -409,8 +409,8 @@ const formatRemainTime = (seconds) => {
   {userFeedbackHistory.length === 0 ? (
     // 연습 기록 없을 때 그대로 사용
     <div className="text-center py-12">
-      <div className="text-gray-400 mb-4">
-        <svg
+      {/* <div className="text-gray-400 mb-4"> */}
+        {/* <svg
           className="w-16 h-16 mx-auto"
           fill="none"
           stroke="currentColor"
@@ -422,21 +422,39 @@ const formatRemainTime = (seconds) => {
             strokeWidth={1}
             d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
           />
-        </svg>
+        </svg> */}
+      {/* </div> */}
+
+      
+      {/* 연습 기록 없을 때 중앙 정렬 */}
+      <div className="col-span-full flex flex-col items-center justify-center py-24">
+        <img
+          src={earth}
+          alt="지구캐릭터"
+          className="w-64 opacity-95 drop-shadow-lg"
+        />
+
+        {/* 제목 - 던전 폰트 + 중앙정렬 */}
+        <h3 className="mt-6 text-[#8C85A5] text-3xl font-[DungeonFighterOnlineBeatBeat] text-center">
+          앗! 아직 연습 기록이 없어요!
+        </h3>
+
+        {/* 설명 문장 */}
+        <p className="text-xl text-[#8C85A5]/70 mt-2 text-center">
+          동화 재생 페이지에서 발음을 연습해보세요
+        </p>
+
+        {/* 버튼은 그대로 유지 */}
+        <button
+          onClick={() => navigate("/")}
+          className="font-[DnfBitbeatV2] text-xl mt-6 px-5 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+        >
+          동화 보러가기
+        </button>
       </div>
-      <h3 className="text-lg font-medium text-gray-900 mb-2">
-        아직 연습 기록이 없습니다
-      </h3>
-      <p className="text-gray-500 mb-4">
-        동화 재생 페이지에서 발음을 연습해보세요!
-      </p>
-      <button
-        onClick={() => navigate("/")}
-        className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-      >
-        동화 보러가기
-      </button>
-    </div>
+      
+     </div>
+
   ) : (
     <div className="space-y-5 relative cursor-pointer font-[DungeonFighterOnlineBeatBeat]  ">
       {uniqueFeedbackHistory
