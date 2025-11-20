@@ -37,7 +37,7 @@ function Player() {
 
   const { getContentById, loadContents, contents } = useContentsStore();
   const { scripts, isLoadingScripts, loadScripts, getCurrentScript } = useTranslationStore();
-  const { currentFeedback, feedbackHistory, fetchLatestFeedback } = useTutorStore();
+  const { currentFeedback, feedbackHistory, mypageFeedbackHistory, fetchLatestFeedback } = useTutorStore();
   const { user } = useAuthStore();
 
   const videoRef = useRef(null);
@@ -126,12 +126,24 @@ function Player() {
   const displayScript = selectedScript || getCurrentScript();
 
   // 현재 콘텐츠/사용자 기준 스크립트별 최신 피드백 맵 (프론트 로컬 히스토리에서 계산)
+  const combinedFeedbackHistory = useMemo(() => {
+    const merged = [];
+    if (Array.isArray(feedbackHistory)) {
+      merged.push(...feedbackHistory);
+    }
+    if (Array.isArray(mypageFeedbackHistory)) {
+      merged.push(...mypageFeedbackHistory);
+    }
+    return merged;
+  }, [feedbackHistory, mypageFeedbackHistory]);
+
   const scriptFeedbackMap = useMemo(() => {
-    if (!user?.userId || !content?.contentsId || scripts.length === 0 || !feedbackHistory) return {};
+    if (!user?.userId || !content?.contentsId || scripts.length === 0 || combinedFeedbackHistory.length === 0) {
+      return {};
+    }
 
     const map = {};
-    // feedbackHistory는 최신 순으로 쌓이므로, 처음 들어오는 값이 최신
-    feedbackHistory.forEach((fb) => {
+    combinedFeedbackHistory.forEach((fb) => {
       if (
         fb &&
         fb.userId === user.userId &&
@@ -143,28 +155,84 @@ function Player() {
       }
     });
     return map;
-  }, [user, content, scripts, feedbackHistory]);
+  }, [user, content, scripts, combinedFeedbackHistory]);
+
+  const knownFeedbackScriptIds = useMemo(() => {
+    if (!user?.userId || !content?.contentsId || combinedFeedbackHistory.length === 0) {
+      return new Set();
+    }
+
+    return combinedFeedbackHistory.reduce((set, fb) => {
+      if (
+        fb &&
+        fb.userId === user.userId &&
+        fb.contentsId === content.contentsId &&
+        fb.scriptId != null
+      ) {
+        set.add(Number(fb.scriptId));
+      }
+      return set;
+    }, new Set());
+  }, [user, content, combinedFeedbackHistory]);
 
   // 페이지 진입 시 / 스크립트 로딩 후, 백엔드에 저장된 최신 점수를 불러오기
   useEffect(() => {
     if (!user?.userId || !content?.contentsId || scripts.length === 0 || !fetchLatestFeedback) return;
+    if (knownFeedbackScriptIds.size === 0) return;
 
     scripts.forEach((script) => {
-      const scriptId = script?.scriptId ?? script?.id;
+      const rawScriptId = script?.scriptId ?? script?.id;
+      const scriptId = rawScriptId != null ? Number(rawScriptId) : null;
       if (!scriptId) return;
+      if (!knownFeedbackScriptIds.has(scriptId)) return;
       if (loadedFeedbackScripts.has(scriptId)) return;
 
-      fetchLatestFeedback(user.userId, content.contentsId, scriptId).catch((err) => {
-        console.error('Failed to fetch latest feedback for script', scriptId, err);
-      });
-
-      setLoadedFeedbackScripts((prev) => {
-        const next = new Set(prev);
-        next.add(scriptId);
-        return next;
-      });
+      fetchLatestFeedback(user.userId, content.contentsId, scriptId)
+        .catch((err) => {
+          const serverMessage = err?.response?.data?.message || err?.message;
+          if (serverMessage && serverMessage.includes('피드백이 존재하지 않습니다')) {
+            console.debug('No feedback yet for script', scriptId);
+          } else {
+            console.error('Failed to fetch latest feedback for script', scriptId, err);
+          }
+        })
+        .finally(() => {
+          setLoadedFeedbackScripts((prev) => {
+            const next = new Set(prev);
+            next.add(scriptId);
+            return next;
+          });
+        });
     });
-  }, [user, content, scripts, fetchLatestFeedback, loadedFeedbackScripts]);
+  }, [user, content, scripts, fetchLatestFeedback, loadedFeedbackScripts, knownFeedbackScriptIds]);
+
+  // 선택된 스크립트에 대해서는 항상 최신 점수를 동기화 (로컬 히스토리가 없더라도)
+  useEffect(() => {
+    if (!user?.userId || !content?.contentsId || !selectedScript || !fetchLatestFeedback) return;
+
+    const rawScriptId = selectedScript?.scriptId ?? selectedScript?.id;
+    const scriptId = rawScriptId != null ? Number(rawScriptId) : null;
+    if (!scriptId) return;
+    if (scriptFeedbackMap[scriptId]) return;
+    if (loadedFeedbackScripts.has(scriptId)) return;
+
+    fetchLatestFeedback(user.userId, content.contentsId, scriptId)
+      .catch((err) => {
+        const serverMessage = err?.response?.data?.message || err?.message;
+        if (serverMessage && serverMessage.includes('피드백이 존재하지 않습니다')) {
+          console.debug('No feedback yet for script', scriptId);
+        } else {
+          console.error('Failed to fetch latest feedback for script', scriptId, err);
+        }
+      })
+      .finally(() => {
+        setLoadedFeedbackScripts((prev) => {
+          const next = new Set(prev);
+          next.add(scriptId);
+          return next;
+        });
+      });
+  }, [user, content, selectedScript, fetchLatestFeedback, scriptFeedbackMap, loadedFeedbackScripts]);
 
   const handleScriptCardClick = (script) => {
     setSelectedScript(script);
@@ -296,9 +364,13 @@ function Player() {
     ? `${API_BASE_URL}/api/media/${content.contentsId}` 
     : null;
   
-  // 녹음 시작 시 프롬프트 숨기기 및 영상 재개
+  // 녹음 시작 시 프롬프트 숨기기 및 영상 정지
   const handleRecordingStart = () => {
     setRecordingPromptVisible(false);
+    if (videoRef.current) {
+      videoRef.current.pause();
+      setIsPlaying(false);
+    }
   };
   
   // 영상 재생 시작 시 중지 기록 초기화 (재시청 대비)
