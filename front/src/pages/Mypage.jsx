@@ -143,33 +143,14 @@ function Mypage() {
 
 
 
-  // Get user feedback history🌱🌱이부분은 밑에 지운다음에 다시 살리면 됨!  🌱🌱2번!!
-  const currentUserId = user?.userId ?? null;
-  const userFeedbackHistory = currentUserId ? getUserFeedbackHistory(currentUserId) : [];
+
+  const currentUserId = user?.userId ?? user?.id ?? null;
+  const rawHistory = currentUserId ? getUserFeedbackHistory(currentUserId) : [];
+
+  // getUserFeedbackHistory가 undefined, null, 객체 등을 반환해도 안전하게 배열로 변환
+  const userFeedbackHistory = Array.isArray(rawHistory) ? rawHistory : [];
 
 
-  ///🌱🌱🌱🌱🌱🌱🌱🌱🌱🌱🌱🌱이부분 나중에 지워야함 임시로 넣어둔것  🌱1번!!
-  // 1) 실제 기록 불러오기
-// const realHistory = user ? getUserFeedbackHistory(user.userId || 1) : [];
-
-// // 2) UI 미리보기용 더미 데이터 (원하는 내용으로 바꿔도 됨)
-// const mockHistory = [
-//   {
-//     id: 1,
-//     contentsId: 3,
-//     contentsTitle: '콩쥐 팥쥐',
-//     score: 85,
-//     lang: 'ko',
-//     accuracy: 92,
-//     targetSentence: '학습한 동화의 예시 문장입니다.',
-//     createdAt: new Date().toISOString(),
-//   },
-// ];
-
-// // 3) 실제 기록이 있으면 그걸 쓰고, 없으면 mockHistory 사용
-// const userFeedbackHistory =
-//   realHistory.length > 0 ? realHistory : mockHistory;
-///🌱🌱🌱🌱🌱🌱🌱🌱🌱🌱🌱🌱이부분 나중에 지워야함 임시로 넣어둔것
   
 
 
