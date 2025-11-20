@@ -409,7 +409,7 @@ function Home() {
       <button
         onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
         className="
-          fixed bottom-6 right-6 w-14 h-14 bg-white rounded-full shadow-lg
+          fixed bottom-6 right-12 w-14 h-14 bg-white rounded-full shadow-lg
           border border-gray-300 flex items-center justify-center
           hover:shadow-xl hover:scale-105 active:scale-95 transition-all
         "
