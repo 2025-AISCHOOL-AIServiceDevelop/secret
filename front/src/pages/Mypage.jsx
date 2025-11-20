@@ -339,8 +339,8 @@ const formatRemainTime = (seconds) => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 -mt-6">
 
             <div className="p-4 rounded-lg border border-transparent text-center">
-            <img src={level1} alt="레벨1아이콘" className="w-36 h-36 object-contain -mb-5" />
-              <p className="text-2xl font-[DungeonFighterOnlineBeatBeat] text-[#6C798A]">x {totalPractice}</p>
+              <img src={level3} alt="레벨3아이콘" className="w-36 h-36 object-contain -mb-5" />
+              <p className="text-2xl font-[DungeonFighterOnlineBeatBeat] text-[#6C798A]">x {languageCount}</p>
             </div>
 
             <div className="p-4 rounded-lg border border-transparent text-center">
@@ -349,9 +349,11 @@ const formatRemainTime = (seconds) => {
             </div>
 
             <div className="p-4 rounded-lg border border-transparent text-center">
-              <img src={level3} alt="레벨3아이콘" className="w-36 h-36 object-contain -mb-5" />
-              <p className="text-2xl font-[DungeonFighterOnlineBeatBeat] text-[#6C798A]">x {languageCount}</p>
+            <img src={level1} alt="레벨1아이콘" className="w-36 h-36 object-contain -mb-5" />
+              <p className="text-2xl font-[DungeonFighterOnlineBeatBeat] text-[#6C798A]">x {totalPractice}</p>
             </div>
+
+
           </div>
         </div>
       </div>
