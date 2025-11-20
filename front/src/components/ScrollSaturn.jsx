@@ -28,7 +28,7 @@ function ScrollSaturn() {
       const clamped = Math.max(0, Math.min(1, rawProgress))
 
       // 아이콘 중심이 화면 위/아래에 딱 붙지 않도록, 아이콘 높이 절반 만큼만 여유
-      const margin = ICON_SIZE / 2
+      const margin = ICON_SIZE / 1
       const maxY = window.innerHeight - margin
       const minY = margin
       const y = minY + (maxY - minY) * clamped
@@ -45,7 +45,7 @@ function ScrollSaturn() {
 
   if (!visible) return null
 
-  const trackRight = 10 // 실제 스크롤바 바로 왼쪽에 얇은 진행바를 붙임
+  const trackRight = 18 // 실제 스크롤바 바로 왼쪽에 얇은 진행바를 붙임
 
   return (
     <>
@@ -54,12 +54,12 @@ function ScrollSaturn() {
         style={{
           position: 'fixed',
           right: `${trackRight}px`,
-          top: '16px',
-          bottom: '16px',
-          width: '6px',
+          top: '35px',
+          bottom: '20px',
+          width: '10px',
           borderRadius: '999px',
           background: 'rgba(255,255,255,0.4)',
-          boxShadow: '0 0 0 1px rgba(0,0,0,0.05)',
+          boxShadow: '0 0 0 1px rgba(0,0,0,0.01)',
           zIndex: 9998,
           pointerEvents: 'none'
         }}
@@ -72,8 +72,8 @@ function ScrollSaturn() {
             width: '100%',
             height: `${progress * 100}%`,
             borderRadius: '999px',
-            background: 'linear-gradient(180deg, #FFE082 0%, #FFB300 100%)',
-            boxShadow: '0 0 6px rgba(255, 193, 7, 0.55)'
+            background: 'linear-gradient(180deg, #FEEBB1 0%, #B1D2FA 100%)',
+            boxShadow: '0 0 6px rgba(255, 193, 7, 0.01)'
           }}
         />
       </div>
@@ -82,7 +82,7 @@ function ScrollSaturn() {
       <div
         style={{
           position: 'fixed',
-          right: '-4px', // 조금 더 오른쪽(화면 바깥 방향)으로 밀어서 스크롤바 쪽에 더 가까이
+          right: '3px', // 조금 더 오른쪽(화면 바깥 방향)으로 밀어서 스크롤바 쪽에 더 가까이
           top: `${topPx}px`,
           zIndex: 9999,
           pointerEvents: 'none'
@@ -91,7 +91,7 @@ function ScrollSaturn() {
         <img
           src={saturn}
           alt="스크롤 토성"
-          className="w-8 h-8 drop-shadow-lg"
+          className="w-full h-7 drop-shadow-lg"
         />
       </div>
     </>
