@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
+import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -36,7 +38,7 @@ public class MediaController {
 
         String storedPath = contents.getContentsPath();
         Path filePath = null;
-        
+
         // 1) 현재 콘텐츠의 동영상 경로 확인
         if (storedPath != null && !storedPath.isBlank()) {
             filePath = Paths.get(storedPath);
@@ -68,11 +70,15 @@ public class MediaController {
         FileSystemResource resource = new FileSystemResource(filePath);
         MediaType mediaType = detectMediaType(filePath);
 
+        // ✅ ContentDisposition + UTF-8 파일명 설정
+        var cd = ContentDisposition.builder("inline")
+                .filename(filePath.getFileName().toString(), StandardCharsets.UTF_8)
+                .build();
+
         return ResponseEntity.ok()
                 .contentType(mediaType)
                 .contentLength(Files.size(filePath))
-                .header(HttpHeaders.CONTENT_DISPOSITION,
-                        "inline; filename=\"" + filePath.getFileName().toString() + "\"")
+                .header(HttpHeaders.CONTENT_DISPOSITION, cd.toString())
                 .body(resource);
     }
 
