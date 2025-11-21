@@ -63,6 +63,7 @@ function Player() {
   const [flippedScriptId, setFlippedScriptId] = useState(null); // 뒤집힌 스크립트 카드 추적
   const [loadedFeedbackScripts, setLoadedFeedbackScripts] = useState(new Set()); // 백엔드에서 점수를 불러온 스크립트 ID
   const [recentScoredScriptId, setRecentScoredScriptId] = useState(null); // 방금 점수가 나온 스크립트 ID (짜잔 효과용)
+  const [hasUserScrolledScripts, setHasUserScrolledScripts] = useState(false); // 사용자가 스크립트 영역을 직접 스크롤했는지 여부
 
     // ✅ 시청 정보 저장 (MyPage에서 사용하는 형식과 동일하게)
   const saveWatchMeta = (contentsId, watchedSeconds, totalSeconds) => {
@@ -383,18 +384,17 @@ function Player() {
             }, 10000);
           }
 
-          // 스크립트 리스트가 자동으로 스크롤되면서 현재 스크립트가 계속 보이도록 처리
-          const container = scriptListRef.current;
-          const target = scriptItemRefs.current[scriptId];
-          if (container && target) {
-            const containerRect = container.getBoundingClientRect();
-            const targetRect = target.getBoundingClientRect();
-            const offset =
-              targetRect.top -
-              containerRect.top -
-              containerRect.height / 2 +
-              targetRect.height / 2;
-            container.scrollTop += offset;
+          // ✅ 사용자가 스크롤을 "직접" 하기 전까지만 자동 스크롤
+          if (!hasUserScrolledScripts) {
+            // 현재 스크립트가 "보이기만" 하도록 스크롤 (첫 번째 스크립트가 위로 사라지는 현상 방지)
+            const container = scriptListRef.current;
+            const target = scriptItemRefs.current[scriptId];
+            if (container && target) {
+              target.scrollIntoView({
+                behavior: 'smooth',
+                block: 'nearest',
+              });
+            }
           }
         }
       }
@@ -612,6 +612,12 @@ function Player() {
             ref={scriptListRef}
             className="bg-white rounded-[14px] border-2 p-5 flex-1 min-h-0 overflow-y-auto"
             style={{ borderColor: '#c8d3f0' }}
+            onScroll={() => {
+              // 사용자가 한 번이라도 직접 스크롤하면, 이후에는 자동 포커싱 비활성화
+              if (!hasUserScrolledScripts) {
+                setHasUserScrolledScripts(true);
+              }
+            }}
           >
             <div className="text-2xl text-gray-600 font-bold mb-3 flex items-center gap-2">
               <FileText className="w-8 h-8" />
