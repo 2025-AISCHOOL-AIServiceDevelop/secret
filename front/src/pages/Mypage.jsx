@@ -171,6 +171,13 @@ const uniqueFeedbackHistory = useMemo(() => {
       return;
     }
 
+    const toMs = (value) => {
+    if (!value) return 0;
+    if (typeof value === 'string' || typeof value === 'number' || value instanceof Date) {
+      return new Date(value).getTime();
+    }
+    return 0; // 객체/이상한 포맷이면 안전하게 0 처리
+  };
     // 있으면 createdAt 비교해서 더 최신 것만 남기기
     const prevTime = new Date(prev.createdAt || 0).getTime();
     const curTime = new Date(fb.createdAt || 0).getTime();
@@ -630,7 +637,7 @@ const formatRemainTime = (seconds) => {
 
                     {/* 학습 완료 X + 남은 시간 있을 때만 표시 */}
                     {!completed && remainLabel ? (
-                      <span className="inline-flex items-center rounded-full bg-[#E9ECEF] px-4 py-3 text-[14ㅁpx] text-[#7B88A0] flex-shrink-0 right-0 ml-20">
+                      <span className="inline-flex items-center rounded-full bg-[#E9ECEF] px-4 py-3 text-[14px] text-[#7B88A0] flex-shrink-0 right-0 ml-20">
                         ♬ {remainLabel} 남음
                       </span>
                     ) : (

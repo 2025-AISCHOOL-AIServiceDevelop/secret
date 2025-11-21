@@ -64,6 +64,44 @@ function Player() {
   const [loadedFeedbackScripts, setLoadedFeedbackScripts] = useState(new Set()); // 백엔드에서 점수를 불러온 스크립트 ID
   const [recentScoredScriptId, setRecentScoredScriptId] = useState(null); // 방금 점수가 나온 스크립트 ID (짜잔 효과용)
 
+    // ✅ 시청 정보 저장 (MyPage에서 사용하는 형식과 동일하게)
+  const saveWatchMeta = (contentsId, watchedSeconds, totalSeconds) => {
+    if (!contentsId) return;
+
+    const keyUserId = user?.userId ?? user?.id ?? 'guest';
+    const storageKey = `watch_${keyUserId}_${contentsId}`;
+
+    const payload = {
+      watchedSeconds: Math.max(0, watchedSeconds || 0),
+      totalSeconds: Math.max(0, totalSeconds || 0),
+    };
+
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(payload));
+    } catch (e) {
+      console.error('watch meta save error', e);
+    }
+  };
+
+    // ✅ 시청 정보 읽기 (MyPage와 동일 포맷)
+  const getWatchMeta = (contentsId) => {
+    if (!contentsId) return { watchedSeconds: 0, totalSeconds: 0 };
+
+    const keyUserId = user?.userId ?? user?.id ?? 'guest';
+    const storageKey = `watch_${keyUserId}_${contentsId}`;
+    const saved = localStorage.getItem(storageKey);
+    if (!saved) return { watchedSeconds: 0, totalSeconds: 0 };
+
+    try {
+      const { watchedSeconds = 0, totalSeconds = 0 } = JSON.parse(saved) || {};
+      return { watchedSeconds, totalSeconds };
+    } catch (e) {
+      console.error('watch meta parse error', e);
+      return { watchedSeconds: 0, totalSeconds: 0 };
+    }
+  };
+
+
   const languages = [
     { code: 'ko', name: '한국어', flag: '🇰🇷' },
     { code: 'en', name: '영어', flag: '🇺🇸' },
@@ -314,6 +352,11 @@ function Player() {
     if (videoRef.current) {
       const time = videoRef.current.currentTime;
       setCurrentTime(time);
+
+      // ✅ 여기서 시청 정보 저장
+    if (content?.contentsId && videoRef.current.duration) {
+      saveWatchMeta(content.contentsId, time, videoRef.current.duration);
+    }
       
       // 자막 싱크: 현재 시간에 해당하는 스크립트 자동 선택
       const currentMs = time * 1000;
@@ -360,10 +403,21 @@ function Player() {
 
   const handleLoadedMetadata = () => {
     if (videoRef.current) {
-      setDuration(videoRef.current.duration);
+      const duration = videoRef.current.duration;
+      setDuration(duration);
+// ✅ 여기서 마지막 시청 시간으로 점프
+      if (content?.contentsId) {
+        const { watchedSeconds } = getWatchMeta(content.contentsId);
+
+        // 0초가 아니고, 전체 길이 안쪽이면 그 위치로 이동
+        if (watchedSeconds > 0 && watchedSeconds < duration) {
+          videoRef.current.currentTime = watchedSeconds;
+          setCurrentTime(watchedSeconds);
+        }
+      }
     }
   };
-
+  
   const handleSeek = (e) => {
     if (!videoRef.current) return;
     const rect = e.currentTarget.getBoundingClientRect();
