@@ -683,7 +683,7 @@ const formatRemainTime = (seconds) => {
               </div>
               {/* 🔹 학습 완료 오버레이 – 이 부분이 새로 추가되는 부분! */}
                   {completed && (
-                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center rounded-[16px] z-10">
+                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center rounded-[16px] z-10 ">
                       <img
                         src={studyCompletedImg}
                         alt="학습 완료"
