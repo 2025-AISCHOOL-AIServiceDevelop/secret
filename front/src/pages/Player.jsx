@@ -45,6 +45,8 @@ function Player() {
   const videoSectionRef = useRef(null);
   const scriptListRef = useRef(null);          // 스크립트 리스트 컨테이너
   const scriptItemRefs = useRef({});           // 각 스크립트 카드 DOM 참조
+  const scriptAsideRef = useRef(null);         // 오른쪽 스크립트 영역 전체
+  const [videoSectionHeight, setVideoSectionHeight] = useState(null); // 왼쪽 섹션 높이 추적
   const [selectedScript, setSelectedScript] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -176,6 +178,26 @@ function Player() {
       return set;
     }, new Set());
   }, [user, content, combinedFeedbackHistory]);
+
+  // 왼쪽 영상 섹션 높이를 측정해서 오른쪽 스크립트 영역 높이에 적용 (ResizeObserver 사용)
+  useEffect(() => {
+    if (!videoSectionRef.current) return;
+
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        if (entry.target === videoSectionRef.current) {
+          // 소수점 픽셀까지 정확하게 측정
+          setVideoSectionHeight(entry.contentRect.height + 32); // padding/border 고려 (box-sizing에 따라 조정 필요)
+        }
+      }
+    });
+
+    observer.observe(videoSectionRef.current);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
 
   // 페이지 진입 시 / 스크립트 로딩 후, 백엔드에 저장된 최신 점수를 불러오기
   useEffect(() => {
@@ -422,14 +444,20 @@ function Player() {
     </div>
     
       {/* 상단 영상 + 스크립트 목록 */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
         {/* 왼쪽: 비디오 플레이어 */}
-        <section ref={videoSectionRef} className="flex flex-col gap-3 rounded-[18px] p-4 border-2" style={{ background: '#e1e8ff', borderColor: '#b9c5ef' }}>
+        <section
+          ref={videoSectionRef}
+          className="flex flex-col gap-3 rounded-[18px] p-4 border-2"
+          style={{ background: '#e1e8ff', borderColor: '#b9c5ef' }}
+        >
            <div className="text-center text-3xl font-[DungeonFighterOnlineBeatBeat] text-[#8C85A5] mb-2">
               {content?.title || content?.name || '영상 제목'}
             </div>
-          
-          <div className="rounded-[14px] overflow-hidden bg-black relative w-full" style={{ aspectRatio: '16/9' }}>
+          <div
+            className="rounded-[14px] overflow-hidden bg-black relative w-full"
+            style={{ aspectRatio: '16/9' }}
+          >
             {videoUrl ? (
               <>
                 <video
@@ -500,8 +528,12 @@ function Player() {
           </div>
         </section>
 
-        {/* 오른쪽: 스크립트 목록 */}
-        <aside className="flex flex-col gap-3 h-full">
+        {/* 오른쪽: 스크립트 목록 (영상 박스 하단에 맞춰 높이 자동 정렬) */}
+        <aside 
+          ref={scriptAsideRef} 
+          className="flex flex-col gap-3"
+          style={videoSectionHeight ? { height: `${videoSectionHeight}px` } : {}}
+        >
 
           {/* 언어 선택 버튼 */}
           <div className="grid grid-cols-7 gap-1">
@@ -521,11 +553,11 @@ function Player() {
             ))}
           </div>
 
-          {/* 스크립트 목록 */}
+          {/* 스크립트 목록 - 영상 박스 높이에 맞춰 늘어나고, 내부만 스크롤 */}
           <div
             ref={scriptListRef}
-            className="bg-white rounded-[14px] border-2 p-5"
-            style={{ borderColor: '#c8d3f0', maxHeight: '450px', overflowY: 'auto' }}
+            className="bg-white rounded-[14px] border-2 p-5 flex-1 min-h-0 overflow-y-auto"
+            style={{ borderColor: '#c8d3f0' }}
           >
             <div className="text-2xl text-gray-600 font-bold mb-3 flex items-center gap-2">
               <FileText className="w-8 h-8" />

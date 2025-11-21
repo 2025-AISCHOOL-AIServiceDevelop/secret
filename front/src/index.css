@@ -72,12 +72,6 @@
       filter 0.35s ease-out;
   }
 
-  /* 카드 전체에 호버해도 스티커가 살아나도록 */
-  .flip-card-front:hover .sticker-orbit-wrapper {
-    transform: scale(1.18) rotate(-4deg);
-    filter: drop-shadow(0 0 16px rgba(255, 255, 255, 0.85));
-  }
-
   .planet-sticker {
     width: 100%;
     height: 100%;
@@ -89,13 +83,6 @@
       transform 0.35s cubic-bezier(0.22, 0.61, 0.36, 1),
       filter 0.35s ease-out;
     transform-origin: center;
-  }
-
-  .flip-card-front:hover .planet-sticker {
-    transform: scale(1.08);
-    filter:
-      drop-shadow(0 4px 10px rgba(0, 0, 0, 0.3))
-      drop-shadow(0 0 14px rgba(255, 255, 255, 0.9));
   }
 
   /* 스티커 주변 은은한 오라 + 별빛 */
@@ -116,11 +103,6 @@
     z-index: -1;
   }
 
-  .flip-card-front:hover .sticker-orbit-glow {
-    opacity: 1;
-    transform: scale(1);
-  }
-
   .sticker-star {
     position: absolute;
     width: 8px;
@@ -135,11 +117,6 @@
     animation: starTwinkle 2.6s ease-in-out infinite;
     animation-play-state: paused;
     pointer-events: none;
-  }
-
-  .flip-card-front:hover .sticker-star {
-    opacity: 1;
-    animation-play-state: running;
   }
 
   .sticker-star-1 {
