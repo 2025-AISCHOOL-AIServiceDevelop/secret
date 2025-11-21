@@ -13,6 +13,14 @@ import studyCompletedImg from "../assets/study-completed.png";
 import earth from "../assets/earth.png";
 
 
+// ✅ 점수 구간별 스티커 선택 함수
+const getStickerByScore = (score) => {
+  if (score == null) return level1; // 기본값은 1레벨
+
+  if (score >= 61) return level3;   // 61~100점
+  if (score >= 31) return level2;   // 31~60점
+  return level1;                    // 0~30점
+};
 
 
 function Mypage() {
@@ -222,6 +230,37 @@ const uniqueFeedbackHistory = useMemo(() => {
     userFeedbackHistory.map((fb) => fb.lang).filter(Boolean)
   ).size;
 
+    // ✅ 지금까지 받은 스티커 개수 (피드백 1건 = 스티커 1개)
+  const { lowCount, midCount, highCount } = useMemo(() => {
+    if (!userFeedbackHistory || userFeedbackHistory.length === 0) {
+      return { lowCount: 0, midCount: 0, highCount: 0 };
+    }
+
+    let low = 0;  // 0~30점 → level1
+    let mid = 0;  // 31~60점 → level2
+    let high = 0; // 61~100점 → level3
+
+    userFeedbackHistory.forEach((fb) => {
+      const score =
+        typeof fb.finalScore === "number"
+          ? fb.finalScore
+          : typeof fb.score === "number"
+          ? fb.score
+          : null;
+
+      if (score == null) return;
+
+      if (score >= 61) high += 1;
+      else if (score >= 31) mid += 1;
+      else low += 1;
+    });
+
+    return { lowCount: low, midCount: mid, highCount: high };
+  }, [userFeedbackHistory]);
+
+
+
+
 
   const goToPlayer = (contentsId) => {
   if (!contentsId) return;
@@ -319,7 +358,7 @@ const formatRemainTime = (seconds) => {
           </div>
         </div>
           
-         {/* 2번: 학습 스티커 */}
+                  {/* 2번: 학습 스티커 */}
         <div className="bg-white/60 rounded-[16px] shadow-md border border-transparent px-8 py-4
          hover:shadow-[0_8px_16px_0_rgba(0,0,0,0.16)] transition-shadow duration-300">
           <h3 className="text-xl font-[DungeonFighterOnlineBeatBeat] text-[#6C798A] mt-3">
@@ -329,24 +368,33 @@ const formatRemainTime = (seconds) => {
           {/* Statistics Section (3개 박스) */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 -mt-6">
 
+            {/* ⭐ 61~100점 → Level3 스티커 개수 */}
             <div className="p-4 rounded-lg border border-transparent text-center">
-              <img src={level3} alt="레벨3아이콘" className="w-36 h-36 object-contain -mb-5" />
-              <p className="text-2xl font-[DungeonFighterOnlineBeatBeat] text-[#6C798A]">x {languageCount}</p>
+              <img src={level3} alt="레벨3아이콘" className="w-36 h-36 object-contain -mb-3 mx-auto" />
+              <p className="text-2xl font-[DungeonFighterOnlineBeatBeat] text-[#6C798A]">
+                x {highCount}
+              </p>
             </div>
 
+            {/* ⭐ 31~60점 → Level2 스티커 개수 */}
             <div className="p-4 rounded-lg border border-transparent text-center">
-              <img src={level2} alt="레벨2아이콘" className="w-36 h-36 object-contain -mb-5" />
-              <p className="text-2xl font-[DungeonFighterOnlineBeatBeat] text-[#6C798A]">x {avgScore}</p>
+              <img src={level2} alt="레벨2아이콘" className="w-36 h-36 object-contain -mb-3 mx-auto" />  
+              <p className="text-2xl font-[DungeonFighterOnlineBeatBeat] text-[#6C798A]">
+                x {midCount}
+              </p>
             </div>
 
+            {/* ⭐ 0~30점 → Level1 스티커 개수 */}
             <div className="p-4 rounded-lg border border-transparent text-center">
-            <img src={level1} alt="레벨1아이콘" className="w-36 h-36 object-contain -mb-5" />
-              <p className="text-2xl font-[DungeonFighterOnlineBeatBeat] text-[#6C798A]">x {totalPractice}</p>
+              <img src={level1} alt="레벨1아이콘" className="w-36 h-36 object-contain -mb-3 mx-auto" />
+              <p className="text-2xl font-[DungeonFighterOnlineBeatBeat] text-[#6C798A]">
+                x {lowCount}
+              </p>
             </div>
-
 
           </div>
         </div>
+
       </div>
     </div>
 
