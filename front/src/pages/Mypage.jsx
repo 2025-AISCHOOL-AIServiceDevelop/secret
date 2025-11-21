@@ -235,7 +235,10 @@ const uniqueFeedbackHistory = useMemo(() => {
 const getWatchMeta = (contentsId) => {
   if (!user || !contentsId) return { watchedSeconds: 0, totalSeconds: 0 };
 
-  const storageKey = `watch_${user?.userId ?? 'guest'}_${contentsId}`;
+  // 👉 Player에서 저장할 때와 동일한 키 포맷으로 맞추기
+  const keyUserId = user?.userId ?? user?.id ?? 'guest';
+  const storageKey = `watch_${keyUserId}_${contentsId}`;
+
   const saved = localStorage.getItem(storageKey);
   if (!saved) return { watchedSeconds: 0, totalSeconds: 0 };
 
