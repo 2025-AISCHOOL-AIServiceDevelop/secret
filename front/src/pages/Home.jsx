@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Search, Loader2, AlertCircle, X } from 'lucide-react';
 import { useContentsStore } from '../stores';
@@ -55,8 +55,23 @@ function Home() {
     loadContents
   } = useContentsStore();
 
+  // 배열 섞기 함수
+  const shuffleArray = (array) => {
+    return [...array].sort(() => Math.random() - 0.5);
+  };
+
   // 검색결과(좌측 리스트)
   const koreanContents = contents.filter((c) => c.language === 'ko');
+
+  // 최초 1회만 랜덤 셔플된 목록
+  const [shuffledKoreanContents, setShuffledKoreanContents] = useState([]);
+
+  // 페이지 처음 들어왔을 때 1번만 셔플
+  useEffect(() => {
+    if (koreanContents.length > 0 && shuffledKoreanContents.length === 0) {
+      setShuffledKoreanContents(shuffleArray(koreanContents));
+    }
+  }, [koreanContents, shuffledKoreanContents.length]);
 
   // 추천 패널용 전체 데이터
   const koreanAllContents = allContents.filter((c) => c.language === 'ko');
@@ -243,7 +258,7 @@ function Home() {
               </article>
             ))
           ) : koreanContents.length > 0 ? (
-            koreanContents.map((content) => (
+            shuffledKoreanContents.map((content) => (
               <article
                 key={content.contentsId}
                 className="rounded-[20px] overflow-hidden bg-white/70 shadow transition-shadow"
