@@ -72,7 +72,7 @@ function Home() {
     const ko = contents.filter((c) => c.language === "ko");
     setShuffledKoreanContents(shuffleArray(ko));
   }
-  }, []);
+  }, [contents]);
 
   // 검색 중이면 검색 결과, 아니면 셔플된 목록 사용
   const listToShow = isSearchExecuted ? koreanContents : shuffledKoreanContents;
