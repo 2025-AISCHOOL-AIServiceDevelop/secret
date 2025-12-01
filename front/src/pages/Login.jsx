@@ -40,3 +40,23 @@
 // }
 
 // export default Login;
+// src/pages/Login.jsx
+import { useNavigate } from "react-router-dom";
+import LoginModal from "../@design-system/components/LoginModal.jsx";
+
+function Login() {
+  const navigate = useNavigate();
+
+  return (
+    <LoginModal
+      isOpen={true}
+      onClose={() => {
+        // 닫기 누르면 홈으로
+        navigate("/");
+      }}
+    />
+  );
+}
+
+export default Login;
+

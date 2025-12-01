@@ -199,46 +199,52 @@ const uniqueFeedbackHistory = useMemo(() => {
 
 
 
-// ✅ 문장(콘텐츠 + 스크립트) 기준으로 "가장 최신" 기록만 남기기
-const latestSentenceHistory = useMemo(() => {
+
+
+
+// ✅ 스크립트 ID 기준으로 "가장 최신" 기록만 남기기
+const latestScriptHistory = useMemo(() => {
   if (!userFeedbackHistory || userFeedbackHistory.length === 0) return [];
 
-  const bySentence = new Map();
+  const byScript = new Map();
 
   userFeedbackHistory.forEach((fb) => {
     if (!fb.contentsId) return;
 
-    // 👉 문장 식별용 key (scriptId가 제일 좋고, 없으면 인덱스/텍스트로 백업)
-    const scriptKey =
+    // 🔹 반드시 scriptId 기준으로만 묶기
+    const scriptId =
       fb.scriptId ??
-      fb.scriptIndex ??
-      fb.sentenceIndex ??
-      fb.lineNo ??
-      fb.lineNumber ??
+      fb.scriptID ??         // 혹시 백엔드에서 이런 이름일 수도 있어서 방어코드
+      fb.script_id ??
       null;
 
-    const baseKey = scriptKey != null
-      ? `${fb.contentsId}_${scriptKey}`
-      : `${fb.contentsId}_${fb.targetSentence || ""}`;
+    // scriptId 없으면 레벨 스티커 계산에서는 제외
+    if (scriptId == null) return;
 
-    if (!baseKey) return;
+    const baseKey = `${fb.contentsId}_${scriptId}`;
 
-    const prev = bySentence.get(baseKey);
+    const prev = byScript.get(baseKey);
     if (!prev) {
-      bySentence.set(baseKey, fb);
+      byScript.set(baseKey, fb);
       return;
     }
 
     const prevTime = new Date(prev.createdAt || 0).getTime();
     const curTime = new Date(fb.createdAt || 0).getTime();
 
+    // 더 최신 피드백만 남기기
     if (curTime > prevTime) {
-      bySentence.set(baseKey, fb); // 더 최신 기록으로 교체
+      byScript.set(baseKey, fb);
     }
   });
 
-  return Array.from(bySentence.values());
+  return Array.from(byScript.values());
 }, [userFeedbackHistory]);
+
+
+
+
+
 
 
 
@@ -259,13 +265,17 @@ const latestSentenceHistory = useMemo(() => {
     );
   }
 
-// ✅ 통계 값 계산 (문장 기준 최신 기록)
-const totalPractice = latestSentenceHistory.length;
+
+
+
+
+// ✅ 통계 값 계산 (스크립트 ID 기준 최신 기록)
+const totalPractice = latestScriptHistory.length;
 
 const avgScore =
   totalPractice > 0
     ? Math.round(
-        latestSentenceHistory.reduce((sum, fb) => {
+        latestScriptHistory.reduce((sum, fb) => {
           const s =
             typeof fb.finalScore === "number"
               ? fb.finalScore
@@ -278,38 +288,45 @@ const avgScore =
     : 0;
 
 const languageCount = new Set(
-  latestSentenceHistory.map((fb) => fb.lang).filter(Boolean)
+  latestScriptHistory.map((fb) => fb.lang).filter(Boolean)
 ).size;
 
 
 
-// ✅ "문장 기준 최신 점수"로 스티커 개수 계산
+
+// ✅ "스크립트 ID 기준 최신 medal"로 스티커 개수 계산
 const { lowCount, midCount, highCount } = useMemo(() => {
-  if (!latestSentenceHistory || latestSentenceHistory.length === 0) {
+  if (!latestScriptHistory || latestScriptHistory.length === 0) {
     return { lowCount: 0, midCount: 0, highCount: 0 };
   }
 
-  let low = 0;  // 0~30점 → level1
-  let mid = 0;  // 31~60점 → level2
-  let high = 0; // 61~100점 → level3
+  let low = 0;  // BRONZE → level1
+  let mid = 0;  // SILVER → level2
+  let high = 0; // GOLD   → level3
 
-  latestSentenceHistory.forEach((fb) => {
-    const score =
-      typeof fb.finalScore === "number"
-        ? fb.finalScore
-        : typeof fb.score === "number"
-        ? fb.score
-        : null;
+  latestScriptHistory.forEach((fb) => {
+    const medal = fb.medal ? String(fb.medal).toUpperCase() : null;
 
-    if (score == null) return;
-
-    if (score >= 61) high += 1;
-    else if (score >= 31) mid += 1;
-    else low += 1;
+    if (medal === 'GOLD') {
+      high += 1;
+    } else if (medal === 'SILVER') {
+      mid += 1;
+    } else if (medal === 'BRONZE') {
+      low += 1;
+    } else {
+      // medal 없으면 그냥 레벨1로 줄지, 완전 무시할지는 선택사항
+      // 여기서는 레벨1로 처리:
+      low += 1;
+    }
   });
 
   return { lowCount: low, midCount: mid, highCount: high };
-}, [latestSentenceHistory]);
+}, [latestScriptHistory]);
+
+
+
+
+
 
 
 
