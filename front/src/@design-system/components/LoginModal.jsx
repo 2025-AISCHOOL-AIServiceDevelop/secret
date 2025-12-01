@@ -24,7 +24,7 @@ function LoginModal({ isOpen, onClose }) {
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[9999] flex items-center justify-center login-earth pt-10 md:pt-16">
       <div className="relative flex items-center gap-6 translate-x-10">
         {/* 로그인 배경 사이즈 */}
-        <div className="bg-white w-[1200px] max-w-[90%] h-[600px] rounded-2xl shadow-2xl flex overflow-hidden relative">
+        <div className="bg-white w-[1200px] max-w-[90%] h-[550px] rounded-2xl shadow-2xl flex overflow-hidden relative">
 
           {/* 닫기 버튼 */}
           <button
