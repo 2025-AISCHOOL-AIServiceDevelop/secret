@@ -13,7 +13,7 @@ import LoginModal from '../@design-system/components/LoginModal';
 
 function Home() {
   const [searchInput, setSearchInput] = useState('');
-  const [selectedAge, setSelectedAge] = useState('2-4세');
+  const [selectedAge, setSelectedAge] = useState('5-6세');
   const [showMascot, setShowMascot] = useState(true);
 
   // 검색 실행 여부
@@ -68,15 +68,20 @@ function Home() {
 
   // 페이지 처음 들어왔을 때 1번만 셔플
   useEffect(() => {
-    if (koreanContents.length > 0 && shuffledKoreanContents.length === 0) {
-      setShuffledKoreanContents(shuffleArray(koreanContents));
-    }
-  }, [koreanContents, shuffledKoreanContents.length]);
+  if (contents.length > 0) {
+    const ko = contents.filter((c) => c.language === "ko");
+    setShuffledKoreanContents(shuffleArray(ko));
+  }
+  }, []);
+
+  // 검색 중이면 검색 결과, 아니면 셔플된 목록 사용
+  const listToShow = isSearchExecuted ? koreanContents : shuffledKoreanContents;
+
 
   // 추천 패널용 전체 데이터
   const koreanAllContents = allContents.filter((c) => c.language === 'ko');
 
-  const ageOptions = ['2-4세', '4-6세', '7-9세', '10세이상'];
+  const ageOptions = ['5-6세', '7-8세', '9-10세', '11세 이상'];
   const indicatorIndex = ageOptions.indexOf(selectedAge);
 
   /** 초기 로딩 */
@@ -128,7 +133,7 @@ function Home() {
 
   /** 자동 나이대 슬라이드 */
   useEffect(() => {
-    const order = ['2-4세', '4-6세', '7-9세', '10세이상'];
+    const order = ['5-6세', '7-8세', '9-10세', '11세 이상'];
 
     const interval = setInterval(() => {
       setSelectedAge((prev) => {
@@ -155,16 +160,16 @@ function Home() {
     const base = koreanAllContents;
 
     switch (selectedAge) {
-      case '2-4세':
+      case '5-6세':
         return base.filter((c) => c.durationSec <= 130);  
 
-      case '4-6세':
+      case '7-8세':
         return base.filter((c) => c.durationSec > 130 && c.durationSec <= 200);
 
-      case '7-9세':
+      case '9-10세':
         return base.filter((c) => c.durationSec > 200 && c.durationSec <= 260);
 
-      case '10세이상':
+      case '11세 이상':
         return base.filter((c) => c.durationSec > 260);
 
       default:
@@ -258,7 +263,7 @@ function Home() {
               </article>
             ))
           ) : koreanContents.length > 0 ? (
-            shuffledKoreanContents.map((content) => (
+            listToShow.map((content) => (
               <article
                 key={content.contentsId}
                 className="rounded-[20px] overflow-hidden bg-white/70 shadow transition-shadow"
