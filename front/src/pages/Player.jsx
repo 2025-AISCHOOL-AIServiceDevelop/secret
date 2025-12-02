@@ -619,7 +619,7 @@ function Player() {
               }
             }}
           >
-            <div className="text-2xl text-gray-600 font-bold mb-3 flex items-center gap-2">
+            <div className="text-2xl text-gray-600 font-DnfBitbeatV2 mb-3 flex items-center gap-2">
               <FileText className="w-8 h-8" />
               전체 스크립트
             </div>

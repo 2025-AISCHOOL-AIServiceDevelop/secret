@@ -314,7 +314,7 @@ function VoiceRecordingBanner({ script, contentsId, language = 'en', userId, onA
 
   return (
     <div
-      className="h-full rounded-[24px] border-2 shadow-md transition-all flex flex-col justify-between px-6 py-4 relative"
+      className="h-full rounded-[50px]  shadow-md transition-all flex flex-col justify-between px-6 py-4 relative"
       style={{
         backgroundColor: '#c8dafc',
         borderColor: recordingState === 'recording' ? '#ffe9a9' : '#e0e7ff',
@@ -322,8 +322,8 @@ function VoiceRecordingBanner({ script, contentsId, language = 'en', userId, onA
     >
       {/* 상단: 노란색 안내 문구 */}
       <div className="mb-2">
-        <span className="text-[24px] font-extrabold text-[#FFF59D] drop-shadow-sm">
-          따라 해봐요!
+        <span className="text-[30px] font-DnfBitbeatV2 text-[#FFF59D] drop-shadow-sm">
+          녹음을 눌러서 따라서 말해봐요!
         </span>
       </div>
 
@@ -343,20 +343,45 @@ function VoiceRecordingBanner({ script, contentsId, language = 'en', userId, onA
             {recordingState === 'recording' ? (
               <button
                 onClick={stop}
-                className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-[#FFE082] to-[#FFECB3] border-2 border-[#FFD54F] text-[#F57C00] font-bold text-base shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2"
+                className="
+                            px-9 py-4 rounded-4xl
+                            bg-gradient-to-r from-[#FFE79D] to-[#ffe9abff]
+                            border-5 border-[#ffda6cff]
+                            shadow-lg hover:shadow-xl
+                            transform hover:scale-120 active:scale-100
+                            transition-all
+                            disabled:opacity-80 disabled:cursor-not-allowed
+                            flex items-center justify-center gap-2"
               >
-                <StopCircle className="w-5 h-5" />
+                <StopCircle className="w-8 h-8 text-[#df8b37]" />
+
+                <span className="font-DnfBitbeatV2 text-3xl record-label">
                 녹음 멈추기
+                </span>
               </button>
             ) : (
               <button
-                onClick={start}
-                disabled={!script || isAnalyzing}
-                className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-[#FFE082] to-[#FFECB3] border-2 border-[#FFD54F] text-[#F57C00] font-bold text-lg shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-              >
-                <Mic className="w-6 h-6" />
-                녹음 시작!
-              </button>
+  onClick={start}
+  disabled={!script || isAnalyzing}
+  className="
+    px-9 py-4 rounded-4xl
+    bg-gradient-to-r from-[#FFE79D] to-[#ffe9abff]
+    border-5 border-[#ffda6cff]
+    shadow-lg hover:shadow-xl
+    transform hover:scale-120 active:scale-100
+    transition-all
+    disabled:opacity-80 disabled:cursor-not-allowed
+    flex items-center justify-center gap-2
+  "
+>
+  <Mic className="w-8 h-8 text-[#df8b37]" />
+
+  <span className="font-DnfBitbeatV2 text-3xl record-label">
+    녹음 시작!
+  </span>
+</button>
+
+
             )}
 
             {recordingState === 'recording' && (

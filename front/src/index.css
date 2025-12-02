@@ -54,6 +54,7 @@
     font-family: 'DungeonFighterOnlineBeatBeat', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     font-size: 1.0625rem; /* 기본보다 약간 크게 */
   }
+  
 
   /* ================================
    * 플레이어 페이지 - 행성 스티커 호버 & 별빛 효과
@@ -166,6 +167,8 @@
   .score-pop-enter {
     animation: scoreCardPopIn 0.7s cubic-bezier(0.23, 1, 0.32, 1) both;
   }
+
+  
 
   @keyframes stickerPopIn {
     0% {
@@ -334,4 +337,20 @@
 
 .animate-fadeInSlow {
   animation: fadeInSlow 0.9s ease forwards;
+}
+
+
+
+.record-label {
+  color: #FFFFFF; /* 글자 안쪽: 흰색 */
+  font-weight: 5000;
+  text-shadow:
+    -2px 0   #df8b37,
+     2px 0    #df8b37,
+     0   -2px #df8b37,
+     0    2px #df8b37,
+    -2px -2px #df8b37,
+    -2px  2px #df8b37,
+     2px -2px #df8b37,
+     2px  2px #df8b37;
 }
