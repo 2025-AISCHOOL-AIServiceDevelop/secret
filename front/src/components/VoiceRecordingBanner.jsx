@@ -312,188 +312,186 @@ function VoiceRecordingBanner({ script, contentsId, language = 'en', userId, onA
     return <img src={level1} alt="연습 레벨 배지" className={className} />
   }
 
-  return (
-    <div
-      className="h-full rounded-[50px]  shadow-md transition-all flex flex-col justify-between px-6 py-4 relative"
-      style={{
-        backgroundColor: '#c8dafc',
-        borderColor: recordingState === 'recording' ? '#ffe9a9' : '#e0e7ff',
-      }}
-    >
-      {/* 상단: 노란색 안내 문구 */}
-      <div className="mb-2">
-        <span className="text-[30px] font-DnfBitbeatV2 text-[#FFF59D] drop-shadow-sm">
-          녹음을 눌러서 따라서 말해봐요!
-        </span>
-      </div>
+return (
+  <div
+    className="rounded-[50px] shadow-md transition-all flex flex-col px-5 py-7 mb-7 relative"
+    style={{
+      backgroundColor: '#c8dafc',
+      borderColor: recordingState === 'recording' ? '#ffe9a9' : '#e0e7ff',
+    }}
+  >
+    {/* 상단 한 줄: 왼쪽 문구 + 가운데 버튼/타이머 */}
+    <div className="relative flex items-center justify-center mb-3 w-full">
+      {/* 왼쪽: 안내 문구 (녹음 중일 때는 숨김) */}
+      {recordingState !== 'recording' && (
+        <div className="absolute left-5 -top-1">
+          <span className="text-[30px] font-DnfBitbeatV2 text-[#FFF59D] drop-shadow-sm">
+            녹음을 눌러서 따라서 말해봐요!
+          </span>
+        </div>
+      )}
 
-      {/* 중단: 라인 그래프 + 녹음 버튼/타이머 */}
-      <div className="relative h-[80px] flex items-center">
-        {/* 전체 폭 라인 그래프 */}
+      {/* 가운데: 버튼 + 타이머 */}
+      <div className="flex items-center gap-4">
+        {recordingState === 'recording' ? (
+          <button
+            onClick={stop}
+            className="
+              px-9 py-4 rounded-4xl
+              bg-gradient-to-r from-[#FFE79D] to-[#ffe9abff]
+              border-5 border-[#ffda6cff]
+              shadow-lg hover:shadow-xl
+              transform hover:scale-120 active:scale-100
+              transition-all
+              disabled:opacity-80 disabled:cursor-not-allowed
+              flex items-center justify-center gap-2
+            "
+          >
+            <StopCircle className="w-8 h-8 text-[#df8b37]" />
+            <span className="font-DnfBitbeatV2 text-3xl record-label">
+              녹음 멈추기
+            </span>
+          </button>
+        ) : (
+          <button
+            onClick={start}
+            disabled={!script || isAnalyzing}
+            className="
+              px-9 py-4 rounded-4xl
+              bg-gradient-to-r from-[#FFE79D] to-[#ffe9abff]
+              border-5 border-[#ffda6cff]
+              shadow-lg hover:shadow-xl
+              transform hover:scale-120 active:scale-100
+              transition-all
+              disabled:opacity-80 disabled:cursor-not-allowed
+              flex items-center justify-center gap-2
+            "
+          >
+            <Mic className="w-8 h-8 text-[#df8b37]" />
+            <span className="font-DnfBitbeatV2 text-3xl record-label">
+              녹음 시작!
+            </span>
+          </button>
+        )}
+
+        {recordingState === 'recording' && (
+          <div className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#FFF9E6] rounded-xl border-2 border-[#FFE082] shadow-sm">
+            <div className="w-2 h-2 bg-[#FFD54F] rounded-full animate-pulse" />
+            <span className="text-sm text-[#F57C00]">{recordingTime} 초</span>
+          </div>
+        )}
+      </div>
+    </div>
+
+    {/* 가운데: 파형 + 파란 문장 (간격 좁게) */}
+    <div className="mt-2 flex flex-col items-center gap-2 w-full">
+      {/* 파형 */}
+      <div className="relative h-[70px] w-full">
         <canvas
           ref={canvasRef}
           width={1000}
           height={80}
           className="absolute inset-0 w-full h-full"
         />
-
-        {/* 중앙: 녹음 버튼 + 타이머 */}
-        <div className="relative w-full flex items-center justify-center pointer-events-none">
-          <div className="flex items-center gap-4 pointer-events-auto">
-            {recordingState === 'recording' ? (
-              <button
-                onClick={stop}
-                className="
-                            px-9 py-4 rounded-4xl
-                            bg-gradient-to-r from-[#FFE79D] to-[#ffe9abff]
-                            border-5 border-[#ffda6cff]
-                            shadow-lg hover:shadow-xl
-                            transform hover:scale-120 active:scale-100
-                            transition-all
-                            disabled:opacity-80 disabled:cursor-not-allowed
-                            flex items-center justify-center gap-2"
-              >
-                <StopCircle className="w-8 h-8 text-[#df8b37]" />
-
-                <span className="font-DnfBitbeatV2 text-3xl record-label">
-                녹음 멈추기
-                </span>
-              </button>
-            ) : (
-              <button
-  onClick={start}
-  disabled={!script || isAnalyzing}
-  className="
-    px-9 py-4 rounded-4xl
-    bg-gradient-to-r from-[#FFE79D] to-[#ffe9abff]
-    border-5 border-[#ffda6cff]
-    shadow-lg hover:shadow-xl
-    transform hover:scale-120 active:scale-100
-    transition-all
-    disabled:opacity-80 disabled:cursor-not-allowed
-    flex items-center justify-center gap-2
-  "
->
-  <Mic className="w-8 h-8 text-[#df8b37]" />
-
-  <span className="font-DnfBitbeatV2 text-3xl record-label">
-    녹음 시작!
-  </span>
-</button>
-
-
-            )}
-
-            {recordingState === 'recording' && (
-              <div className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#FFF9E6] rounded-xl border-2 border-[#FFE082] shadow-sm">
-                <div className="w-2 h-2 bg-[#FFD54F] rounded-full animate-pulse"></div>
-                <span className="text-sm font-bold text-[#F57C00]">{recordingTime}초</span>
-              </div>
-            )}
-          </div>
-        </div>
       </div>
 
-      {/* 하단: 현재 스크립트 텍스트 (녹음 중에만, 큼직한 단어만 표시) */}
+      {/* 파란 문장 (녹음 중일 때만) */}
       {recordingState === 'recording' && scriptWords.length > 0 && (
-        <div className={`mt-6 flex items-center justify-center px-2 ${wordGapClass}`}>
+        <div
+          className={`flex flex-wrap items-center justify-center px-6 ${wordGapClass}`}
+        >
           {scriptWords.map((word, idx) => (
             <span
               key={`${word}-${idx}`}
-              className="text-[32px] font-bold text-[#2E1E9A]"
+              className="text-[32px] text-[#337AF7]"
             >
               {word}
             </span>
           ))}
         </div>
       )}
-
-      {/* 분석 중 오버레이 */}
-      {isAnalyzing && (
-        <div className="absolute inset-0 bg-white/95 backdrop-blur-sm rounded-[16px] flex items-center justify-center z-10">
-          <div className="flex items-center gap-3">
-            <Loader2 className="w-8 h-8 animate-spin text-[#81D4FA]" />
-            <div className="text-base font-bold text-[#0277BD]">AI가 분석 중...</div>
-          </div>
-        </div>
-      )}
-
-      {/* 에러 메시지 오버레이 */}
-      {errorMessage && !isAnalyzing && (
-        <div className="absolute inset-0 bg-white/95 backdrop-blur-sm rounded-[16px] flex items-center justify-center z-10">
-          <div className="text-center">
-            <Frown className="w-12 h-12 mx-auto mb-2 text-[#F57C00]" />
-            <div className="text-sm font-bold text-[#F57C00] mb-3">{errorMessage}</div>
-            <button
-              onClick={() => setErrorMessage('')}
-              className="px-4 py-2 rounded-lg bg-gradient-to-r from-[#81D4FA] to-[#4FC3F7] border-2 border-[#0277BD] text-white font-bold text-sm shadow-md hover:shadow-lg transform hover:scale-105 transition-all"
-            >
-              확인
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* 분석 결과 오버레이 */}
-      {localScore !== null && !isAnalyzing && !errorMessage && (
-        <div className="absolute inset-0 bg-white/95 backdrop-blur-sm rounded-[16px] flex items-center justify-center z-10 p-4">
-          <div className="w-full h-full grid grid-cols-[auto_1fr_auto] gap-4 items-stretch">
-            {/* 왼쪽: 메달 이미지만 표시 */}
-            <div className="flex flex-col items-center justify-center px-4">
-              {getMedalIcon(localMedal)}
-            </div>
-
-            {/* 가운데: 상세 정보 */}
-            <div className="flex flex-col gap-2.5 justify-center">
-              {/* 총점만 숫자로 표시 */}
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-[32px] font-bold text-[#0277BD]">나의 점수는</span>
-                <span className="text-[32px] font-extrabold text-[#F57C00]">
-                  {localScore}
-                </span>
-              </div>
-
-              {/* 백엔드에서 내려준 평가 문장 그대로 표시 */}
-              {localFeedbackText && (
-                <div className="mt-1 text-[32px] md:text-[32px] leading-relaxed text-[#F57C00]">
-                  {localFeedbackText}
-                </div>
-              )}
-
-            </div>
-
-            {/* 오른쪽: 액션 버튼들 */}
-            <div className="flex flex-col justify-center items-end gap-3 pr-2">
-              <button
-                onClick={start}
-                className="w-44 px-5 py-3 rounded-lg bg-gradient-to-r from-[#81D4FA] to-[#4FC3F7] border-2 border-[#0277BD] text-white font-bold text-base shadow-md hover:shadow-lg transform hover:scale-105 transition-all inline-flex items-center justify-center gap-2"
-              >
-                <RefreshCw className="w-4 h-4" />
-                다시 도전
-              </button>
-              {onContinueVideo && (
-                <button
-                  onClick={() => {
-                    setLocalScore(null)
-                    setLocalFeedbackText('')
-                    setLocalAccuracy(null)
-                    setLocalFluency(null)
-                    setLocalCompleteness(null)
-                    setLocalMedal(null)
-                    setErrorMessage('')
-                    onContinueVideo()
-                  }}
-                  className="w-44 px-5 py-3 rounded-lg bg-gradient-to-r from-[#FFE082] to-[#FFECB3] border-2 border-[#FFD54F] text-[#F57C00] font-bold text-base shadow-md hover:shadow-lg transform hover:scale-105 transition-all inline-flex items-center justify-center gap-2"
-                >
-                  이어서 따라하기
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
-  )
+
+    {/* ==== 아래부터는 기존 오버레이/결과 코드 그대로 유지 ==== */}
+
+    {isAnalyzing && (
+      <div className="absolute inset-0 bg-white/95 backdrop-blur-sm rounded-[50px] flex items-center justify-center z-10 p-4">
+        <div className="flex items-center gap-3">
+          <Loader2 className="w-8 h-8 animate-spin text-[#81D4FA]" />
+          <div className="text-xl text-[#337AF7]">AI가 분석 중...</div>
+        </div>
+      </div>
+    )}
+
+    {errorMessage && !isAnalyzing && (
+      <div className="absolute inset-0 bg-white/95 backdrop-blur-sm rounded-[50px] flex items-center justify-center z-10 p-4">
+        <div className="text-center">
+          <Frown className="w-12 h-12 mx-auto mb-2 text-[#F57C00]" />
+          <div className="text-xl text-[#F57C00] mb-3 ">{errorMessage}</div>
+          <button
+            onClick={() => setErrorMessage('')}
+            className="px-10 py-1 rounded-lg bg-gradient-to-r from-[#66ADFF] to-[#66ADFF] text-white text-2xl shadow-md hover:shadow-lg transform hover:scale-105 transition-all"
+          >
+            확인
+          </button>
+        </div>
+      </div>
+    )}
+
+    {localScore !== null && !isAnalyzing && !errorMessage && (
+      <div className="absolute inset-0 bg-white/95 backdrop-blur-sm rounded-[50px] flex items-center justify-center z-10 p-4">
+        <div className="w-full h-auto grid grid-cols-[auto_1fr_auto] gap-4 items-stretch">
+          <div className="flex flex-col items-center justify-center px-4">
+            {getMedalIcon(localMedal)}
+          </div>
+
+          <div className="flex flex-col gap-2.5 justify-center mt-4">
+            <div className="flex items-center gap-3">
+              <span className="text-[32px] text-[#337AF7] ">나의 점수는</span>
+              <span className="text-[32px] text-[#337AF7]">
+                {localScore}
+              </span>
+            </div>
+
+            {localFeedbackText && (
+              <div className="mt-auto text-[44px] leading-relaxed text-[#B8A3FE] mb-2">
+                {localFeedbackText}
+              </div>
+            )}
+          </div>
+
+          <div className="flex flex-col justify-center items-end gap-3 pr-10">
+            <button
+              onClick={start}
+              className="w-50 px-5 py-3 rounded-3xl bg-gradient-to-r from-[#74c0e4ff] to-[#4FC3F7] border-5 border-[#337AF7] text-white text-2xl shadow-md hover:shadow-lg transform hover:scale-105 transition-all inline-flex items-center justify-center gap-2"
+            >
+              <RefreshCw className="w-6 h-6" />
+              다시 도전
+            </button>
+            {onContinueVideo && (
+              <button
+                onClick={() => {
+                  setLocalScore(null)
+                  setLocalFeedbackText('')
+                  setLocalAccuracy(null)
+                  setLocalFluency(null)
+                  setLocalCompleteness(null)
+                  setLocalMedal(null)
+                  setErrorMessage('')
+                  onContinueVideo()
+                }}
+                className="w-50 px-5 py-3 rounded-3xl bg-gradient-to-r from-[#FFE082] to-[#FFECB3] border-5 border-[#FFD54F] text-[#F57C00] text-2xl shadow-md hover:shadow-lg transform hover:scale-105 transition-all inline-flex items-center justify-center gap-2"
+              >
+                이어서 따라하기
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    )}
+  </div>
+)
+
 }
 
 export default VoiceRecordingBanner

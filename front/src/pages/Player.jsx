@@ -531,7 +531,7 @@ function Player() {
               <div className="w-full h-full grid place-items-center" style={{ background: 'linear-gradient(135deg, #6657c7, #6aa0ff)' }}>
                 <div className="text-center text-white">
                   <Film className="w-20 h-20 mb-4 mx-auto animate-pulse" />
-                  <div className="text-xl font-bold">비디오를 불러오는 중...</div>
+                  <div className="text-xl ">비디오를 불러오는 중...</div>
                 </div>
               </div>
             )}
@@ -574,9 +574,9 @@ function Player() {
             </div>
             <button
               onClick={changeSpeed}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-[#FFE082] to-[#FFECB3] border-2 border-[#FFD54F] text-[#F57C00] font-bold text-sm shadow-md hover:shadow-sm transform hover:scale-105 transition-all"
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-[#FFE082] to-[#FFECB3] border-3 border-[#FFD54F] text-[#F57C00] text-sm shadow-md hover:shadow-sm transform hover:scale-105 transition-all"
             >
-              <Gauge className="w-4 h-4" />
+              <Gauge className="w-5 h-5" />
               {playbackSpeed === 1 ? '보통' : playbackSpeed === 0.75 ? '느리게' : '아주 느리게'}
             </button>
           </div>
@@ -669,7 +669,7 @@ function Player() {
                             : 'bg-[#E1F5FE] border-[#B3E5FC]'
                         } ${isRecentlyScored ? 'sticker-pop-enter' : ''}`}
                       >
-                            <div className={`flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-base font-bold ${
+                            <div className={`flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-base ${
                             isSelected
                               ? 'bg-[#01579B] text-white'
                               : 'bg-[#B3E5FC] text-[#01579B]'
@@ -679,7 +679,7 @@ function Player() {
                             <div className="flex-1 flex items-start justify-between gap-3">
                               <div className={`text-lg md:text-xl leading-relaxed script-text-default-font ${
                               isSelected
-                                ? 'text-[#01579B] font-bold'
+                                ? 'text-[#01579B] '
                                 : 'text-[#0277BD]'
                             }`}>
                               {script.text}
@@ -708,7 +708,7 @@ function Player() {
 
                           {/* 뒷면: 점수 & 평가 */}
                           <div
-                            className={`flip-card-back rounded-[14px] min-h-[140px] border-2 p-4 bg-white flex flex-col justify-center gap-2 border-[#01579B] shadow-lg ${
+                            className={`flip-card-back rounded-[14px] min-h-[140px] border-2 p-4 bg-white flex flex-col justify-center gap-2 border-[ #01579B] shadow-lg ${
                               isRecentlyScored ? 'score-pop-enter' : ''
                             }`}
                             onClick={(e) => {
@@ -719,22 +719,22 @@ function Player() {
                             {totalScore != null ? (
                               <>
                                 <div className="flex items-center justify-between gap-3">
-                                  <div className="text-2xl font-bold text-[#01579B]">
+                                  <div className="text-2xl text-[ #01579B]">
                                     나의 점수
                                   </div>
-                                  <div className="text-2xl font-extrabold text-[#F57C00]">
+                                  <div className="text-2xl text-[#F57C00]">
                                     {totalScore}
                                   </div>
                                 </div>
                                 {/* 총 점수와 평가 문장만 표시 */}
                                 {feedbackText && (
-                                  <div className="mt-3 px-3 py-2 rounded-lg bg-[#FFFDE7] border border-[#FFD54F] text-[16px] text-[#F57C00] leading-relaxed line-clamp-3">
+                                  <div className="mt-3 px-3 py-2 rounded-lg bg-[ #FFFDE7] border border-[#FFD54F] text-[16px] text-[#F57C00] leading-relaxed line-clamp-3">
                                     {feedbackText}
                                   </div>
                                 )}
                               </>
                             ) : (
-                              <div className="text-2xl text-center text-[#0277BD] leading-relaxed">
+                              <div className="text-2xl text-center text-[#aabd02ff] leading-relaxed">
                                 아직 점수가 없어요.
                                 <br />
                                 아래에서 먼저 녹음해 볼까요?
@@ -757,7 +757,7 @@ function Player() {
       </div>
 
       {/* 하단: 음성 녹음 전용 배너 */}
-      <div className="h-[180px]">
+      <div className="h-auto">
         <VoiceRecordingBanner
           script={displayScript}
           contentsId={content?.contentsId || (contentId ? parseInt(contentId) : undefined)}

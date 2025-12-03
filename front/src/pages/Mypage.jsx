@@ -490,7 +490,7 @@ const formatRemainTime = (seconds) => {
                 <span className="text-2xl">📚</span>
               </div>
               <p className="text-xs text-[#7b88a0]">총 연습</p>
-              <p className="text-lg font-bold text-[#3c6fd8]">
+              <p className="text-lg   text-[#3c6fd8]">
                 {totalPractice}
               </p>
             </div>
@@ -500,7 +500,7 @@ const formatRemainTime = (seconds) => {
                 <span className="text-2xl">⭐</span>
               </div>
               <p className="text-xs text-[#7b88a0]">평균 점수</p>
-              <p className="text-lg font-bold text-[#2e8b57]">{avgScore}</p>
+              <p className="text-lg   text-[#2e8b57]">{avgScore}</p>
             </div>
 
             <div className="text-center">
@@ -508,7 +508,7 @@ const formatRemainTime = (seconds) => {
                 <span className="text-2xl">🌐</span>
               </div>
               <p className="text-xs text-[#7b88a0]">학습 언어</p>
-              <p className="text-lg font-bold text-[#7b3fb9]">
+              <p className="text-lg   text-[#7b3fb9]">
                 {languageCount}
               </p>
             </div>
