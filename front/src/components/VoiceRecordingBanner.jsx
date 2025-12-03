@@ -484,21 +484,22 @@ return (
 
     {localScore !== null && !isAnalyzing && !errorMessage && (
       <div className="absolute inset-0 bg-white/95 backdrop-blur-sm rounded-[50px] flex items-center justify-center z-10 p-4">
-        <div className="w-full h-auto grid grid-cols-[auto_1fr_auto] gap-4 items-stretch">
+        <div className="w-full h-auto grid grid-cols-1 md:grid-cols-[auto_1fr_auto] gap-6 items-stretch">
           <div className="flex flex-col items-center justify-center px-4">
             {getMedalIcon(localMedal)}
           </div>
 
-          <div className="flex flex-col gap-2.5 justify-center mt-4">
-            <div className="flex items-center gap-3">
-              <span className="text-[32px] text-[#337AF7] ">나의 점수는</span>
-              <span className="text-[32px] text-[#337AF7]">
+          <div className="flex flex-col gap-2.5 justify-center mt-4 ">
+            <div className="flex flex-wrap items-center gap-2 md:gap-3">
+              <span className="text-[26px] md:text-[32px] text-[#337AF7] ">나의 점수는
+              </span>
+              <span className="text-[26px] md:text-[32px] text-[#337AF7]">
                 {localScore}
               </span>
             </div>
 
             {localFeedbackText && (
-              <div className="mt-auto text-[44px] leading-relaxed text-[#B8A3FE] mb-2">
+              <div className="mt-auto text-[44px] leading-snug md:leading-relaxed text-[#B8A3FE] mb-2 break-keep md:break-normal ">
                 {localFeedbackText}
               </div>
             )}
@@ -507,7 +508,7 @@ return (
           <div className="flex flex-col justify-center items-end gap-3 pr-10">
             <button
               onClick={start}
-              className="w-50 px-5 py-3 rounded-3xl bg-gradient-to-r from-[#74c0e4ff] to-[#4FC3F7] border-5 border-[#337AF7] text-white text-2xl shadow-md hover:shadow-lg transform hover:scale-105 transition-all inline-flex items-center justify-center gap-2"
+              className="w-50 px-5 py-3 rounded-3xl bg-gradient-to-r from-[#74c0e4ff] to-[#4FC3F7] border-5 border-[#6293e9ff] text-white text-2xl shadow-md hover:shadow-lg transform hover:scale-105 transition-all inline-flex items-center justify-center gap-2"
             >
               <RefreshCw className="w-6 h-6" />
               다시 도전
