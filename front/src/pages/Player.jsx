@@ -354,11 +354,12 @@ function Player() {
       const time = videoRef.current.currentTime;
       setCurrentTime(time);
 
-      // ✅ 여기서 시청 정보 저장
-    if (content?.contentsId && videoRef.current.duration) {
-      saveWatchMeta(content.contentsId, time, videoRef.current.duration);
-    }
-      
+      // ✅ 여기서 시청 정보 저장 (루트 ID 기준)
+if (content?.contentsId && videoRef.current.duration) {
+  saveWatchMeta(content.contentsId, time, videoRef.current.duration);
+}
+
+       
       // 자막 싱크: 현재 시간에 해당하는 스크립트 자동 선택
       const currentMs = time * 1000;
       const activeScript = scripts.find(s => 
@@ -405,16 +406,18 @@ function Player() {
     if (videoRef.current) {
       const duration = videoRef.current.duration;
       setDuration(duration);
+
+
 // ✅ 여기서 마지막 시청 시간으로 점프
       if (content?.contentsId) {
         const { watchedSeconds } = getWatchMeta(content.contentsId);
 
-        // 0초가 아니고, 전체 길이 안쪽이면 그 위치로 이동
-        if (watchedSeconds > 0 && watchedSeconds < duration) {
-          videoRef.current.currentTime = watchedSeconds;
-          setCurrentTime(watchedSeconds);
-        }
-      }
+  if (watchedSeconds > 0 && watchedSeconds < duration) {
+    videoRef.current.currentTime = watchedSeconds;
+    setCurrentTime(watchedSeconds);
+  }
+}
+
     }
   };
   

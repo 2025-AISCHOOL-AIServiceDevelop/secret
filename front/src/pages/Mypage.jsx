@@ -580,6 +580,8 @@ const formatRemainTime = (seconds) => {
           ? getContentById(feedback.contentsId)
           : null;
 
+
+
           // 2) 썸네일 URL (있는 필드에 맞게 조정)
           const thumbnailUrl =
           content?.thumbUrl ||                      // 🔹 Home에서 쓰는 필드 추가
@@ -697,14 +699,18 @@ const formatRemainTime = (seconds) => {
               <img
                 src={thumbnailUrl}
                 alt={title}
-                className="w-full h-full object-cover"
+                className="
+                w-full h-full object-cover
+                transition-opacity duration-300
+                group-hover:opacity-0
+        "
               />
             )}
 
             {videoUrl && (
               <video
                 src={videoUrl}
-                className="absolute inset-0 w-full h-full object-cover opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                className="absolute inset-0 w-full h-full object-cover opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
                 muted
                 playsInline
                 preload="metadata"

@@ -459,8 +459,8 @@ return (
         
         
          </div>
-      <div className="mt-4 text-xl text-[#337AF7] font-DnfBitbeatV2 self-end pr-200 ">
-        AI가 분석 중...
+      <div className="mt-4 text-xl text-[#337AF7] font-DnfBitbeatV2 self-end pr-100 ">
+        AI 친구가 분석 중이에요! 잠깐만 기다려줘요~
       </div>
     </div>
   </div>
@@ -507,7 +507,7 @@ return (
           <div className="flex flex-col justify-center items-end gap-3 pr-10">
             <button
               onClick={start}
-              className="w-50 px-5 py-3 rounded-3xl bg-gradient-to-r from-[#74c0e4ff] to-[#4FC3F7] border-5 border-[#337AF7] text-white text-2xl shadow-md hover:shadow-lg transform hover:scale-105 transition-all inline-flex items-center justify-center gap-2"
+              className="w-50 px-5 py-3 rounded-3xl bg-gradient-to-r from-[#74c0e4ff] to-[#4FC3F7] border-5 border-[#5c97fdff] text-white text-2xl shadow-md hover:shadow-lg transform hover:scale-105 transition-all inline-flex items-center justify-center gap-2"
             >
               <RefreshCw className="w-6 h-6" />
               다시 도전
