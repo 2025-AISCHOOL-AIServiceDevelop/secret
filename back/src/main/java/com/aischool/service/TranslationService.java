@@ -7,6 +7,7 @@ import com.aischool.entity.Contents;
 import com.aischool.entity.Script;
 import com.aischool.repository.ContentsRepository;
 import com.aischool.repository.ScriptRepository;
+import com.aischool.util.ContentsPathUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -270,7 +271,7 @@ public class TranslationService {
                     for (String ext : exts) {
                         Path p = dir.resolve(n + ext);
                         if (Files.isRegularFile(p)) {
-                            String found = p.toAbsolutePath().toString();
+                            String found = ContentsPathUtil.normalize(p);
                             log.info("[Video] 발견: {}", found);
                             return found;
                         }
@@ -286,7 +287,7 @@ public class TranslationService {
                         String noExt = fname.substring(0, dot);
                         for (String n : nameCandidates) {
                             if (noExt.equalsIgnoreCase(n)) {
-                                String found = p.toAbsolutePath().toString();
+                                String found = ContentsPathUtil.normalize(p);
                                 log.info("[Video] 발견: {}", found);
                                 return found;
                             }

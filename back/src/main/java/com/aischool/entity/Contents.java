@@ -1,11 +1,13 @@
 package com.aischool.entity;
 
+import com.aischool.entity.listener.ContentsPathListener;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "contents")
+@EntityListeners(ContentsPathListener.class)
 @Getter @Setter @Builder
 @NoArgsConstructor @AllArgsConstructor
 public class Contents {

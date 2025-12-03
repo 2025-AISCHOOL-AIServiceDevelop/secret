@@ -8,4 +8,5 @@ public class LearningHistoryRequest {
     private Integer progressSec;
     private Integer totalSec;
     private Integer lastLineIdx;
+     private String language; 
 }

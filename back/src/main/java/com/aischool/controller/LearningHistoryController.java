@@ -20,6 +20,7 @@ public class LearningHistoryController {
 
     private final LearningHistoryService historyService;
 
+    // ★ 학습 기록 저장 (언어 포함해서 DTO로 전달됨)
     @PostMapping
     public ResponseEntity<Void> save(@RequestBody LearningHistoryRequest req,
                                      HttpSession session) {
@@ -27,7 +28,8 @@ public class LearningHistoryController {
         Long userId = (Long) session.getAttribute("loginUserId");
         String sessionId = session.getId();
 
-        log.info("POST /api/history called. sessionId={}, loginUserId={}", sessionId, userId);
+        log.info("POST /api/history called. sessionId={}, loginUserId={}, lang={}",
+                sessionId, userId, req.getLanguage());
 
         if (userId == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
@@ -37,19 +39,23 @@ public class LearningHistoryController {
         return ResponseEntity.ok().build();
     }
 
+    // ★ 내 학습 기록 조회 (언어별)
     @GetMapping("/me")
-    public ResponseEntity<List<LearningHistoryResponse>> myHistory(HttpSession session) {
-
+    public ResponseEntity<List<LearningHistoryResponse>> myHistory(
+            @RequestParam("lang") String language,   // ?lang=en 같은 쿼리 파라미터
+            HttpSession session
+    ) {
         Long userId = (Long) session.getAttribute("loginUserId");
         String sessionId = session.getId();
 
-        log.info("GET /api/history/me called. sessionId={}, loginUserId={}", sessionId, userId);
+        log.info("GET /api/history/me called. sessionId={}, loginUserId={}, lang={}",
+                sessionId, userId, language);
 
         if (userId == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
-        List<LearningHistoryResponse> data = historyService.getMyHistory(userId);
+        List<LearningHistoryResponse> data = historyService.getMyHistory(userId, language);
         return ResponseEntity.ok(data);
     }
 }

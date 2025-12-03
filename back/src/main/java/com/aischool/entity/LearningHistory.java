@@ -7,7 +7,8 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "learning_history")
-@Getter @Setter
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -22,6 +23,7 @@ public class LearningHistory {
 
     private Integer progressSec;
     private Integer totalSec;
+    private String language;
     private Integer lastLineIdx;
 
     private LocalDateTime createdAt;
@@ -37,4 +39,5 @@ public class LearningHistory {
     public void onUpdate() {
         this.updatedAt = LocalDateTime.now();
     }
+
 }
