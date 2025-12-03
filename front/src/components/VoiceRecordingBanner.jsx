@@ -414,14 +414,58 @@ return (
 
     {/* ==== 아래부터는 기존 오버레이/결과 코드 그대로 유지 ==== */}
 
-    {isAnalyzing && (
-      <div className="absolute inset-0 bg-white/95 backdrop-blur-sm rounded-[50px] flex items-center justify-center z-10 p-4">
-        <div className="flex items-center gap-3">
-          <Loader2 className="w-8 h-8 animate-spin text-[#81D4FA]" />
-          <div className="text-xl text-[#337AF7]">AI가 분석 중...</div>
-        </div>
+{isAnalyzing && (
+  <div className="absolute inset-0 bg-white/90 backdrop-blur-sm rounded-[50px] flex items-center justify-center z-10 p-4">
+    <div className="flex flex-col items-center justify-center w-full">
+      <div className="rocket">
+        
+        
+        
+        
+ 
+
+  <div class="rocket">
+    <div class="rocket-body">
+      <div class="body"></div>
+      <div class="fin fin-left"></div>
+      <div class="fin fin-right"></div>
+      <div class="window"></div>
+    </div>
+    <div class="exhaust-flame"></div>
+    <ul class="exhaust-fumes">
+      <li></li>
+      <li></li>
+      <li></li>
+      <li></li>
+      <li></li>
+      <li></li>
+      <li></li>
+      <li></li>
+      <li></li>
+    </ul>
+    <ul class="star">
+      <li></li>
+      <li></li>
+      <li></li>
+      <li></li>
+      <li></li>
+      <li></li>
+      <li></li>
+    </ul>
+  </div>
+
+        
+        
+        
+        
+         </div>
+      <div className="mt-4 text-xl text-[#337AF7] font-DnfBitbeatV2 self-end pr-200 ">
+        AI가 분석 중...
       </div>
-    )}
+    </div>
+  </div>
+)}
+
 
     {errorMessage && !isAnalyzing && (
       <div className="absolute inset-0 bg-white/95 backdrop-blur-sm rounded-[50px] flex items-center justify-center z-10 p-4">

@@ -719,7 +719,7 @@ function Player() {
                             {totalScore != null ? (
                               <>
                                 <div className="flex items-center justify-between gap-3">
-                                  <div className="text-2xl text-[ #01579B]">
+                                  <div className="text-2xl text-[#01579B]">
                                     나의 점수
                                   </div>
                                   <div className="text-2xl text-[#F57C00]">
