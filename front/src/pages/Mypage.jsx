@@ -162,40 +162,45 @@ function Mypage() {
   
 
 
+
+
 const uniqueFeedbackHistory = useMemo(() => {
   if (!userFeedbackHistory || userFeedbackHistory.length === 0) return [];
 
-  const byContent = new Map();
+  const byStory = new Map();
 
   userFeedbackHistory.forEach((fb) => {
     if (!fb.contentsId) return;
 
-    const key = fb.contentsId;
-    const prev = byContent.get(key);
+    // 1) 해당 피드백의 동화 정보 찾기
+    const content = getContentById(fb.contentsId);
 
-    // 이전 기록이 없으면 넣기
+    // 2) 같은 동화의 다른 언어 버전을 하나로 묶기 위한 "루트 ID"
+    const rootId =
+      content?.parentId ||       // 번역본이면 부모 ID
+      content?.contentsId ||     // 아니면 자기 자신
+      fb.contentsId;             // 혹시 몰라서 fallback
+
+    const prev = byStory.get(rootId);
+
+    // 3) 처음이면 바로 저장
     if (!prev) {
-      byContent.set(key, fb);
+      byStory.set(rootId, { ...fb, __rootContentsId: rootId });
       return;
     }
 
-    const toMs = (value) => {
-    if (!value) return 0;
-    if (typeof value === 'string' || typeof value === 'number' || value instanceof Date) {
-      return new Date(value).getTime();
-    }
-    return 0; // 객체/이상한 포맷이면 안전하게 0 처리
-  };
-    // 있으면 createdAt 비교해서 더 최신 것만 남기기
+    // 4) 이미 있으면 createdAt 비교해서 더 최신 것만 남김
     const prevTime = new Date(prev.createdAt || 0).getTime();
     const curTime = new Date(fb.createdAt || 0).getTime();
     if (curTime > prevTime) {
-      byContent.set(key, fb);
+      byStory.set(rootId, { ...fb, __rootContentsId: rootId });
     }
   });
 
-  return Array.from(byContent.values());
-}, [userFeedbackHistory]);
+  return Array.from(byStory.values());
+}, [userFeedbackHistory, getContentById]);
+
+
 
 
 
@@ -625,11 +630,12 @@ const formatRemainTime = (seconds) => {
 
           // 남은 시간(초) 계산 – 학습 완료가 아니고 전체 길이가 있을 때만
           const remainSeconds =
-            !completed && totalSeconds > 0
+            !completed && totalSeconds > 0 && watchedSeconds > 0   // "3초 이상 재생한 경우에만 → “♬ 1분25초 남음” 표시."
               ? Math.max(0, totalSeconds - watchedSeconds)
               : 0;
 
           const remainLabel = formatRemainTime(remainSeconds);
+
 
 
           // 🔹 Player에서 쓰는 것과 같은 영상 URL
@@ -637,14 +643,24 @@ const formatRemainTime = (seconds) => {
             ? `${API_BASE_URL}/api/media/${content.contentsId}`
             : null;
 
-          const progress =
-            completed
-              ? 100
-              : typeof watchProgress === "number" && watchProgress > 0
-                ? watchProgress
-                : typeof feedback.score === "number"
-                  ? Math.min(100, feedback.score)
-                  : 0;                            // 둘 다 없으면 0
+          // 점수 하나로 정리
+const rawScore =
+  typeof feedback.finalScore === 'number'
+    ? feedback.finalScore
+    : typeof feedback.score === 'number'
+      ? feedback.score
+      : null;
+
+// 진행률 결정
+const progress =
+  completed
+    ? 100
+    : watchProgress > 0
+      ? watchProgress       // 실제 시청 기준
+      : rawScore != null
+        ? Math.min(100, rawScore) // 점수 기준 (시청정보 없을 때)
+        : 0;
+
         
 
                   
