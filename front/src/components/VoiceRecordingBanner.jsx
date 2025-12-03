@@ -455,7 +455,7 @@ function VoiceRecordingBanner({ script, contentsId, language = 'en', userId, onA
 
               {/* 백엔드에서 내려준 평가 문장 그대로 표시 */}
               {localFeedbackText && (
-                <div className="mt-3 text-[32px] md:text-[32px] leading-relaxed text-[#F57C00]">
+                <div className="mt-1 text-[32px] md:text-[32px] leading-relaxed text-[#F57C00]">
                   {localFeedbackText}
                 </div>
               )}
