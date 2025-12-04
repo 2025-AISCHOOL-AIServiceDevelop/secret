@@ -458,8 +458,8 @@ return (
       {/* 🔵 오른쪽 텍스트 */}
       <div className="flex-1 flex justify-center md:justify-end">
       <div className="text-center md:text-left text-xl md:text-2xl text-[#337AF7] font-DnfBitbeatV2 leading-relaxed ">
-        <div>AI 친구가 분석 중이에요!</div>
-        <div className="mt-1">잠깐만 기다려줘요~</div>
+        <div>AI 선생님이 확인 중!</div>
+        <div className="mt-1">조금만 기다려~♪</div>
       </div>
     </div>
   </div>
