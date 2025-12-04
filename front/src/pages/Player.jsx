@@ -109,8 +109,7 @@ function Player() {
     { code: 'zh', name: '중국어', flag: '🇨🇳' },
     { code: 'ja', name: '일본어', flag: '🇯🇵' },
     { code: 'vi', name: '베트남어', flag: '🇻🇳' },
-    { code: 'ru', name: '러시아어', flag: '🇷🇺' },
-    { code: 'th', name: '태국어', flag: '🇹🇭' }
+    { code: 'ru', name: '러시아어', flag: '🇷🇺' }
   ];
 
   // Load contents if not already loaded (직접 접근 시)
@@ -602,12 +601,12 @@ if (content?.contentsId && videoRef.current.duration) {
         >
 
           {/* 언어 선택 버튼 */}
-          <div className="grid grid-cols-7 gap-1">
+          <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
             {languages.map((lang) => (
               <button
                 key={lang.code}
                 onClick={() => setSelectedLanguage(lang.code)}
-                className={`px-0.5 py-0.5 rounded-xl text-[14px] transition-all hover-sm ${
+                className={`w-full px-0.5 py-0.5 rounded-xl text-[14px] transition-all hover-sm ${
                   selectedLanguage === lang.code
                     ? 'bg-[#81D4FA] text-[#01579B] shadow-md border-2 border-[#4FC3F7]'
                     : 'bg-[#E1F5FE] text-[#0277BD] border-2 border-[#B3E5FC]'
