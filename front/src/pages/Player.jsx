@@ -299,6 +299,8 @@ function Player() {
 
   const handleScriptCardClick = (script) => {
     setSelectedScript(script);
+    // 스크립트 변경 시 이전 분석 결과 초기화 (중요!)
+    setAnalysisResult(null);
 
     const startMs = script?.startMs ?? script?.startTimeMs ?? null;
     if (videoRef.current && startMs != null) {
@@ -456,6 +458,8 @@ if (content?.contentsId && videoRef.current.duration) {
   // 녹음 시작 시 프롬프트 숨기기 및 영상 정지
   const handleRecordingStart = () => {
     setRecordingPromptVisible(false);
+    // 녹음 시작 시 이전 분석 결과 초기화 (중요!)
+    setAnalysisResult(null);
     if (videoRef.current) {
       videoRef.current.pause();
       setIsPlaying(false);
@@ -766,6 +770,7 @@ if (content?.contentsId && videoRef.current.duration) {
           contentsId={content?.contentsId || (contentId ? parseInt(contentId) : undefined)}
           language={selectedLanguage}
           userId={user?.userId ?? null}
+          analysisResult={analysisResult}
           onAnalyzed={handleAnalysisComplete}
           onRecordingStart={handleRecordingStart}
           onContinueVideo={handleContinueVideo}
