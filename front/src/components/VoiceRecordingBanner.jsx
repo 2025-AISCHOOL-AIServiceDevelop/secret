@@ -34,7 +34,7 @@ const normalizeScore = (value) => {
  * VoiceRecordingBanner - 유아용 음성 녹음 전용 배너
  * 영상과 스크립트 목록 하단에 배치되며, 귀여운 캐릭터와 함께 녹음 기능 제공
  */
-function VoiceRecordingBanner({ script, contentsId, language = 'en', userId, onAnalyzed, onRecordingStart, onContinueVideo }) {
+function VoiceRecordingBanner({ script, contentsId, language = 'en', userId, analysisResult, onAnalyzed, onRecordingStart, onContinueVideo }) {
   const canvasRef = useRef(null)
   const mediaStreamRef = useRef(null)
   const mediaRecorderRef = useRef(null)
@@ -45,19 +45,20 @@ function VoiceRecordingBanner({ script, contentsId, language = 'en', userId, onA
 
   const { recordingState, startRecording, stopRecording, resetRecording, analyzePronunciation, isAnalyzing } = useTutorStore()
 
-  const [localScore, setLocalScore] = useState(null)
-  const [localAccuracy, setLocalAccuracy] = useState(null)
-  const [localFluency, setLocalFluency] = useState(null)
-  const [localCompleteness, setLocalCompleteness] = useState(null)
-  const [localMedal, setLocalMedal] = useState(null)
-  const [localFeedbackText, setLocalFeedbackText] = useState('')
-  const [localScriptText, setLocalScriptText] = useState('')
+  // analysisResult에서 파생된 값들 (props로 전달받은 analysisResult를 우선 사용)
+  const localScore = analysisResult?.finalScore ?? analysisResult?.score ?? null
+  const localAccuracy = normalizeScore(analysisResult?.accuracy)
+  const localFluency = normalizeScore(analysisResult?.fluency)
+  const localCompleteness = normalizeScore(analysisResult?.completeness)
+  const localMedal = analysisResult?.medal ? String(analysisResult.medal).toUpperCase() : null
+  const localFeedbackText = analysisResult?.feedbackText ?? analysisResult?.overallComment ?? ''
+  const localScriptText = analysisResult?.scriptText ?? script?.text ?? ''
   const [errorMessage, setErrorMessage] = useState('')
   const [recordingTime, setRecordingTime] = useState(0)
   const recordingTimerRef = useRef(null)
   const waveformHistoryRef = useRef([])
 
-  const displayedScript = (localScriptText || script?.text || '').trim()
+  const displayedScript = (script?.text || '').trim()
   const scriptWords = displayedScript ? displayedScript.split(/\s+/) : []
   const wordGapClass =
     scriptWords.length <= 3 ? 'gap-10' : scriptWords.length <= 6 ? 'gap-6' : 'gap-4'
@@ -96,13 +97,6 @@ function VoiceRecordingBanner({ script, contentsId, language = 'en', userId, onA
 
       drawWaveform()
       startRecording()
-      setLocalScore(null)
-      setLocalAccuracy(null)
-      setLocalFluency(null)
-      setLocalCompleteness(null)
-      setLocalMedal(null)
-      setLocalFeedbackText('')
-      setLocalScriptText(script?.text ?? '')
       setErrorMessage('')
       setRecordingTime(0)
       waveformHistoryRef.current = []
@@ -181,31 +175,12 @@ function VoiceRecordingBanner({ script, contentsId, language = 'en', userId, onA
           'en-US'
 
         const res = await analyzePronunciation(file, userId, contentsId, scriptId, azureLanguage)
-        const score = normalizeScore(res?.finalScore ?? res?.score) ?? 0
-        const accuracyScore = normalizeScore(res?.accuracy)
-        const fluencyScore = normalizeScore(res?.fluency)
-        const completenessScore = normalizeScore(res?.completeness)
-
-        setLocalScore(score)
-        setLocalAccuracy(accuracyScore)
-        setLocalFluency(fluencyScore)
-        setLocalCompleteness(completenessScore)
-        const medal = res?.medal ? String(res.medal).toUpperCase() : null
-        setLocalMedal(medal)
-        // 백엔드에서 내려준 평가 문구를 그대로 사용
-        setLocalFeedbackText(res?.feedbackText ?? res?.overallComment ?? '')
-        setLocalScriptText(res?.scriptText ?? script?.text ?? '')
+        // 분석 결과는 onAnalyzed 콜백을 통해 부모 컴포넌트에서 관리
         setErrorMessage('')
         if (onAnalyzed) onAnalyzed(res, script)
       } catch (e) {
         console.error('Analyze failed', e)
         setErrorMessage(e.message || '발음 분석 중 오류가 발생했습니다. 다시 시도해주세요!')
-        setLocalScore(null)
-        setLocalFeedbackText('')
-        setLocalAccuracy(null)
-        setLocalFluency(null)
-        setLocalCompleteness(null)
-        setLocalMedal(null)
       } finally {
         cleanup()
         resetRecording()
@@ -515,12 +490,6 @@ return (
             {onContinueVideo && (
               <button
                 onClick={() => {
-                  setLocalScore(null)
-                  setLocalFeedbackText('')
-                  setLocalAccuracy(null)
-                  setLocalFluency(null)
-                  setLocalCompleteness(null)
-                  setLocalMedal(null)
                   setErrorMessage('')
                   onContinueVideo()
                 }}
