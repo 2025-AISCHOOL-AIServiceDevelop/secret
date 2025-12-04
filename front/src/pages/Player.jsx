@@ -299,8 +299,6 @@ function Player() {
 
   const handleScriptCardClick = (script) => {
     setSelectedScript(script);
-    // 스크립트 변경 시 이전 분석 결과 초기화 (중요!)
-    setAnalysisResult(null);
 
     const startMs = script?.startMs ?? script?.startTimeMs ?? null;
     if (videoRef.current && startMs != null) {
@@ -458,8 +456,6 @@ if (content?.contentsId && videoRef.current.duration) {
   // 녹음 시작 시 프롬프트 숨기기 및 영상 정지
   const handleRecordingStart = () => {
     setRecordingPromptVisible(false);
-    // 녹음 시작 시 이전 분석 결과 초기화 (중요!)
-    setAnalysisResult(null);
     if (videoRef.current) {
       videoRef.current.pause();
       setIsPlaying(false);
@@ -476,17 +472,26 @@ if (content?.contentsId && videoRef.current.duration) {
   };
 
   // 영상 이어보기 (분석 결과 후)
-  const handleContinueVideo = () => {
-    // 영상 섹션으로 스크롤
-    if (videoSectionRef.current) {
-      videoSectionRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  const handleContinueVideo = (script) => {
+  if (videoSectionRef.current) {
+    videoSectionRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+  if (!videoRef.current) return;
+
+  // ✅ 넘어온 스크립트의 시작 위치로 점프
+  if (script) {
+    const startMs = script.startMs ?? script.startTimeMs ?? null;
+    if (startMs != null) {
+      const startSec = startMs / 1000;
+      videoRef.current.currentTime = startSec;
+      setCurrentTime(startSec);
     }
-    // 영상 재생
-    if (videoRef.current) {
-      videoRef.current.play();
-      setIsPlaying(true);
-    }
-  };
+  }
+
+  videoRef.current.play();
+  setIsPlaying(true);
+};
+
 
   return (
     <div className="player-page flex flex-col gap-4">
@@ -770,7 +775,6 @@ if (content?.contentsId && videoRef.current.duration) {
           contentsId={content?.contentsId || (contentId ? parseInt(contentId) : undefined)}
           language={selectedLanguage}
           userId={user?.userId ?? null}
-          analysisResult={analysisResult}
           onAnalyzed={handleAnalysisComplete}
           onRecordingStart={handleRecordingStart}
           onContinueVideo={handleContinueVideo}

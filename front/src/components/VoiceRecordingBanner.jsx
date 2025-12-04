@@ -34,7 +34,7 @@ const normalizeScore = (value) => {
  * VoiceRecordingBanner - 유아용 음성 녹음 전용 배너
  * 영상과 스크립트 목록 하단에 배치되며, 귀여운 캐릭터와 함께 녹음 기능 제공
  */
-function VoiceRecordingBanner({ script, contentsId, language = 'en', userId, analysisResult, onAnalyzed, onRecordingStart, onContinueVideo }) {
+function VoiceRecordingBanner({ script, contentsId, language = 'en', userId, onAnalyzed, onRecordingStart, onContinueVideo }) {
   const canvasRef = useRef(null)
   const mediaStreamRef = useRef(null)
   const mediaRecorderRef = useRef(null)
@@ -45,20 +45,19 @@ function VoiceRecordingBanner({ script, contentsId, language = 'en', userId, ana
 
   const { recordingState, startRecording, stopRecording, resetRecording, analyzePronunciation, isAnalyzing } = useTutorStore()
 
-  // analysisResult에서 파생된 값들 (props로 전달받은 analysisResult를 우선 사용)
-  const localScore = analysisResult?.finalScore ?? analysisResult?.score ?? null
-  const localAccuracy = normalizeScore(analysisResult?.accuracy)
-  const localFluency = normalizeScore(analysisResult?.fluency)
-  const localCompleteness = normalizeScore(analysisResult?.completeness)
-  const localMedal = analysisResult?.medal ? String(analysisResult.medal).toUpperCase() : null
-  const localFeedbackText = analysisResult?.feedbackText ?? analysisResult?.overallComment ?? ''
-  const localScriptText = analysisResult?.scriptText ?? script?.text ?? ''
+  const [localScore, setLocalScore] = useState(null)
+  const [localAccuracy, setLocalAccuracy] = useState(null)
+  const [localFluency, setLocalFluency] = useState(null)
+  const [localCompleteness, setLocalCompleteness] = useState(null)
+  const [localMedal, setLocalMedal] = useState(null)
+  const [localFeedbackText, setLocalFeedbackText] = useState('')
+  const [localScriptText, setLocalScriptText] = useState('')
   const [errorMessage, setErrorMessage] = useState('')
   const [recordingTime, setRecordingTime] = useState(0)
   const recordingTimerRef = useRef(null)
   const waveformHistoryRef = useRef([])
 
-  const displayedScript = (script?.text || '').trim()
+  const displayedScript = (localScriptText || script?.text || '').trim()
   const scriptWords = displayedScript ? displayedScript.split(/\s+/) : []
   const wordGapClass =
     scriptWords.length <= 3 ? 'gap-10' : scriptWords.length <= 6 ? 'gap-6' : 'gap-4'
@@ -97,6 +96,13 @@ function VoiceRecordingBanner({ script, contentsId, language = 'en', userId, ana
 
       drawWaveform()
       startRecording()
+      setLocalScore(null)
+      setLocalAccuracy(null)
+      setLocalFluency(null)
+      setLocalCompleteness(null)
+      setLocalMedal(null)
+      setLocalFeedbackText('')
+      setLocalScriptText(script?.text ?? '')
       setErrorMessage('')
       setRecordingTime(0)
       waveformHistoryRef.current = []
@@ -175,12 +181,31 @@ function VoiceRecordingBanner({ script, contentsId, language = 'en', userId, ana
           'en-US'
 
         const res = await analyzePronunciation(file, userId, contentsId, scriptId, azureLanguage)
-        // 분석 결과는 onAnalyzed 콜백을 통해 부모 컴포넌트에서 관리
+        const score = normalizeScore(res?.finalScore ?? res?.score) ?? 0
+        const accuracyScore = normalizeScore(res?.accuracy)
+        const fluencyScore = normalizeScore(res?.fluency)
+        const completenessScore = normalizeScore(res?.completeness)
+
+        setLocalScore(score)
+        setLocalAccuracy(accuracyScore)
+        setLocalFluency(fluencyScore)
+        setLocalCompleteness(completenessScore)
+        const medal = res?.medal ? String(res.medal).toUpperCase() : null
+        setLocalMedal(medal)
+        // 백엔드에서 내려준 평가 문구를 그대로 사용
+        setLocalFeedbackText(res?.feedbackText ?? res?.overallComment ?? '')
+        setLocalScriptText(res?.scriptText ?? script?.text ?? '')
         setErrorMessage('')
         if (onAnalyzed) onAnalyzed(res, script)
       } catch (e) {
         console.error('Analyze failed', e)
         setErrorMessage(e.message || '발음 분석 중 오류가 발생했습니다. 다시 시도해주세요!')
+        setLocalScore(null)
+        setLocalFeedbackText('')
+        setLocalAccuracy(null)
+        setLocalFluency(null)
+        setLocalCompleteness(null)
+        setLocalMedal(null)
       } finally {
         cleanup()
         resetRecording()
@@ -389,57 +414,62 @@ return (
 
     {/* ==== 아래부터는 기존 오버레이/결과 코드 그대로 유지 ==== */}
 
+
+
+
+
 {isAnalyzing && (
   <div className="absolute inset-0 bg-white/90 backdrop-blur-sm rounded-[50px] flex items-center justify-center z-10 p-4">
-    <div className="flex flex-col items-center justify-center w-full">
+    <div className="flex flex-col md:flex-row items-center justify-center gap-8 w-full max-w-3xl">
+      
+      {/* 🚀 로켓 애니메이션 */}
       <div className="rocket">
-        
-        
-        
-        
- 
+        <div className="rocket-body">
+          <div className="body"></div>
+          <div className="fin fin-left"></div>
+          <div className="fin fin-right"></div>
+          <div className="window"></div>
+        </div>
+        <div className="exhaust-flame"></div>
 
-  <div class="rocket">
-    <div class="rocket-body">
-      <div class="body"></div>
-      <div class="fin fin-left"></div>
-      <div class="fin fin-right"></div>
-      <div class="window"></div>
-    </div>
-    <div class="exhaust-flame"></div>
-    <ul class="exhaust-fumes">
-      <li></li>
-      <li></li>
-      <li></li>
-      <li></li>
-      <li></li>
-      <li></li>
-      <li></li>
-      <li></li>
-      <li></li>
-    </ul>
-    <ul class="star">
-      <li></li>
-      <li></li>
-      <li></li>
-      <li></li>
-      <li></li>
-      <li></li>
-      <li></li>
-    </ul>
-  </div>
+        <ul className="exhaust-fumes">
+          <li></li>
+          <li></li>
+          <li></li>
+          <li></li>
+          <li></li>
+          <li></li>
+          <li></li>
+          <li></li>
+          <li></li>
+        </ul>
 
-        
-        
-        
-        
-         </div>
-      <div className="mt-4 text-xl text-[#337AF7] font-DnfBitbeatV2 self-end pr-100 ">
-        AI 친구가 분석 중이에요! 잠깐만 기다려줘요~
+        <ul className="star">
+          <li></li>
+          <li></li>
+          <li></li>
+          <li></li>
+          <li></li>
+          <li></li>
+          <li></li>
+        </ul>
+      </div>
+
+      {/* 🔵 오른쪽 텍스트 */}
+      <div className="text-center md:text-left text-xl md:text-2xl text-[#337AF7] font-DnfBitbeatV2 leading-relaxed">
+        <div>AI 친구가 분석 중이에요!</div>
+        <div className="mt-1">잠깐만 기다려줘요~</div>
       </div>
     </div>
   </div>
 )}
+
+
+
+
+
+
+
 
 
     {errorMessage && !isAnalyzing && (
@@ -490,14 +520,28 @@ return (
             {onContinueVideo && (
               <button
                 onClick={() => {
-                  setErrorMessage('')
-                  onContinueVideo()
+                  setLocalScore(null);
+                  setLocalFeedbackText('');
+                  setLocalAccuracy(null);
+                  setLocalFluency(null);
+                  setLocalCompleteness(null);
+                  setLocalMedal(null);
+                  setErrorMessage('');
+
+                  // ✅ 현재 문장(script)을 함께 넘기기
+                  if (script) {
+                    onContinueVideo(script);
+                  } else {
+                    onContinueVideo(); // 혹시 모를 fallback (원래 동작)
+                  }
                 }}
                 className="w-50 px-5 py-3 rounded-3xl bg-gradient-to-r from-[#FFE082] to-[#FFECB3] border-5 border-[#FFD54F] text-[#F57C00] text-2xl shadow-md hover:shadow-lg transform hover:scale-105 transition-all inline-flex items-center justify-center gap-2"
               >
                 이어서 따라하기
               </button>
             )}
+
+
           </div>
         </div>
       </div>
