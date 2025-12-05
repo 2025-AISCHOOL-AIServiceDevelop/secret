@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
+﻿import { useState, useEffect, useRef, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
   Play,
@@ -65,7 +65,7 @@ function Player() {
   const [recentScoredScriptId, setRecentScoredScriptId] = useState(null); // 방금 점수가 나온 스크립트 ID (짜잔 효과용)
   const [hasUserScrolledScripts, setHasUserScrolledScripts] = useState(false); // 사용자가 스크립트 영역을 직접 스크롤했는지 여부
 
-    // ✅ 시청 정보 저장 (MyPage에서 사용하는 형식과 동일하게)
+  // ✅ 시청 정보 저장 (MyPage에서 사용하는 형식과 동일하게)
   const saveWatchMeta = (contentsId, watchedSeconds, totalSeconds) => {
     if (!contentsId) return;
 
@@ -84,7 +84,7 @@ function Player() {
     }
   };
 
-    // ✅ 시청 정보 읽기 (MyPage와 동일 포맷)
+  // ✅ 시청 정보 읽기 (MyPage와 동일 포맷)
   const getWatchMeta = (contentsId) => {
     if (!contentsId) return { watchedSeconds: 0, totalSeconds: 0 };
 
@@ -101,7 +101,6 @@ function Player() {
       return { watchedSeconds: 0, totalSeconds: 0 };
     }
   };
-
 
   const languages = [
     { code: 'ko', name: '한국어', flag: '🇰🇷' },
@@ -224,8 +223,7 @@ function Player() {
     const observer = new ResizeObserver((entries) => {
       for (const entry of entries) {
         if (entry.target === videoSectionRef.current) {
-          // 소수점 픽셀까지 정확하게 측정
-          setVideoSectionHeight(entry.contentRect.height + 32); // padding/border 고려 (box-sizing에 따라 조정 필요)
+          setVideoSectionHeight(entry.contentRect.height + 32); // padding/border 고려
         }
       }
     });
@@ -354,31 +352,27 @@ function Player() {
       setCurrentTime(time);
 
       // ✅ 여기서 시청 정보 저장 (루트 ID 기준)
-if (content?.contentsId && videoRef.current.duration) {
-  saveWatchMeta(content.contentsId, time, videoRef.current.duration);
-}
+      if (content?.contentsId && videoRef.current.duration) {
+        saveWatchMeta(content.contentsId, time, videoRef.current.duration);
+      }
 
-       
       // 자막 싱크: 현재 시간에 해당하는 스크립트 자동 선택
       const currentMs = time * 1000;
-      const activeScript = scripts.find(s => 
+      const activeScript = scripts.find(s =>
         currentMs >= s.startMs && currentMs < s.endMs
       );
-      
+
       if (activeScript) {
         const scriptId = activeScript.scriptId || activeScript.id;
-        
+
         // 스크립트가 변경되었을 때만 업데이트
         if (!selectedScript || (selectedScript.scriptId || selectedScript.id) !== scriptId) {
           setSelectedScript(activeScript);
 
-          // 영상은 멈추지 않고 계속 재생되도록 유지하되,
-          // 필요하면 프롬프트만 띄우고 스크롤을 통해 현재 스크립트를 보여줌
           if (!pausedScriptIds.has(scriptId)) {
             setRecordingPromptVisible(true);
             setPausedScriptIds(prev => new Set([...prev, scriptId]));
 
-            // 10초 후 자동으로 프롬프트 숨기기
             setTimeout(() => {
               setRecordingPromptVisible(false);
             }, 10000);
@@ -386,7 +380,6 @@ if (content?.contentsId && videoRef.current.duration) {
 
           // ✅ 사용자가 스크롤을 "직접" 하기 전까지만 자동 스크롤
           if (!hasUserScrolledScripts) {
-            // 현재 스크립트가 "보이기만" 하도록 스크롤 (첫 번째 스크립트가 위로 사라지는 현상 방지)
             const container = scriptListRef.current;
             const target = scriptItemRefs.current[scriptId];
             if (container && target) {
@@ -406,20 +399,18 @@ if (content?.contentsId && videoRef.current.duration) {
       const duration = videoRef.current.duration;
       setDuration(duration);
 
-
-// ✅ 여기서 마지막 시청 시간으로 점프
+      // ✅ 여기서 마지막 시청 시간으로 점프
       if (content?.contentsId) {
         const { watchedSeconds } = getWatchMeta(content.contentsId);
 
-  if (watchedSeconds > 0 && watchedSeconds < duration) {
-    videoRef.current.currentTime = watchedSeconds;
-    setCurrentTime(watchedSeconds);
-  }
-}
-
+        if (watchedSeconds > 0 && watchedSeconds < duration) {
+          videoRef.current.currentTime = watchedSeconds;
+          setCurrentTime(watchedSeconds);
+        }
+      }
     }
   };
-  
+
   const handleSeek = (e) => {
     if (!videoRef.current) return;
     const rect = e.currentTarget.getBoundingClientRect();
@@ -448,10 +439,10 @@ if (content?.contentsId && videoRef.current.duration) {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const videoUrl = content?.contentsId 
-    ? `${API_BASE_URL}/api/media/${content.contentsId}` 
+  const videoUrl = content?.contentsId
+    ? `${API_BASE_URL}/api/media/${content.contentsId}`
     : null;
-  
+
   // 녹음 시작 시 프롬프트 숨기기 및 영상 정지
   const handleRecordingStart = () => {
     setRecordingPromptVisible(false);
@@ -460,7 +451,7 @@ if (content?.contentsId && videoRef.current.duration) {
       setIsPlaying(false);
     }
   };
-  
+
   // 영상 재생 시작 시 중지 기록 초기화 (재시청 대비)
   const handleVideoPlay = () => {
     setIsPlaying(true);
@@ -470,44 +461,81 @@ if (content?.contentsId && videoRef.current.duration) {
     }
   };
 
-  // 영상 이어보기 (분석 결과 후)
-  const handleContinueVideo = (script) => {
-  if (videoSectionRef.current) {
-    videoSectionRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }
-  if (!videoRef.current) return;
+  // 🔁 영상 이어보기 (분석 결과 후, **다음 스크립트**로 이동)
+  const handleContinueVideo = (scriptFromBanner) => {
+    if (!scripts || scripts.length === 0) return;
+    if (!videoRef.current) return;
 
-  // ✅ 넘어온 스크립트의 시작 위치로 점프
-  if (script) {
-    const startMs = script.startMs ?? script.startTimeMs ?? null;
+    // 기준 스크립트: 배너에서 넘겨준 것 > 현재 선택된 것 > 첫 번째
+    const current = scriptFromBanner || selectedScript || scripts[0];
+
+    const currentIndex = scripts.findIndex((s) => {
+      if (current.scriptId && s.scriptId) return s.scriptId === current.scriptId;
+      if (current.id && s.id) return s.id === current.id;
+      return (
+        s.orderNo === current.orderNo &&
+        s.contentsId === current.contentsId
+      );
+    });
+
+    // 다음 인덱스 (마지막이면 그대로 유지)
+    const nextIndex =
+      currentIndex >= 0 && currentIndex < scripts.length - 1
+        ? currentIndex + 1
+        : currentIndex;
+
+    const nextScript = scripts[nextIndex];
+    if (!nextScript) return;
+
+    // ✅ 선택 스크립트 변경
+    setSelectedScript(nextScript);
+
+    // ✅ 영상 위치를 다음 스크립트 시작 지점으로 점프
+    const startMs = nextScript.startMs ?? nextScript.startTimeMs ?? null;
     if (startMs != null) {
       const startSec = startMs / 1000;
       videoRef.current.currentTime = startSec;
       setCurrentTime(startSec);
     }
-  }
 
-  videoRef.current.play();
-  setIsPlaying(true);
-};
+    // ✅ 스크립트 카드로 스크롤 (이어하기는 강제로 포커싱)
+    const scriptKey = nextScript.scriptId ?? nextScript.id;
+    const targetEl =
+      scriptKey != null ? scriptItemRefs.current[scriptKey] : null;
+    if (scriptListRef.current && targetEl) {
+      targetEl.scrollIntoView({
+        behavior: 'smooth',
+        block: 'nearest',
+      });
+    }
 
+    // ✅ 영상 영역 상단으로 스크롤
+    if (videoSectionRef.current) {
+      videoSectionRef.current.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      });
+    }
+
+    videoRef.current.play();
+    setIsPlaying(true);
+  };
 
   return (
     <div className="player-page flex flex-col gap-4">
 
+      {/* 🔥 학습 페이지 헤더(토성 + 제목) */}
+      <div className="relative mb-8 pt-7 text-center">
+        <img
+          src={saturn}
+          alt="토성 아이콘"
+          className="absolute left-1/2 -translate-x-1/2 -top-[0.5px] max-w-[34px]"
+        />
+        <h3 className="text-4xl font-[DungeonFighterOnlineBeatBeat] text-[#8C85A5] mb-2">
+          학습 페이지
+        </h3>
+      </div>
 
-       {/* 🔥 학습 페이지 헤더(토성 + 제목) */}
-    <div className="relative mb-8 pt-7 text-center">
-      <img
-        src={saturn}
-        alt="토성 아이콘"
-        className="absolute left-1/2 -translate-x-1/2 -top-[0.5px] max-w-[34px]"
-      />
-      <h3 className="text-4xl font-[DungeonFighterOnlineBeatBeat] text-[#8C85A5] mb-2">
-        학습 페이지
-      </h3>
-    </div>
-    
       {/* 상단 영상 + 스크립트 목록 */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
         {/* 왼쪽: 비디오 플레이어 */}
@@ -516,9 +544,9 @@ if (content?.contentsId && videoRef.current.duration) {
           className="flex flex-col gap-3 rounded-[18px] p-4 border-2"
           style={{ background: '#e1e8ff', borderColor: '#b9c5ef' }}
         >
-           <div className="text-center text-3xl font-[DungeonFighterOnlineBeatBeat] text-[#8C85A5] mb-2">
-              {content?.title || content?.name || '영상 제목'}
-            </div>
+          <div className="text-center text-3xl font-[DungeonFighterOnlineBeatBeat] text-[#8C85A5] mb-2">
+            {content?.title || content?.name || '영상 제목'}
+          </div>
           <div
             className="rounded-[14px] overflow-hidden bg-black relative w-full"
             style={{ aspectRatio: '16/9' }}
@@ -536,10 +564,12 @@ if (content?.contentsId && videoRef.current.duration) {
                   onPause={() => setIsPlaying(false)}
                   crossOrigin="anonymous"
                 />
-                
               </>
             ) : (
-              <div className="w-full h-full grid place-items-center" style={{ background: 'linear-gradient(135deg, #6657c7, #6aa0ff)' }}>
+              <div
+                className="w-full h-full grid place-items-center"
+                style={{ background: 'linear-gradient(135deg, #6657c7, #6aa0ff)' }}
+              >
                 <div className="text-center text-white">
                   <Film className="w-20 h-20 mb-4 mx-auto animate-pulse" />
                   <div className="text-xl font-bold">비디오를 불러오는 중...</div>
@@ -547,15 +577,15 @@ if (content?.contentsId && videoRef.current.duration) {
               </div>
             )}
           </div>
-          
+
           {/* 컨트롤 바 */}
           <div className="grid grid-cols-[auto_1fr_auto_auto] gap-3 items-center mt-2">
-            <button 
+            <button
               onClick={togglePlayPause}
               disabled={!videoUrl}
-              aria-label={isPlaying ? "pause" : "play"} 
-              className="group relative w-14 h-14 rounded-full flex items-center justify-center disabled:opacity-50 transition-all hover:scale-110 active:scale-95 shadow-lg hover:shadow-xl disabled:cursor-not-allowed" 
-              style={{ 
+              aria-label={isPlaying ? 'pause' : 'play'}
+              className="group relative w-14 h-14 rounded-full flex items-center justify-center disabled:opacity-50 transition-all hover:scale-110 active:scale-95 shadow-lg hover:shadow-xl disabled:cursor-not-allowed"
+              style={{
                 background: 'linear-gradient(135deg, #FFE082 0%, #FFECB3 100%)',
                 border: '3px solid #FFD54F'
               }}
@@ -567,17 +597,17 @@ if (content?.contentsId && videoRef.current.duration) {
                 <Play className="w-7 h-7 text-[#F57C00] fill-[#F57C00] ml-1" />
               )}
             </button>
-            <div 
-              className="h-4 rounded-full overflow-hidden border-2 cursor-pointer hover:h-5 transition-all" 
+            <div
+              className="h-4 rounded-full overflow-hidden border-2 cursor-pointer hover:h-5 transition-all"
               style={{ background: '#F0F8FF', borderColor: '#B3E5FC' }}
               onClick={handleSeek}
             >
-              <span 
-                className="block h-full transition-all" 
-                style={{ 
-                  width: `${duration > 0 ? (currentTime / duration) * 100 : 0}%`, 
-                  background: 'linear-gradient(90deg, #81D4FA, #FFE082)' 
-                }} 
+              <span
+                className="block h-full transition-all"
+                style={{
+                  width: `${duration > 0 ? (currentTime / duration) * 100 : 0}%`,
+                  background: 'linear-gradient(90deg, #81D4FA, #FFE082)'
+                }}
               />
             </div>
             <div className="text-[#6d7a9f] text-lg font-medium whitespace-nowrap">
@@ -594,12 +624,11 @@ if (content?.contentsId && videoRef.current.duration) {
         </section>
 
         {/* 오른쪽: 스크립트 목록 (영상 박스 하단에 맞춰 높이 자동 정렬) */}
-        <aside 
-          ref={scriptAsideRef} 
+        <aside
+          ref={scriptAsideRef}
           className="flex flex-col gap-3"
           style={videoSectionHeight ? { height: `${videoSectionHeight}px` } : {}}
         >
-
           {/* 언어 선택 버튼 */}
           <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
             {languages.map((lang) => (
@@ -635,64 +664,68 @@ if (content?.contentsId && videoRef.current.duration) {
               전체 스크립트
             </div>
             <div className="space-y-2.5">
-                {isLoadingScripts ? (
-                  <div className="text-center py-6">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
-                    <p className="text-base mt-3 text-gray-600">스크립트 로딩 중...</p>
-                  </div>
-                ) : scripts.length > 0 ? (
-                  scripts.map((script, index) => {
-                    const isSelected = selectedScript && (
-                      (script.scriptId && selectedScript.scriptId === script.scriptId) ||
-                      (script.id && selectedScript.id === script.id) ||
-                      (selectedScript.orderNo === script.orderNo && selectedScript.contentsId === script.contentsId)
-                    );
-                    const scriptKey = script.scriptId ?? script.id;
-                    const feedbackForScript = scriptKey != null ? scriptFeedbackMap[Number(scriptKey)] : null;
-                    const latestMedal =
-                      feedbackForScript?.medal ||
-                      (analysisResult && analysisResult.scriptId === scriptKey ? analysisResult.medal : null);
-                    const stickerSrc = latestMedal ? getStickerByMedal(latestMedal) : null;
-                    const displayFeedback = feedbackForScript || (analysisResult && analysisResult.scriptId === scriptKey ? analysisResult : null);
-                    const totalScore = displayFeedback?.finalScore ?? displayFeedback?.score ?? null;
-                    const feedbackText = displayFeedback?.feedbackText || displayFeedback?.overallComment || '';
-                    const cardId = scriptKey ?? `${script.contentsId}-${script.orderNo}`;
-                    const isFlipped = flippedScriptId === cardId;
-                    const isRecentlyScored = scriptKey != null && recentScoredScriptId === scriptKey;
-                    
-                    return (
-                      <div
-                        key={script.scriptId || script.id || `${script.contentsId}-${script.orderNo}`}
-                        ref={el => {
-                          if (el && scriptKey != null) {
-                            scriptItemRefs.current[scriptKey] = el;
-                          }
-                        }}
-                        onClick={() => handleScriptCardClick(script)}
-                        className="flip-card cursor-pointer flex-shrink-0 group"
-                      >
-                        <div className={`flip-card-inner ${isFlipped ? 'is-flipped' : ''}`}>
-                          {/* 앞면: 스크립트 + 스티커 */}
-                          <div
-                            className={`flip-card-front rounded-[14px] min-h-[170px] border-2 p-4 relative flex items-start gap-3 transition-all ${
-                          isSelected
-                            ? 'bg-white border-[#01579B] shadow-xl'
-                            : 'bg-[#E1F5FE] border-[#B3E5FC]'
-                        } ${isRecentlyScored ? 'sticker-pop-enter' : ''}`}
-                      >
-                            <div className={`flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-base font-bold ${
+              {isLoadingScripts ? (
+                <div className="text-center py-6">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
+                  <p className="text-base mt-3 text-gray-600">스크립트 로딩 중...</p>
+                </div>
+              ) : scripts.length > 0 ? (
+                scripts.map((script, index) => {
+                  const isSelected = selectedScript && (
+                    (script.scriptId && selectedScript.scriptId === script.scriptId) ||
+                    (script.id && selectedScript.id === script.id) ||
+                    (selectedScript.orderNo === script.orderNo && selectedScript.contentsId === script.contentsId)
+                  );
+                  const scriptKey = script.scriptId ?? script.id;
+                  const feedbackForScript = scriptKey != null ? scriptFeedbackMap[Number(scriptKey)] : null;
+                  const latestMedal =
+                    feedbackForScript?.medal ||
+                    (analysisResult && analysisResult.scriptId === scriptKey ? analysisResult.medal : null);
+                  const stickerSrc = latestMedal ? getStickerByMedal(latestMedal) : null;
+                  const displayFeedback = feedbackForScript || (analysisResult && analysisResult.scriptId === scriptKey ? analysisResult : null);
+                  const totalScore = displayFeedback?.finalScore ?? displayFeedback?.score ?? null;
+                  const feedbackText = displayFeedback?.feedbackText || displayFeedback?.overallComment || '';
+                  const cardId = scriptKey ?? `${script.contentsId}-${script.orderNo}`;
+                  const isFlipped = flippedScriptId === cardId;
+                  const isRecentlyScored = scriptKey != null && recentScoredScriptId === scriptKey;
+
+                  return (
+                    <div
+                      key={script.scriptId || script.id || `${script.contentsId}-${script.orderNo}`}
+                      ref={el => {
+                        if (el && scriptKey != null) {
+                          scriptItemRefs.current[scriptKey] = el;
+                        }
+                      }}
+                      onClick={() => handleScriptCardClick(script)}
+                      className="flip-card cursor-pointer flex-shrink-0 group"
+                    >
+                      <div className={`flip-card-inner ${isFlipped ? 'is-flipped' : ''}`}>
+                        {/* 앞면: 스크립트 + 스티커 */}
+                        <div
+                          className={`flip-card-front rounded-[14px] min-h-[170px] border-2 p-4 relative flex items-start gap-3 transition-all ${
                             isSelected
-                              ? 'bg-[#01579B] text-white'
-                              : 'bg-[#B3E5FC] text-[#01579B]'
-                          }`}>
+                              ? 'bg-white border-[#01579B] shadow-xl'
+                              : 'bg-[#E1F5FE] border-[#B3E5FC]'
+                          } ${isRecentlyScored ? 'sticker-pop-enter' : ''}`}
+                        >
+                          <div
+                            className={`flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-base font-bold ${
+                              isSelected
+                                ? 'bg-[#01579B] text-white'
+                                : 'bg-[#B3E5FC] text-[#01579B]'
+                            }`}
+                          >
                             {index + 1}
                           </div>
-                            <div className="flex-1 flex items-start justify-between gap-3">
-                              <div className={`text-lg md:text-xl leading-relaxed script-text-default-font ${
-                              isSelected
-                                ? 'text-[#01579B] font-bold'
-                                : 'text-[#0277BD]'
-                            }`}>
+                          <div className="flex-1 flex items-start justify-between gap-3">
+                            <div
+                              className={`text-lg md:text-xl leading-relaxed script-text-default-font ${
+                                isSelected
+                                  ? 'text-[#01579B] font-bold'
+                                  : 'text-[#0277BD]'
+                              }`}
+                            >
                               {script.text}
                             </div>
                             {stickerSrc && (
@@ -714,54 +747,54 @@ if (content?.contentsId && videoRef.current.duration) {
                                 <div className="sticker-star sticker-star-3" />
                               </div>
                             )}
-                            </div>
-                          </div>
-
-                          {/* 뒷면: 점수 & 평가 */}
-                          <div
-                            className={`flip-card-back rounded-[14px] min-h-[140px] border-2 p-4 bg-white flex flex-col justify-center gap-2 border-[ #01579B] shadow-lg ${
-                              isRecentlyScored ? 'score-pop-enter' : ''
-                            }`}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setFlippedScriptId((prev) => (prev === cardId ? null : prev));
-                            }}
-                          >
-                            {totalScore != null ? (
-                              <>
-                                <div className="flex items-center justify-between gap-3">
-                                  <div className="text-2xl text-[#01579B]">
-                                    나의 점수
-                                  </div>
-                                  <div className="text-2xl text-[#F57C00]">
-                                    {totalScore}
-                                  </div>
-                                </div>
-                                {/* 총 점수와 평가 문장만 표시 */}
-                                {feedbackText && (
-                                  <div className="mt-3 px-3 py-2 rounded-lg bg-[ #FFFDE7] border border-[#FFD54F] text-[16px] text-[#F57C00] leading-relaxed line-clamp-3">
-                                    {feedbackText}
-                                  </div>
-                                )}
-                              </>
-                            ) : (
-                              <div className="text-2xl text-center text-[#aabd02ff] leading-relaxed">
-                                아직 점수가 없어요.
-                                <br />
-                                아래에서 먼저 녹음해 볼까요?
-                              </div>
-                            )}
                           </div>
                         </div>
+
+                        {/* 뒷면: 점수 & 평가 */}
+                        <div
+                          className={`flip-card-back rounded-[14px] min-h-[140px] border-2 p-4 bg-white flex flex-col justify-center gap-2 border-[ #01579B] shadow-lg ${
+                            isRecentlyScored ? 'score-pop-enter' : ''
+                          }`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setFlippedScriptId((prev) => (prev === cardId ? null : prev));
+                          }}
+                        >
+                          {totalScore != null ? (
+                            <>
+                              <div className="flex items-center justify-between gap-3">
+                                <div className="text-2xl text-[#01579B]">
+                                  나의 점수
+                                </div>
+                                <div className="text-2xl text-[#F57C00]">
+                                  {totalScore}
+                                </div>
+                              </div>
+                              {/* 총 점수와 평가 문장만 표시 */}
+                              {feedbackText && (
+                                <div className="mt-3 px-3 py-2 rounded-lg bg-[ #FFFDE7] border border-[#FFD54F] text-[16px] text-[#F57C00] leading-relaxed line-clamp-3">
+                                  {feedbackText}
+                                </div>
+                              )}
+                            </>
+                          ) : (
+                            <div className="text-2xl text-center text-[#aabd02ff] leading-relaxed">
+                              아직 점수가 없어요.
+                              <br />
+                              아래에서 먼저 녹음해 볼까요?
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    );
-                  })
-                ) : (
-                  <div className="text-center py-4 flex-shrink-0">
-                    <Inbox className="w-12 h-12 mx-auto mb-2 text-gray-400" />
-                    <div className="text-sm text-gray-500">스크립트를 불러올 수 없습니다.</div>
-                  </div>
-                )}
+                    </div>
+                  );
+                })
+              ) : (
+                <div className="text-center py-4 flex-shrink-0">
+                  <Inbox className="w-12 h-12 mx-auto mb-2 text-gray-400" />
+                  <div className="text-sm text-gray-500">스크립트를 불러올 수 없습니다.</div>
+                </div>
+              )}
             </div>
           </div>
         </aside>
@@ -776,14 +809,12 @@ if (content?.contentsId && videoRef.current.duration) {
           userId={user?.userId ?? null}
           onAnalyzed={handleAnalysisComplete}
           onRecordingStart={handleRecordingStart}
-          onContinueVideo={handleContinueVideo}
+          onContinueVideo={handleContinueVideo} // ✅ 여기서 이어하기 콜백 연결
         />
       </div>
 
     </div>
-  )
+  );
 }
 
-export default Player
-
-
+export default Player;
